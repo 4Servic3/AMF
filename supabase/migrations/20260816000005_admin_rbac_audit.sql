@@ -161,7 +161,20 @@ create table if not exists app_settings (
 );
 
 -- 11. Webhook Events & Background Jobs
--- Alter existing webhook_events to add attempts and payload_hash
+-- Create webhook_events if it doesn't exist (fallback)
+create table if not exists webhook_events (
+  id uuid default uuid_generate_v4() primary key,
+  provider text not null,
+  external_id text not null,
+  type text not null,
+  payload jsonb not null,
+  status text default 'pending',
+  processed_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(provider, external_id)
+);
+
+-- Alter existing or newly created webhook_events to add new columns
 alter table webhook_events add column if not exists attempts integer default 0 not null;
 alter table webhook_events add column if not exists payload_hash text;
 alter table webhook_events add column if not exists received_at timestamp with time zone default timezone('utc'::text, now()) not null;
