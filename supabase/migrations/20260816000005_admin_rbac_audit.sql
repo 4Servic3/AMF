@@ -1,5 +1,17 @@
 -- Migration: Stage 2 - Banco Administrativo, Migrations, RBAC e Auditoria
 
+-- Enable UUID extension (fallback if not enabled)
+create extension if not exists "uuid-ossp";
+
+-- Helper function for updated_at (fallback if not created by initial schema)
+create or replace function public.update_modified_column()
+returns trigger as $$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$$ language plpgsql;
+
 -- 1. Admin Roles
 create table if not exists admin_roles (
   id uuid default uuid_generate_v4() primary key,
@@ -12,7 +24,11 @@ create table if not exists admin_roles (
 );
 
 -- 2. Admin Permissions
-create type permission_risk_level as enum ('low', 'medium', 'high', 'critical');
+DO $$ BEGIN
+    CREATE TYPE permission_risk_level AS ENUM ('low', 'medium', 'high', 'critical');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 create table if not exists admin_permissions (
   id uuid default uuid_generate_v4() primary key,
@@ -34,7 +50,11 @@ create table if not exists admin_role_permissions (
 );
 
 -- 4. Admin User Roles
-create type admin_user_role_status as enum ('invited', 'active', 'suspended', 'revoked');
+DO $$ BEGIN
+    CREATE TYPE admin_user_role_status AS ENUM ('invited', 'active', 'suspended', 'revoked');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 create table if not exists admin_user_roles (
   user_id uuid references auth.users on delete cascade not null,
@@ -114,7 +134,11 @@ create table if not exists content_versions (
 );
 
 -- 8. Content Reviews
-create type content_review_status as enum ('pending', 'approved', 'rejected', 'changes_requested');
+DO $$ BEGIN
+    CREATE TYPE content_review_status AS ENUM ('pending', 'approved', 'rejected', 'changes_requested');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 create table if not exists content_reviews (
   id uuid default uuid_generate_v4() primary key,
@@ -129,7 +153,11 @@ create table if not exists content_reviews (
 );
 
 -- 9. Publication Schedules
-create type publication_schedule_status as enum ('scheduled', 'running', 'completed', 'cancelled', 'failed');
+DO $$ BEGIN
+    CREATE TYPE publication_schedule_status AS ENUM ('scheduled', 'running', 'completed', 'cancelled', 'failed');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 create table if not exists publication_schedules (
   id uuid default uuid_generate_v4() primary key,
@@ -148,7 +176,11 @@ create table if not exists publication_schedules (
 );
 
 -- 10. Feature Flags & App Settings
-create type setting_risk_level as enum ('low', 'medium', 'high');
+DO $$ BEGIN
+    CREATE TYPE setting_risk_level AS ENUM ('low', 'medium', 'high');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 create table if not exists app_settings (
   key text primary key,
@@ -364,7 +396,12 @@ begin
 end $$;
 
 -- Triggers for updated_at
+drop trigger if exists update_admin_roles_modtime on admin_roles;
 create trigger update_admin_roles_modtime before update on admin_roles for each row execute procedure update_modified_column();
+
+drop trigger if exists update_pub_schedules_modtime on publication_schedules;
 create trigger update_pub_schedules_modtime before update on publication_schedules for each row execute procedure update_modified_column();
+
+drop trigger if exists update_app_settings_modtime on app_settings;
 create trigger update_app_settings_modtime before update on app_settings for each row execute procedure update_modified_column();
 
