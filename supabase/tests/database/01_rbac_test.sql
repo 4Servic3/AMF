@@ -1,3 +1,6 @@
+-- Enable pgTAP for testing
+create extension if not exists pgtap with schema public;
+
 begin;
 select plan(8);
 
