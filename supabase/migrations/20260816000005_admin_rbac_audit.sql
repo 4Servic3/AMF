@@ -177,7 +177,7 @@ create table if not exists background_jobs (
   max_attempts integer default 3 not null,
   run_at timestamp with time zone default timezone('utc'::text, now()) not null,
   locked_at timestamp with time zone,
-  locked_by text,
+  locked_by_worker text,
   last_error text,
   completed_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
