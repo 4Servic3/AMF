@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "stories": [
+    {
+      "id": "obstrucao-uretral",
+      "title": "Obstrução uretral em felino jovem",
+      "category": "Emergência",
+      "imageUrl": "/assets/amf-casos/stories/story-obstrucao-uretral.webp",
+      "durationMs": 8000,
+      "isNew": true,
+      "locked": false
+    },
+    {
+      "id": "felv",
+      "title": "Anemia grave em paciente FeLV positivo",
+      "category": "FeLV",
+      "imageUrl": "/assets/amf-casos/stories/story-felv.webp",
+      "durationMs": 8000,
+      "isNew": true,
+      "locked": false
+    },
+    {
+      "id": "drc",
+      "title": "Doença renal crônica: estágio 2",
+      "category": "Nefrologia",
+      "imageUrl": "/assets/amf-casos/stories/story-drc.webp",
+      "durationMs": 8000,
+      "isNew": false,
+      "locked": false
+    },
+    {
+      "id": "oncologia",
+      "title": "Massa mediastinal em felino adulto",
+      "category": "Oncologia",
+      "imageUrl": "/assets/amf-casos/stories/story-oncologia.webp",
+      "durationMs": 8000,
+      "isNew": false,
+      "locked": true
+    },
+    {
+      "id": "emergencia",
+      "title": "Estabilização do paciente felino",
+      "category": "Emergência",
+      "imageUrl": "/assets/amf-casos/stories/story-emergencia.webp",
+      "durationMs": 8000,
+      "isNew": false,
+      "locked": false
+    },
+    {
+      "id": "diagnostico",
+      "title": "Perda de peso progressiva",
+      "category": "Diagnóstico",
+      "imageUrl": "/assets/amf-casos/stories/story-diagnostico.webp",
+      "durationMs": 8000,
+      "isNew": false,
+      "locked": false
+    }
+  ]
+}

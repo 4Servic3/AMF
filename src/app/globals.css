@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
 @theme {
+  --color-plum-950: #12051B;
+  --color-plum-900: #16051F;
+  --color-plum-800: #24102D;
+  --color-cream-50: #FBF7F0;
+  --color-cream-100: #F6F0E8;
+  --color-warm-white: #FFFDFC;
+  --color-teal-700: #006B68;
+  --color-teal-800: #004F4D;
+  --color-gold-500: #D6A63E;
+  --color-gold-400: #E8BD5A;
+  --color-ink: #10162F;
+  --color-muted: #667085;
+  --color-border: #DED5C9;
+
   --color-amf-plum-950: #14091F;
   --color-amf-plum-900: #1C0D29;
   --color-amf-plum-850: #251232;

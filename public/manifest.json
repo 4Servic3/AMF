@@ -1,0 +1,21 @@
+{
+  "name": "Academia de Medicina Felina",
+  "short_name": "Academia",
+  "description": "Atualização clínica e Casos da Semana para veterinários de felinos.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#F7F3EC",
+  "theme_color": "#40264F",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
