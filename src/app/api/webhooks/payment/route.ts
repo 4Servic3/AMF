@@ -3,15 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 
 // Webhooks de pagamento muitas vezes não têm o contexto do usuário logado,
 // então usamos o client com Service Role para bypassar RLS em operações críticas de servidor.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy_key';
-const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || 'secret_mock_dev';
-
-const supabase = createClient(supabaseUrl, supabaseServiceRole, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
+// Inicializamos dentro do handler para não quebrar o build estático do Next.js se as envs não estiverem presentes no build time.
 
 export async function POST(req: Request) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || 'secret_mock_dev';
+
+  if (!supabaseUrl || !supabaseServiceRole) {
+    console.error('Missing Supabase credentials for webhook');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceRole, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
   try {
     // 1. Validar Assinatura (Exemplo Genérico)
     const signature = req.headers.get('x-webhook-signature');
