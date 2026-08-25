@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Paywall } from '@/components/ui/paywall';
 import { CoursePlayer } from '@/components/ui/course-player';
+import { PdfViewer } from '@/components/ui/pdf-viewer';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export default async function LessonPage({ params }: { params: Promise<{ courseSlug: string, lessonSlug: string }> }) {
@@ -45,7 +46,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   // 3. Fetch current lesson
   const { data: currentLesson } = await supabase
     .from('lessons')
-    .select('*, course_modules!inner(course_id)')
+    .select('*, course_modules!inner(course_id), lesson_materials(id)')
     .eq('id', lessonSlug)
     .single();
 
@@ -169,14 +170,21 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-6 bg-[#FAF7F1]">
-             <div className="bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
-              <h2 className="text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
-              <p className="text-gray-600 mb-6">Este material está disponível para download.</p>
-              <button className="bg-[#D4AD62] text-[#160820] font-bold px-8 py-3 rounded-full hover:bg-[#E0C17E] transition-colors shadow-sm">
-                Baixar PDF
-              </button>
-             </div>
+          <div className="w-full bg-[#FAF7F1] flex flex-col items-center">
+             {currentLesson.lesson_materials && currentLesson.lesson_materials.length > 0 ? (
+                <PdfViewer 
+                  courseSlug={courseSlug}
+                  materialId={currentLesson.lesson_materials[0].id}
+                  title={currentLesson.title}
+                />
+             ) : (
+               <div className="flex-1 flex flex-col items-center justify-center p-6 w-full mt-24">
+                 <div className="bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
+                  <h2 className="text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
+                  <p className="text-gray-600 mb-6">Este material não possui um arquivo anexado no momento.</p>
+                 </div>
+               </div>
+             )}
           </div>
         )}
 
