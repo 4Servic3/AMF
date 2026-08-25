@@ -2,7 +2,7 @@ import React from 'react';
 import { trackEvent } from '@/lib/services/analytics';
 import { createClient } from '@/lib/supabase/server';
 import { PremiumHomeHeader } from '@/components/home/premium-home-header';
-import { FeaturedClinicalCard } from '@/components/home/featured-clinical-card';
+import { WelcomeBanner } from '@/components/home/welcome-banner';
 import { SuaAcademia, type UserCourseProgress } from '@/components/home/sua-academia';
 
 export default async function AppHome() {
@@ -113,23 +113,17 @@ export default async function AppHome() {
       </PremiumHomeHeader>
 
       <div className="home-content-container max-w-[1240px] mx-auto w-full flex-1 flex flex-col pt-0">
-        <div className="flex flex-col relative z-10 w-full min-w-0 max-w-full -mt-[24px]">
+        <div className="flex flex-col relative z-10 w-full min-w-0 max-w-full mt-3 sm:mt-4">
           
           {banners && banners.length > 0 ? (
-            <FeaturedClinicalCard 
-              title={banners[0].title || ''}
-              subtitle={banners[0].subtitle || ''}
-              stepsCount={0}
-              imageUrl={banners[0].media_asset_id ? `/api/media/${banners[0].media_asset_id}` : ''}
-              href={banners[0].cta_target_id || '#'}
+            <WelcomeBanner 
+              imageUrl={banners[0].media_asset_id ? `/api/media/${banners[0].media_asset_id}` : '/assets/amf-home/banner-imersao-felinos.png'}
+              href={banners[0].cta_target_id ? `/app/cursos/${banners[0].cta_target_id}` : undefined}
             />
           ) : (
-            <div className="bg-[#1C0D29] rounded-[20px] p-8 text-center text-[#F9F5EE] border border-[#D4AD62]/20">
-              <h3 className="font-editorial text-xl font-bold mb-2 text-[#D4AD62]">Bem-vindo(a) à Academia</h3>
-              <p className="font-sans text-sm text-white/80">
-                Explore nossos cursos e atualize-se na medicina felina.
-              </p>
-            </div>
+            <WelcomeBanner 
+              imageUrl="/assets/amf-home/banner-imersao-felinos.png"
+            />
           )}
 
         </div>
