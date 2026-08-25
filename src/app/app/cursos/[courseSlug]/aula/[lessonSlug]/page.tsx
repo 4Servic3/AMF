@@ -1,81 +1,40 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { determineAccessState, getUserEntitlements } from '@/lib/services/access';
-import { getProgress } from '@/lib/services/progress';
-import { CoursePlayer } from '@/components/ui/course-player';
-import { VideoNotes } from '@/components/ui/video-notes';
+import { createClient } from '@/lib/supabase/server';
 import { Paywall } from '@/components/ui/paywall';
+import { CoursePlayer } from '@/components/ui/course-player';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
-// Mock DB Fetch
-async function getCourseAndLesson(courseSlug: string, lessonSlug: string) {
-  if (courseSlug !== 'imersao-parte-1' && courseSlug !== 'imersao-clinica-de-felinos-parte-1') return null;
-  
-  const course = {
-    id: 'ccccccc1-0000-0000-0000-000000000000',
-    product_id: '22222222-2222-2222-2222-222222222222',
-    title: 'Imersão Clínica de Felinos — Parte 1',
-    modules: [
-      {
-        id: 'mmmmm001-0000-0000-0000-000000000000',
-        title: 'Módulo 1: O Início de Tudo',
-        lessons: [
-          { id: 'lllllll1-0000-0000-0000-000000000000', title: 'Aula 1: A Abordagem Cat Friendly', slug: 'abordagem-cat-friendly', duration_seconds: 1200, video_id: 'v_demo_1', description: 'Entenda os princípios fundamentais para tornar o ambiente da clínica seguro e receptivo para gatos.', materials: [{ title: 'Checklist Cat Friendly', url: '#', type: 'pdf' }] },
-          { id: 'lllllll2-0000-0000-0000-000000000000', title: 'Aula 2: Semiologia Felina', slug: 'semiologia-felina', duration_seconds: 1800, video_id: 'v_demo_2', description: 'O exame físico detalhado no gato.', materials: [] },
-        ]
-      },
-      {
-        id: 'mmmmm002-0000-0000-0000-000000000000',
-        title: 'Módulo 2: Casos Clínicos',
-        lessons: [
-          { id: 'lllllll3-0000-0000-0000-000000000000', title: 'Aula 3: Desidratação', slug: 'desidratacao', duration_seconds: 2100, video_id: 'v_demo_3', description: 'Diagnóstico.', materials: [] },
-          { id: 'lllllll4-0000-0000-0000-000000000000', title: 'Aula 4: Fluidoterapia na prática', slug: 'fluidoterapia', duration_seconds: 2500, video_id: 'v_demo_4', description: 'Terapia.', materials: [] },
-        ]
-      }
-    ]
-  };
-
-  let currentLesson = null;
-  let prevLesson = null;
-  let nextLesson = null;
-  
-  const allLessons = course.modules.flatMap(m => m.lessons);
-  const currentIndex = allLessons.findIndex(l => l.slug === lessonSlug);
-  
-  if (currentIndex !== -1) {
-    currentLesson = allLessons[currentIndex];
-    prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
-    nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
-  }
-
-  if (!currentLesson) return null;
-
-  return { course, currentLesson, prevLesson, nextLesson };
-}
-
-export default async function LessonPage({ params }: { params: { courseSlug: string, lessonSlug: string } }) {
+export default async function LessonPage({ params }: { params: Promise<{ courseSlug: string, lessonSlug: string }> }) {
   const { courseSlug, lessonSlug } = await params;
-  const data = await getCourseAndLesson(courseSlug, lessonSlug);
   
-  if (!data) {
-    notFound();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // 1. Fetch Course
+  const { data: course } = await supabase
+    .from('courses')
+    .select('id, title, status')
+    .eq('slug', courseSlug)
+    .single();
+
+  if (!course) notFound();
+
+  // 2. Auth Check
+  let hasAccess = false;
+  if (user) {
+    const { data: accessData } = await supabase.rpc('has_course_access', { course_uuid: course.id });
+    hasAccess = !!accessData;
   }
 
-  const { course, currentLesson, prevLesson, nextLesson } = data;
-  const userId = '00000000-0000-0000-0000-000000000000';
-  
-  // Auth Check
-  const entitlements = await getUserEntitlements(userId);
-  const accessState = determineAccessState(entitlements, course.product_id);
-  const hasAccess = accessState === 'available';
-
-  if (!hasAccess) {
+  if (!hasAccess || !user) {
     return (
       <div className="max-w-4xl mx-auto pt-12">
         <Paywall 
           title="Conteúdo Bloqueado" 
           description="Você precisa possuir este curso para acessar a aula." 
-          themeColor="var(--color-amf-purple)" 
+          themeColor="#160820" 
           ctaText="Ver detalhes do curso" 
           ctaUrl={`/app/produtos/${courseSlug}`} 
         />
@@ -83,128 +42,206 @@ export default async function LessonPage({ params }: { params: { courseSlug: str
     );
   }
 
-  // Load Progress
-  const progressData = await getProgress(userId, currentLesson.id);
-  const initialPosition = progressData?.last_position_seconds || 0;
+  // 3. Fetch current lesson
+  const { data: currentLesson } = await supabase
+    .from('lessons')
+    .select('*, course_modules!inner(course_id)')
+    .eq('id', lessonSlug)
+    .single();
+
+  if (!currentLesson || currentLesson.course_modules.course_id !== course.id) {
+    notFound();
+  }
+
+  // 4. Fetch curriculum for sidebar
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: modulesData } = await supabaseAdmin
+    .from('course_modules')
+    .select(`
+      id, title, order_index,
+      lessons (
+        id, title, type, duration_seconds, order_index, status
+      )
+    `)
+    .eq('course_id', course.id)
+    .eq('status', 'published')
+    .order('order_index', { ascending: true });
+
+  const modules = (modulesData || []).map(mod => ({
+    ...mod,
+    lessons: (mod.lessons || [])
+      .filter((l: any) => l.status === 'published' || l.status === 'coming_soon')
+      .sort((a: any, b: any) => a.order_index - b.order_index)
+  }));
+
+  // Find next/prev lessons in the flattened array
+  const allLessons = modules.flatMap(m => m.lessons);
+  const currentIndex = allLessons.findIndex(l => l.id === lessonSlug);
+  const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  // 5. Fetch External Resource if external_link
+  let destinationUrl = null;
+  if (currentLesson.type === 'external_link' && currentLesson.external_resource_id) {
+    const { data: extRes } = await supabaseAdmin
+      .from('external_resources')
+      .select('private_destination_url')
+      .eq('id', currentLesson.external_resource_id)
+      .single();
+    if (extRes && extRes.private_destination_url) {
+      try {
+        const urlObj = new URL(extRes.private_destination_url);
+        if (urlObj.protocol === 'https:' && (urlObj.hostname === 'chat.whatsapp.com' || urlObj.hostname === 'wa.me')) {
+          destinationUrl = extRes.private_destination_url;
+        }
+      } catch (e) {
+        // Invalid URL
+      }
+    }
+  }
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 mx-auto -mt-6 -mx-6 h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex flex-col xl:flex-row gap-6 mx-auto -mt-6 -mx-6 h-[calc(100vh-64px)] overflow-hidden bg-[#FAF7F1]">
       
-      {/* Coluna Esquerda: Vídeo e Conteúdo */}
-      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 pb-24 xl:pb-0">
+      {/* Coluna Esquerda: Conteúdo */}
+      <div className="flex-1 flex flex-col h-full overflow-y-auto pb-24 xl:pb-0 relative">
         
         {/* Top Bar Navigation */}
-        <div className="bg-white px-6 py-4 border-b border-(--color-amf-border) flex items-center gap-4">
-          <Link href={`/app/cursos/${courseSlug}`} className="w-8 h-8 rounded-full border border-(--color-amf-border) flex items-center justify-center text-(--color-amf-muted) hover:bg-gray-50 flex-shrink-0">
+        <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center gap-4 shrink-0">
+          <Link href={`/app/cursos/${courseSlug}`} className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 flex-shrink-0 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </Link>
-          <div className="flex-1">
-            <div className="text-xs font-bold text-(--color-amf-purple) uppercase tracking-wider">{course.title}</div>
-            <h1 className="text-xl font-bold text-(--color-amf-foreground) truncate">{currentLesson.title}</h1>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-bold text-[#D4AD62] uppercase tracking-wider truncate">{course.title}</div>
+            <h1 className="text-lg font-bold text-[#160820] truncate">{currentLesson.title}</h1>
           </div>
         </div>
 
-        {/* Player Section */}
-        <div className="p-4 md:p-6 lg:px-12 bg-black">
-          <CoursePlayer 
-            userId={userId} 
-            lessonId={currentLesson.id} 
-            videoId={currentLesson.video_id}
-            initialPositionSeconds={initialPosition} 
-            courseSlug={courseSlug}
-          />
-        </div>
+        {/* Dynamic Content Area */}
+        {currentLesson.type === 'video' ? (
+          <div className="w-full bg-black">
+            <CoursePlayer 
+              userId={user.id} 
+              lessonId={currentLesson.id} 
+              videoId={currentLesson.video_asset_id || ''}
+              courseSlug={courseSlug}
+              initialPositionSeconds={0}
+            />
+          </div>
+        ) : currentLesson.type === 'external_link' ? (
+          <div className="flex-1 flex items-center justify-center p-6 bg-[#FAF7F1]">
+            <div className="bg-white max-w-lg w-full p-8 md:p-12 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-[#0F6466]/10 rounded-full flex items-center justify-center text-[#0F6466] mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              </div>
+              <h2 className="text-2xl font-bold font-editorial text-[#160820] mb-3">Grupo de network</h2>
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                Acesse o grupo exclusivo para networking entre os participantes e médicos-veterinários da Imersão Clínica de Felinos.
+              </p>
+              
+              <p className="text-xs text-gray-400 mb-4 font-medium uppercase tracking-wider">Você será direcionado ao WhatsApp em uma nova aba.</p>
+              
+              {destinationUrl ? (
+                <>
+                  <a 
+                    href={destinationUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full bg-[#0F6466] text-white font-bold py-4 rounded-xl hover:bg-[#0c5052] transition-colors mb-6 flex items-center justify-center gap-2 shadow-sm ring-1 ring-inset ring-white/10"
+                  >
+                    Entrar
+                  </a>
+                  
+                  <div className="text-sm text-gray-500 w-full text-left bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <span className="block text-xs font-bold text-gray-700 mb-1">Se o botão não abrir, toque no link:</span>
+                    <a href={destinationUrl} target="_blank" rel="noopener noreferrer" className="text-[#D4AD62] hover:underline font-medium break-all">
+                      {destinationUrl}
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <div className="text-red-500 font-bold p-4 bg-red-50 rounded-lg w-full">Destino indisponível ou revogado. Contate o suporte.</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center p-6 bg-[#FAF7F1]">
+             <div className="bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
+              <h2 className="text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
+              <p className="text-gray-600 mb-6">Este material está disponível para download.</p>
+              <button className="bg-[#D4AD62] text-[#160820] font-bold px-8 py-3 rounded-full hover:bg-[#E0C17E] transition-colors shadow-sm">
+                Baixar PDF
+              </button>
+             </div>
+          </div>
+        )}
 
-        {/* Lower Controls & Content */}
-        <div className="px-6 py-6 lg:px-12 flex flex-col gap-8 max-w-4xl mx-auto w-full">
-          {/* Navigation Controls */}
+        {/* Lower Controls */}
+        <div className="px-6 py-8 flex flex-col gap-8 max-w-4xl mx-auto w-full shrink-0">
           <div className="flex items-center justify-between">
             {prevLesson ? (
-              <Link href={`/app/cursos/${courseSlug}/aula/${prevLesson.slug}`} className="flex items-center gap-2 text-sm font-medium text-(--color-amf-muted) hover:text-(--color-amf-purple)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Aula Anterior
+              <Link href={`/app/cursos/${courseSlug}/aula/${prevLesson.id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#160820] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Anterior
               </Link>
             ) : <div></div>}
             
             {nextLesson ? (
-              <Link href={`/app/cursos/${courseSlug}/aula/${nextLesson.slug}`} className="flex items-center gap-2 text-sm font-medium bg-(--color-amf-plum) text-white px-4 py-2 rounded-full hover:opacity-90">
-                Próxima Aula
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              <Link href={`/app/cursos/${courseSlug}/aula/${nextLesson.id}`} className="flex items-center gap-2 text-sm font-bold bg-[#160820] text-white px-6 py-2.5 rounded-full hover:bg-[#2c1040] transition-colors shadow-sm">
+                Próxima
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
               </Link>
             ) : (
-              <button className="flex items-center gap-2 text-sm font-medium bg-(--color-amf-teal) text-white px-4 py-2 rounded-full hover:opacity-90">
-                Concluir Curso
-              </button>
+              <Link href={`/app/cursos/${courseSlug}`} className="flex items-center gap-2 text-sm font-bold bg-[#0F6466] text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-opacity">
+                Concluir
+              </Link>
             )}
           </div>
-
-          {/* Description & Materials */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
-              <div>
-                <h3 className="font-bold text-(--color-amf-teal-dark) mb-2">Visão Geral da Aula</h3>
-                <p className="text-(--color-amf-muted) leading-relaxed">
-                  {currentLesson.description}
-                </p>
-              </div>
-
-              {currentLesson.materials.length > 0 && (
-                <div>
-                  <h3 className="font-bold text-(--color-amf-teal-dark) mb-4">Anexos e Materiais</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    {currentLesson.materials.map((mat, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 border border-(--color-amf-border) rounded-lg bg-white shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-(--color-amf-muted)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                          </div>
-                          <span className="font-medium text-sm text-(--color-amf-foreground)">{mat.title}</span>
-                        </div>
-                        <button className="text-(--color-amf-teal) text-sm font-bold px-3 py-1 bg-(--color-amf-teal)/10 rounded-md">Baixar</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="md:col-span-1 h-[400px]">
-              <VideoNotes userId={userId} lessonId={currentLesson.id} />
-            </div>
-          </div>
         </div>
+
       </div>
 
-      {/* Coluna Direita: Grade (Visível em Desktop, Recolhida em Mobile se necessário, mas no design desktop ela fica fixa) */}
-      <div className="hidden xl:flex w-80 bg-white border-l border-(--color-amf-border) flex-col h-full overflow-y-auto shadow-[-4px_0_15px_rgba(0,0,0,0.03)] z-10">
-        <div className="p-4 border-b border-(--color-amf-border) sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-(--color-amf-plum)">Conteúdo do Curso</h2>
+      {/* Coluna Direita: Grade Curricular (Sidebar Desktop) */}
+      <div className="hidden xl:flex w-[320px] bg-white border-l border-gray-200 flex-col h-full overflow-y-auto shadow-[-4px_0_15px_rgba(0,0,0,0.02)] z-10 shrink-0">
+        <div className="p-5 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="font-bold text-[#160820]">Conteúdo do Curso</h2>
         </div>
         <div className="flex flex-col">
-          {course.modules.map(mod => (
-            <div key={mod.id} className="border-b border-(--color-amf-border) last:border-0">
-              <div className="p-3 bg-gray-50 text-xs font-bold text-(--color-amf-muted) uppercase tracking-wider">
+          {modules.map(mod => (
+            <div key={mod.id} className="border-b border-gray-100 last:border-0">
+              <div className="p-4 bg-[#FAF7F1]/50 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                 {mod.title}
               </div>
               <div className="flex flex-col">
                 {mod.lessons.map(lesson => {
-                  const isActive = lesson.slug === lessonSlug;
+                  const isActive = lesson.id === lessonSlug;
+                  const isComingSoon = lesson.status === 'coming_soon';
+                  const isVideo = lesson.type === 'video';
+                  
                   return (
                     <Link 
                       key={lesson.id} 
-                      href={`/app/cursos/${courseSlug}/aula/${lesson.slug}`}
-                      className={`flex items-start gap-3 p-3 text-sm transition-colors ${isActive ? 'bg-(--color-amf-purple)/5 border-l-2 border-(--color-amf-purple)' : 'hover:bg-gray-50 border-l-2 border-transparent'}`}
+                      href={isComingSoon ? '#' : `/app/cursos/${courseSlug}/aula/${lesson.id}`}
+                      className={`flex items-start gap-3 p-4 text-sm transition-colors ${isActive ? 'bg-[#D4AD62]/10 border-l-2 border-[#D4AD62]' : isComingSoon ? 'cursor-not-allowed opacity-60' : 'hover:bg-gray-50 border-l-2 border-transparent'}`}
                     >
-                      <div className="mt-0.5 text-(--color-amf-muted)">
+                      <div className="mt-0.5">
                         {isActive ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-amf-purple)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AD62" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        ) : isComingSoon ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                         )}
                       </div>
-                      <div>
-                        <div className={`font-medium ${isActive ? 'text-(--color-amf-purple)' : 'text-(--color-amf-foreground)'}`}>{lesson.title}</div>
-                        <div className="text-xs text-(--color-amf-muted) mt-1">{Math.round(lesson.duration_seconds / 60)} min</div>
+                      <div className="min-w-0">
+                        <div className={`font-bold truncate ${isActive ? 'text-[#160820]' : 'text-gray-700'}`}>{lesson.title}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">
+                          {isComingSoon ? 'Em breve' : isVideo ? `${Math.round(lesson.duration_seconds / 60)} min` : lesson.type === 'external_link' ? 'Comunidade' : 'Material'}
+                        </div>
                       </div>
                     </Link>
                   )
