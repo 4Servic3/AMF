@@ -25,6 +25,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const { data: hasAccess } = await supabase.rpc('has_course_access', { course_uuid: course.id });
     if (!hasAccess) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+    // Validate lesson and fetch its duration from the server
+    const { data: lesson } = await supabase
+      .from('lessons')
+      .select('video_asset_id')
+      .eq('id', lessonId)
+      .single();
+
+    if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+
+    let serverDuration = 0;
+    if (lesson.video_asset_id) {
+      const { data: videoAsset } = await supabase
+        .from('video_assets')
+        .select('duration_seconds')
+        .eq('id', lesson.video_asset_id)
+        .single();
+      if (videoAsset && videoAsset.duration_seconds) {
+        serverDuration = videoAsset.duration_seconds;
+      }
+    }
+
     // Check existing progress to prevent regression
     const { data: existingProgress } = await supabase
       .from('lesson_progress')
@@ -37,14 +58,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     let newProgressPercent = existingProgress?.progress_percent || 0;
     
     // Check reasonable monotonicity (client shouldn't jump 100% instantly if not ended)
-    if (duration_seconds > 0) {
-      const calculatedPercent = Math.min((position_seconds / duration_seconds) * 100, 100);
+    if (serverDuration > 0) {
+      const calculatedPercent = Math.min((position_seconds / serverDuration) * 100, 100);
       if (calculatedPercent > newProgressPercent) {
         newProgressPercent = calculatedPercent;
       }
       
-      // Concluído se assistir > 90% ou is_ended real
-      if (newProgressPercent >= 90 || is_ended) {
+      // Concluído se assistir > 90% (ignoring is_ended from client to avoid cheating)
+      if (newProgressPercent >= 90) {
+        newIsCompleted = true;
+        newProgressPercent = 100;
+      }
+    } else if (lesson.video_asset_id === null) {
+      // For non-video lessons, allow marking as complete
+      if (is_ended) {
         newIsCompleted = true;
         newProgressPercent = 100;
       }

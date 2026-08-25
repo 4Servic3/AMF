@@ -84,6 +84,22 @@ export async function POST(req: Request) {
         })
         .eq('provider_asset_id', assetId)
         .eq('provider', 'mux');
+    } else if (event.type === 'video.asset.errored') {
+      const assetId = event.data.id;
+      await supabase
+        .from('video_assets')
+        .update({ status: 'error' })
+        .eq('provider_asset_id', assetId)
+        .eq('provider', 'mux');
+    } else if (event.type === 'video.asset.created' || event.type === 'video.upload.asset_created') {
+      const assetId = event.data.asset_id || event.data.id;
+      if (assetId) {
+        await supabase
+          .from('video_assets')
+          .update({ status: 'processing', provider_asset_id: assetId })
+          .eq('provider', 'mux')
+          .eq('provider_asset_id', event.object?.id || event.data.id); // try matching upload ID
+      }
     }
 
     // Mark event as processed

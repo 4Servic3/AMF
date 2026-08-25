@@ -111,6 +111,7 @@ export default async function LessonPage({ params }: { params: { courseSlug: str
             lessonId={currentLesson.id} 
             videoId={currentLesson.video_id}
             initialPositionSeconds={initialPosition} 
+            courseSlug={courseSlug}
           />
         </div>
 

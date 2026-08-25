@@ -38,7 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     const { data: videoAsset } = await supabase
       .from('video_assets')
-      .select('playback_id, playback_policy, status')
+      .select('playback_id, playback_policy, status, duration_seconds')
       .eq('id', lesson.video_asset_id)
       .single();
 
@@ -59,15 +59,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
-    // Expiration curta de 10 horas max ou algo do tipo
+    const duration = videoAsset.duration_seconds || (2 * 60 * 60); // fallback 2h
+    const margin = 2 * 60 * 60; // 2 horas de margem para pausar, voltar, etc.
+
     const token = jwt.sign(
       {
         sub: videoAsset.playback_id,
         aud: 'v',
-        exp: Math.floor(Date.now() / 1000) + (10 * 60 * 60) // 10 horas
+        exp: Math.floor(Date.now() / 1000) + duration + margin
       },
       Buffer.from(signingSecret, 'base64'),
-      { keyid: signingKey, algorithm: 'RS256' } // Note: Mux uses RS256 with PEM, wait, they use RS256 with base64 decoded secret.
+      { keyid: signingKey, algorithm: 'RS256' }
     );
     // Actually, Mux uses standard RS256. If signingSecret is base64 of the private key, we decode it.
 
