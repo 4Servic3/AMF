@@ -9,7 +9,7 @@ import { Paywall } from '@/components/ui/paywall';
 
 // Mock DB Fetch
 async function getCourseAndLesson(courseSlug: string, lessonSlug: string) {
-  if (courseSlug !== 'imersao-parte-1') return null;
+  if (courseSlug !== 'imersao-parte-1' && courseSlug !== 'imersao-clinica-de-felinos-parte-1') return null;
   
   const course = {
     id: 'ccccccc1-0000-0000-0000-000000000000',

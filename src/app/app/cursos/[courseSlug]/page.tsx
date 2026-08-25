@@ -66,10 +66,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   // Filtragem estrita de segurança e modelagem
   const modules = (modulesData || []).map(mod => ({
     ...mod,
-    lessons: (mod.lessons || []).filter((l: any) => l.status === 'published').sort((a: any, b: any) => a.order_index - b.order_index).map((l: any) => ({
+    lessons: (mod.lessons || []).filter((l: any) => l.status === 'published' || l.status === 'coming_soon').sort((a: any, b: any) => a.order_index - b.order_index).map((l: any) => ({
       id: l.id,
       title: l.title,
       type: l.type,
+      status: l.status,
       duration_seconds: l.duration_seconds || 0,
       slug: l.id, // MVP: using ID as slug for routing
       // NUNCA passamos IDs de assets privados para o cliente se ele não tem acesso
@@ -135,9 +136,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           <p className="text-gray-600 mb-5 line-clamp-3 text-sm leading-relaxed">{course.short_description}</p>
           
           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-6">
-            <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-md">
-              <span className="font-bold text-gray-700">{course.instructor || 'AMF'}</span>
-            </div>
+            {course.instructor && (
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-md">
+                <span className="font-bold text-gray-700">{course.instructor}</span>
+              </div>
+            )}
             {course.workload && (
               <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-md">
                 <span>{Math.round(course.workload / 60)}h</span>
@@ -199,32 +202,63 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                   </svg>
                 </summary>
                 <div className="border-t border-gray-100 bg-[#FAF7F1]/30">
-                  {mod.lessons.map((lesson, idx) => (
-                    <Link 
-                      key={lesson.id} 
-                      href={`/app/cursos/${courseSlug}/aula/${lesson.slug}`}
-                      className="flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors"
-                    >
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center border-[1.5px] flex-shrink-0 ${lesson.is_completed ? 'bg-[#0F6466] border-[#0F6466] text-white' : 'border-[#D4AD62] text-[#D4AD62]'}`}>
-                        {lesson.is_completed ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                        ) : (
-                          <span className="text-[11px] font-bold">{idx + 1}</span>
+                  {mod.lessons.map((lesson: any, idx: number) => {
+                    const isComingSoon = lesson.status === 'coming_soon';
+                    const isVideo = lesson.type === 'video';
+                    const isPdf = lesson.type === 'pdf_material';
+                    const isExternal = lesson.type === 'external_link';
+                    
+                    const innerContent = (
+                      <>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center border-[1.5px] flex-shrink-0 ${lesson.is_completed ? 'bg-[#0F6466] border-[#0F6466] text-white' : isComingSoon ? 'border-gray-300 text-gray-400' : 'border-[#D4AD62] text-[#D4AD62]'}`}>
+                          {lesson.is_completed ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                          ) : isComingSoon ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          ) : (
+                            <span className="text-[11px] font-bold">{idx + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-sm font-bold ${lesson.is_completed ? 'text-[#0F6466]' : isComingSoon ? 'text-gray-400' : 'text-[#160820]'}`}>
+                            {lesson.title}
+                          </div>
+                          <div className="text-[11px] mt-0.5 text-gray-500">
+                            {isComingSoon ? 'Em breve' : isVideo ? `${Math.round(lesson.duration_seconds / 60)} min` : isExternal ? 'Comunidade' : 'Material'}
+                          </div>
+                        </div>
+                        {!isComingSoon && (
+                          <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#160820] shadow-sm group-hover/link:border-[#D4AD62] group-hover/link:text-[#D4AD62] transition-colors">
+                            {isPdf ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            ) : isExternal ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            )}
+                          </div>
                         )}
-                      </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-bold ${lesson.is_completed ? 'text-[#0F6466]' : 'text-[#160820]'}`}>
-                          {lesson.title}
+                      </>
+                    );
+
+                    if (isComingSoon) {
+                      return (
+                        <div key={lesson.id} className="flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 bg-gray-50/50 cursor-not-allowed">
+                          {innerContent}
                         </div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">
-                          {lesson.type === 'video' ? `${Math.round(lesson.duration_seconds / 60)} min` : lesson.type === 'external_link' ? 'Comunidade' : 'Material'}
-                        </div>
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#160820] shadow-sm group-hover:border-[#D4AD62] group-hover:text-[#D4AD62] transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                      </div>
-                    </Link>
-                  ))}
+                      );
+                    }
+
+                    return (
+                      <Link 
+                        key={lesson.id} 
+                        href={`/app/cursos/${courseSlug}/aula/${lesson.slug}`}
+                        className="group/link flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors cursor-pointer"
+                      >
+                        {innerContent}
+                      </Link>
+                    );
+                  })}
                 </div>
               </details>
             ))}
