@@ -75,7 +75,7 @@
   }
 
   .premium-app-main {
-    padding-bottom: calc(var(--amf-bottom-nav-outer-height) + var(--amf-page-end-gap));
+    padding-bottom: var(--amf-bottom-nav-outer-height);
   }
   @media (min-width: 1024px) {
     .premium-app-main {
@@ -97,7 +97,6 @@
     max-width: 100%;
     margin: 0;
     min-width: 0;
-    overflow-x: hidden;
   }
 
   img,

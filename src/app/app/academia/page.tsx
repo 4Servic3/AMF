@@ -1,4 +1,6 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
+import { getFeatureFlags } from '@/lib/services/flags';
 import { AcademyHeader } from '@/components/academia/academy-header';
 import { AcademyProgressSummary } from '@/components/academia/academy-progress-summary';
 import { ContinueJourneyCard } from '@/components/academia/continue-journey-card';
@@ -6,7 +8,11 @@ import { LearningPath } from '@/components/academia/learning-path';
 import { NextMilestoneCard } from '@/components/academia/next-milestone-card';
 import type { StepStatus } from '@/components/academia/learning-path-step';
 
-export default function AcademyPage() {
+export default async function AcademyPage() {
+  const flags = await getFeatureFlags();
+  if (!flags.member_academy_enabled) {
+    redirect('/app/cursos');
+  }
   const steps: { title: string; subtitle: string; status: StepStatus; progressPercent?: number }[] = [
     {
       title: 'Fundamentos essenciais',

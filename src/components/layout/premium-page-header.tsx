@@ -9,10 +9,10 @@ type PremiumPageHeaderProps = {
 export function PremiumPageHeader({ title, rightSlot, children }: PremiumPageHeaderProps) {
   return (
     <div 
-      className="relative w-full text-white pb-[64px]"
+      className="relative w-full text-white pb-[24px]"
       style={{ 
         background: 'linear-gradient(135deg, #1C0D29 0%, #160B24 52%, #081E27 85%)',
-        minHeight: '292px',
+        minHeight: 'auto',
       }}
     >
       {/* Elemento decorativo Feline Lineart */}

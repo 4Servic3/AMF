@@ -7,21 +7,17 @@ import { Library } from 'lucide-react';
 interface FeaturedClinicalCardProps {
   title: string;
   subtitle: string;
-  stepsCount: number;
+  stepsCount?: number;
   imageUrl: string;
   href: string;
+  hasMultiple?: boolean;
 }
 
-export function FeaturedClinicalCard({ title, subtitle, stepsCount, imageUrl, href }: FeaturedClinicalCardProps) {
-  // O componente renderiza apenas um destaque conforme a regra: 
-  // "Transformar em carousel somente se houver mais de um destaque real... 
-  // Se houver apenas um, não exibir setas falsas nem autoplay."
-  
+export function FeaturedClinicalCard({ title, subtitle, stepsCount, imageUrl, href, hasMultiple = false }: FeaturedClinicalCardProps) {
   return (
     <div 
       className="relative w-full rounded-[20px] overflow-hidden group bg-[#160B24] flex items-stretch border border-[rgba(224,193,126,0.24)] shadow-[0_14px_36px_rgba(17,15,24,0.22),0_3px_8px_rgba(17,15,24,0.10)]"
       style={{ 
-        // Mobile heights and aspect ratio
         aspectRatio: '1.65/1',
         minHeight: '224px',
         maxHeight: '270px'
@@ -83,21 +79,22 @@ export function FeaturedClinicalCard({ title, subtitle, stepsCount, imageUrl, hr
             Ver agora
           </Link>
           
-          <div className="flex items-center gap-2 text-[#F9F5EE] text-[13px] font-medium shrink-0">
-            <Library size={18} strokeWidth={1.5} />
-            <span>{stepsCount} etapas</span>
-          </div>
+          {stepsCount !== undefined && stepsCount > 0 && (
+            <div className="flex items-center gap-2 text-[#F9F5EE] text-[13px] font-medium shrink-0">
+              <Library size={18} strokeWidth={1.5} />
+              <span>{stepsCount} etapas</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Paginação */}
-      <div className="absolute bottom-[24px] left-[24px] md:left-1/2 md:-translate-x-1/2 flex items-center gap-[6px]">
-        <div className="w-[8px] h-[8px] rounded-full bg-[#D4AD62]"></div>
-        <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
-        <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
-        <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
-        <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
-      </div>
+      {hasMultiple && (
+        <div className="absolute bottom-[24px] left-[24px] md:left-1/2 md:-translate-x-1/2 flex items-center gap-[6px]">
+          <div className="w-[8px] h-[8px] rounded-full bg-[#D4AD62]"></div>
+          <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
+          <div className="w-[6px] h-[6px] rounded-full bg-[rgba(255,255,255,0.35)]"></div>
+        </div>
+      )}
     </div>
   );
 }

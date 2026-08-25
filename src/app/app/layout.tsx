@@ -7,11 +7,11 @@ import { StoryViewerProvider } from '@/components/ui/stories/story-viewer-provid
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <StoryViewerProvider>
-      <div className="flex min-h-screen bg-[#FAF7F1]">
+      <div className="flex min-h-[100dvh] bg-[#FAF7F1]">
         <Navigation />
 
         {/* Main Content Area */}
-        <div className="flex-1 lg:pl-[84px] xl:pl-[240px] flex flex-col min-h-screen min-w-0">
+        <div className="flex-1 lg:pl-[84px] xl:pl-[240px] flex flex-col min-h-[100dvh] min-w-0">
           <GlobalHeader />
 
           {/* A reserva inferior mestre que impede o conteúdo de ficar por baixo da bottom nav */}

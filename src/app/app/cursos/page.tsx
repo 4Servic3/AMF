@@ -2,58 +2,90 @@ import React from 'react';
 import { trackEvent } from '@/lib/services/analytics';
 import { CourseLibraryItem } from '@/lib/models/courses';
 import { CoursesLibraryClient } from './courses-library-client';
-
-// Mock function for products adapting to new CourseLibraryItem
-async function getProducts(): Promise<CourseLibraryItem[]> {
-  return [
-    {
-      id: '1111', slug: 'casos-da-semana', title: 'Casos da Semana', 
-      description: 'Novos casos 2x por semana', productType: 'subscription',
-      specialty: 'Clínica', coverUrl: '/assets/amf-home/novidades-perda-de-peso.webp',
-      accessState: 'active_subscription', destinationUrl: '/app/cursos/casos-da-semana',
-      isPublished: true
-    },
-    {
-      id: '2222', slug: 'imersao-parte-1', title: 'Imersão Clínica P1', 
-      description: 'Aprenda a base essencial para atender gatos com segurança no seu plantão.',
-      productType: 'course', level: 'Básico', moduleCount: 8,
-      coverUrl: '/assets/amf-casos/hero/hero-obstrucao-uretral.webp',
-      accessState: 'unlocked', destinationUrl: '/app/cursos/imersao-parte-1',
-      isPublished: true
-    },
-    {
-      id: '3333', slug: 'imersao-parte-2', title: 'Imersão Clínica P2', 
-      description: 'Domine as doenças renais, hepáticas e endócrinas dos felinos.',
-      productType: 'course', level: 'Intermediário', moduleCount: 10,
-      coverUrl: '/assets/amf-home/hero-da-queixa-a-conduta.webp',
-      accessState: 'in_progress', progressPercent: 28, destinationUrl: '/app/cursos/imersao-parte-2',
-      isPublished: true
-    },
-    {
-      id: '4444', slug: 'academia-completa', title: 'Academia Completa', 
-      description: 'Formação definitiva em Medicina Felina.',
-      productType: 'bundle', moduleCount: 42,
-      coverUrl: '/assets/amf-casos/stories/story-felv.webp',
-      accessState: 'locked', destinationUrl: '/app/cursos/academia-completa',
-      isPublished: true
-    },
-    {
-      id: '5555', slug: 'nefrologia-felina', title: 'Nefrologia Felina', 
-      description: 'O essencial da nefrologia em gatos.',
-      productType: 'course', level: 'Intermediário', moduleCount: 6,
-      coverUrl: '/assets/amf-home/novidades-perda-de-peso.webp',
-      accessState: 'locked', destinationUrl: '/app/cursos/nefrologia-felina',
-      isPublished: true
-    }
-  ];
-}
+import { createClient } from '@/lib/supabase/server';
 
 export default async function Catalog() {
-  const userId = 'fake-user-id';
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || 'anonymous';
+  
+  // Track catalog viewed (only runs on server in some setups, but usually trackEvent should be client-side if it interacts with browser, 
+  // but if it's a server action, it's fine. We leave it as is).
   trackEvent('catalog_viewed', { userId });
 
-  // For this mock step we load the products in the server component
-  const products = await getProducts();
+  // 1. Fetch ALL published courses
+  const { data: courses, error } = await supabase
+    .from('courses')
+    .select(`
+      id,
+      slug,
+      title,
+      short_description,
+      status,
+      workload,
+      media_assets!cover_asset_id(url)
+    `)
+    .eq('status', 'published');
+
+  if (error) {
+    console.error('Error fetching courses:', error);
+  }
+
+  // 2. Fetch User Entitlements and Progress if logged in
+  let entitlements: any[] = [];
+  let progresses: any[] = [];
+  
+  if (user) {
+    const { data: ent } = await supabase
+      .from('entitlements')
+      .select('resource_id')
+      .eq('profile_id', user.id)
+      .eq('status', 'active');
+      // ideally check expires_at, etc.
+    entitlements = ent || [];
+
+    const { data: prog } = await supabase
+      .from('lesson_progress')
+      .select('course_id, progress_percent, status')
+      .eq('profile_id', user.id);
+    progresses = prog || [];
+  }
+
+  const entitlementSet = new Set(entitlements.map(e => e.resource_id));
+
+  const products: CourseLibraryItem[] = (courses || []).map(course => {
+    // Find progress if any
+    const courseProgress = progresses.find(p => p.course_id === course.id);
+    let accessState: 'locked' | 'unlocked' | 'in_progress' | 'active_subscription' = 'locked';
+    
+    if (entitlementSet.has(course.id)) {
+      accessState = 'unlocked';
+      if (courseProgress && courseProgress.status === 'in_progress') {
+        accessState = 'in_progress';
+      }
+    }
+
+    // Default covers or specific if media_asset exists
+    // The query above aliases media_assets to 'media_assets' or it might be an array.
+    const coverUrl = Array.isArray(course.media_assets) 
+      ? course.media_assets[0]?.url 
+      : (course.media_assets as any)?.url || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+
+    return {
+      id: course.id,
+      slug: course.slug,
+      title: course.title,
+      description: course.short_description || '',
+      productType: 'course',
+      level: 'Todos', // Placeholder
+      moduleCount: 0, // Placeholder
+      coverUrl,
+      accessState,
+      progressPercent: courseProgress?.progress_percent || 0,
+      destinationUrl: `/app/cursos/${course.slug}`,
+      isPublished: true
+    };
+  });
 
   return <CoursesLibraryClient products={products} />;
 }

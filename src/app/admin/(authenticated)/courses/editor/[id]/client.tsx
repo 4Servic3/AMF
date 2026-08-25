@@ -31,10 +31,12 @@ export default function CourseEditorClient({ id, initialData }: { id: string, in
   }
 
   const tabs = [
-    { id: 'geral', label: 'Geral' },
+    { id: 'geral', label: 'Informações gerais' },
     { id: 'estrutura', label: 'Estrutura' },
-    { id: 'avaliacoes', label: 'Avaliações' },
-    { id: 'acesso', label: 'Acesso' }
+    { id: 'conteudo', label: 'Conteúdo e mídias' },
+    { id: 'acesso', label: 'Acesso' },
+    { id: 'certificado', label: 'Certificado' },
+    { id: 'publicacao', label: 'Publicação' }
   ]
 
   return (

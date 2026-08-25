@@ -1,91 +1,141 @@
 import React from 'react';
 import { trackEvent } from '@/lib/services/analytics';
+import { createClient } from '@/lib/supabase/server';
 import { PremiumHomeHeader } from '@/components/home/premium-home-header';
-import { ClinicalStoriesRail, type ClinicalStory } from '@/components/home/clinical-stories-rail';
 import { FeaturedClinicalCard } from '@/components/home/featured-clinical-card';
-import { AcademyQuickAccess } from '@/components/home/academy-quick-access';
-import { NewsSection, CloseFriendsBanner, type NewsArticle } from '@/components/home/news-and-close-friends';
-
-// Mock data (replace with actual DB calls later)
-const mockStories: ClinicalStory[] = [
-  { id: 'caso-42', title: 'Caso 42', coverUrl: '/assets/amf-home/story-caso-42.webp', accentColor: '#FF7068', isNew: true, seen: false, locked: false, publishedAt: new Date().toISOString(), slidesCount: 5, viewedSlidesCount: 0 },
-  { id: 'felv', title: 'FeLV', coverUrl: '/assets/amf-home/story-felv.webp', accentColor: '#D4AD62', isNew: false, seen: false, locked: false, publishedAt: new Date().toISOString(), slidesCount: 3, viewedSlidesCount: 0 },
-  { id: 'drc', title: 'DRC', coverUrl: '/assets/amf-home/story-drc.webp', accentColor: '#59BFAE', isNew: false, seen: true, locked: false, publishedAt: new Date().toISOString(), slidesCount: 4, viewedSlidesCount: 4 },
-  { id: 'oncologia', title: 'Oncologia', coverUrl: '/assets/amf-home/story-oncologia.webp', accentColor: '#D4AD62', isNew: false, seen: false, locked: true, publishedAt: new Date().toISOString(), slidesCount: 6, viewedSlidesCount: 0 },
-  { id: 'plantao', title: 'Plantão', coverUrl: '/assets/amf-home/story-plantao.webp', accentColor: '#59BFAE', isNew: false, seen: true, locked: false, publishedAt: new Date().toISOString(), slidesCount: 2, viewedSlidesCount: 2 }
-];
-
-const mockNews: NewsArticle = {
-  tag: 'Caso Clínico',
-  title: 'Paciente felino com perda de peso progressiva',
-  dateStr: 'Publicado hoje • 14 min',
-  imageUrl: '/assets/amf-home/novidades-perda-de-peso.webp',
-  href: '/app/casos/perda-de-peso'
-};
+import { SuaAcademia, type UserCourseProgress } from '@/components/home/sua-academia';
 
 export default async function AppHome() {
-  const userId = 'fake-user-id';
-  trackEvent('home_viewed', { userId });
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (session) {
+    trackEvent('home_viewed', { userId: session.user.id });
+  }
+
+  // 1. Fetch Banner
+  const { data: banners } = await supabase
+    .from('home_banners')
+    .select('*')
+    .eq('status', 'published')
+    .order('position', { ascending: true })
+    .limit(1);
+
+  // 2. Fetch User Courses with REAL Progress
+  let courses: UserCourseProgress[] = [];
+  let materialsCount = 0;
+
+  if (session) {
+    // Pegamos os cursos que o usuário tem acesso
+    const { data: entitlements } = await supabase
+      .from('entitlements')
+      .select('resource_id')
+      .eq('profile_id', session.user.id)
+      .eq('resource_type', 'course')
+      .eq('status', 'active');
+      
+    const courseIds = (entitlements || []).map(e => e.resource_id);
+
+    if (courseIds.length > 0) {
+      // Pegar o progresso real atualizado por último
+      const { data: progresses } = await supabase
+        .from('lesson_progress')
+        .select(`
+          course_id,
+          lesson_id,
+          progress_percent,
+          is_completed,
+          updated_at,
+          courses!inner ( title, slug ),
+          lessons!inner ( title, slug )
+        `)
+        .eq('profile_id', session.user.id)
+        .in('course_id', courseIds)
+        .order('updated_at', { ascending: false });
+
+      const courseMap = new Map<string, UserCourseProgress>();
+
+      // Popula o map com o progresso mais recente de cada curso
+      (progresses || []).forEach((prog: any) => {
+        if (!courseMap.has(prog.course_id)) {
+          // Precisamos calcular a % total real se baseando no histórico.
+          // Mas como os writes do client já limitam progress_percent, pegamos as médias.
+          courseMap.set(prog.course_id, {
+            courseId: prog.course_id,
+            courseTitle: prog.courses.title,
+            courseSlug: prog.courses.slug,
+            lastLessonTitle: prog.lessons.title,
+            lastLessonSlug: prog.lessons.slug, // Using slug or ID
+            progressPercent: prog.progress_percent || 0, // Simplified for MVP (in reality needs sum of all lessons / total lessons)
+            status: prog.is_completed ? 'completed' : 'in_progress',
+          });
+        }
+      });
+
+      // E os cursos que tem acesso mas nunca começou?
+      for (const cid of courseIds) {
+        if (!courseMap.has(cid)) {
+          // Fetch course metadata
+          const { data: c } = await supabase.from('courses').select('title, slug').eq('id', cid).single();
+          if (c) {
+            courseMap.set(cid, {
+              courseId: cid,
+              courseTitle: c.title,
+              courseSlug: c.slug,
+              progressPercent: 0,
+              status: 'not_started'
+            });
+          }
+        }
+      }
+
+      // Converte map para array e ordena (em andamento primeiro, recém atualizados)
+      courses = Array.from(courseMap.values()).sort((a, b) => {
+        if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+        if (a.status !== 'in_progress' && b.status === 'in_progress') return 1;
+        return 0;
+      });
+    }
+
+    const { count } = await supabase
+      .from('user_favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', session.user.id)
+      .eq('type', 'material');
+      
+    materialsCount = count || 0;
+  }
 
   return (
-    <div 
-      className="premium-home flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0 max-w-full"
-      style={{ overflowX: 'clip' }}
-    >
-      {/* 
-        O PremiumHomeHeader ocupa toda a largura disponível no topo.
-        Os filhos passados para ele (Hero, etc.) ficam contidos no max-width.
-      */}
+    <div className="premium-home flex flex-col w-full min-h-[100dvh] bg-[#FAF7F1] min-w-0 max-w-full">
       <PremiumHomeHeader>
-        <div className="max-w-[1240px] mx-auto w-full min-w-0 max-w-full">
-          {/* Stories Rail (dentro da área escura) */}
-          <ClinicalStoriesRail stories={mockStories} />
-        </div>
+        <div />
       </PremiumHomeHeader>
 
-      {/* 
-        A partir daqui, os elementos estão na transição ou na área clara.
-      */}
-      <div className="home-content-container max-w-[1240px] mx-auto">
-        <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-8 -mt-[22px] md:-mt-[32px] relative z-10 w-full min-w-0 max-w-full">
+      <div className="home-content-container max-w-[1240px] mx-auto w-full flex-1 flex flex-col pt-0">
+        <div className="flex flex-col relative z-10 w-full min-w-0 max-w-full -mt-[24px]">
           
-          {/* Hero Banner (Ocupa 8 colunas no Desktop) */}
-          <div className="lg:col-span-8 min-w-0 max-w-full">
+          {banners && banners.length > 0 ? (
             <FeaturedClinicalCard 
-              title="Da queixa à conduta clínica"
-              subtitle="Acompanhe o raciocínio completo da Dra. Polyana"
-              stepsCount={5}
-              imageUrl="/assets/amf-home/hero-da-queixa-a-conduta.webp"
-              href="/app/casos/conduta-clinica"
+              title={banners[0].title || ''}
+              subtitle={banners[0].subtitle || ''}
+              stepsCount={0}
+              imageUrl={banners[0].media_asset_id ? `/api/media/${banners[0].media_asset_id}` : ''}
+              href={banners[0].cta_target_id || '#'}
             />
-          </div>
-
-          {/* Quick Access (Ocupa 4 colunas no Desktop) */}
-          <div className="lg:col-span-4 min-w-0 max-w-full">
-            <AcademyQuickAccess 
-              courseTitle="Imersão Clínica"
-              courseProgress={62}
-              courseHref="/app/cursos/imersao-clinica"
-              savedMaterialsCount={12}
-              materialsHref="/app/perfil/materiais"
-            />
-          </div>
+          ) : (
+            <div className="bg-[#1C0D29] rounded-[20px] p-8 text-center text-[#F9F5EE] border border-[#D4AD62]/20">
+              <h3 className="font-editorial text-xl font-bold mb-2 text-[#D4AD62]">Bem-vindo(a) à Academia</h3>
+              <p className="font-sans text-sm text-white/80">
+                Explore nossos cursos e atualize-se na medicina felina.
+              </p>
+            </div>
+          )}
 
         </div>
 
-        {/* Linha 2: Novidades e Close Friends */}
-        <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-8 mt-[16px] lg:mt-8 w-full min-w-0 max-w-full">
-          
-          {/* News Card (8 colunas) */}
-          <div className="lg:col-span-8 min-w-0 max-w-full">
-            <NewsSection news={mockNews} />
-          </div>
-
-          {/* Close Friends Banner (4 colunas) */}
-          <div className="lg:col-span-4 mt-[32px] lg:mt-0 mb-8 lg:mb-0 min-w-0 max-w-full">
-            <CloseFriendsBanner count={2} href="/app/close-friends" />
-          </div>
-
+        <div className="mt-8 w-full min-w-0 max-w-full lg:max-w-[768px] mx-auto pb-8">
+          <SuaAcademia courses={courses} materialsCount={materialsCount} />
         </div>
       </div>
     </div>
