@@ -169,7 +169,9 @@ export async function POST(
       );
     }
 
-    const { data: videoAsset } = await supabase
+    // Consulta dos dados técnicos do vídeo via serviceClient (o aluno já teve matrícula e acesso validados nas etapas anteriores)
+    const serviceClient = createServiceRoleClient();
+    const { data: videoAsset } = await serviceClient
       .from('video_assets')
       .select(
         'id, status, mux_playback_id, playback_policy, duration_seconds, aspect_ratio, max_stored_resolution, title'
@@ -229,7 +231,6 @@ export async function POST(
     });
 
     // Registro na tabela playback_sessions (sem nunca gravar o JWT bruto)
-    const serviceClient = createServiceRoleClient();
     await serviceClient.from('playback_sessions').insert({
       user_id: user.id,
       lesson_id: lesson.id,
