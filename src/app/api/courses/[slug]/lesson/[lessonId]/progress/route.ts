@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { updateSecureProgress } from '@/lib/services/progress';
 
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string, lessonId: string }> }) {
   try {
@@ -46,57 +47,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       }
     }
 
-    // Check existing progress to prevent regression
-    const { data: existingProgress } = await supabase
-      .from('lesson_progress')
-      .select('last_position_seconds, progress_percent, is_completed, first_started_at')
-      .eq('profile_id', user.id)
-      .eq('lesson_id', lessonId)
-      .single();
+    // 6. Update progress securely and monotonically
+    const result = await updateSecureProgress(
+      user.id,
+      lessonId,
+      position_seconds,
+      typeof duration_seconds === 'number' ? duration_seconds : undefined,
+      Boolean(is_ended)
+    );
 
-    let newIsCompleted = existingProgress?.is_completed || false;
-    let newProgressPercent = existingProgress?.progress_percent || 0;
-    
-    // Check reasonable monotonicity (client shouldn't jump 100% instantly if not ended)
-    if (serverDuration > 0) {
-      const calculatedPercent = Math.min((position_seconds / serverDuration) * 100, 100);
-      if (calculatedPercent > newProgressPercent) {
-        newProgressPercent = calculatedPercent;
-      }
-      
-      // Concluído se assistir > 90% (ignoring is_ended from client to avoid cheating)
-      if (newProgressPercent >= 90) {
-        newIsCompleted = true;
-        newProgressPercent = 100;
-      }
-    } else if (lesson.video_asset_id === null) {
-      // For non-video lessons, allow marking as complete
-      if (is_ended) {
-        newIsCompleted = true;
-        newProgressPercent = 100;
-      }
-    }
-
-    const { error: upsertError } = await supabase
-      .from('lesson_progress')
-      .upsert({
-        profile_id: user.id,
-        lesson_id: lessonId,
-        course_id: course.id,
-        is_completed: newIsCompleted,
-        last_position_seconds: Math.max(existingProgress?.last_position_seconds || 0, position_seconds),
-        progress_percent: newProgressPercent,
-        status: newIsCompleted ? 'completed' : 'in_progress',
-        first_started_at: existingProgress?.first_started_at || new Date().toISOString(),
-        completed_at: (newIsCompleted && !existingProgress?.is_completed) ? new Date().toISOString() : undefined,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'profile_id,lesson_id' });
-
-    if (upsertError) {
-      throw upsertError;
-    }
-
-    return NextResponse.json({ success: true, is_completed: newIsCompleted, percent: newProgressPercent });
+    return NextResponse.json({
+      success: true,
+      is_completed: result.is_completed,
+      percent: result.progress_percent,
+      last_position_seconds: result.last_position_seconds,
+    });
   } catch (err) {
     console.error('Progress tracking error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

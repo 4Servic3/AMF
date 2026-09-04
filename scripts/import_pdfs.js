@@ -162,6 +162,7 @@ function importPDFs() {
                                             course_id: course.id,
                                             title: file,
                                             name: file,
+                                            file_url: storagePath,
                                             storage_path: storagePath,
                                             type: 'pdf',
                                             mime_type: 'application/pdf',

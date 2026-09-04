@@ -2,15 +2,45 @@
 create extension if not exists "uuid-ossp";
 
 -- Enums
-create type user_role as enum ('member', 'admin', 'content_manager', 'support');
-create type profession_type as enum ('veterinarian', 'student', 'other');
-create type product_type as enum ('course', 'subscription', 'bundle', 'event');
-create type product_status as enum ('active', 'inactive', 'draft', 'upcoming');
-create type subscription_status as enum ('active', 'canceled', 'past_due', 'unpaid', 'trialing');
-create type purchase_status as enum ('pending', 'completed', 'failed', 'refunded');
+DO $$ 
+BEGIN
+    CREATE TYPE user_role AS ENUM ('member', 'admin', 'content_manager', 'support');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ 
+BEGIN
+    CREATE TYPE profession_type AS ENUM ('veterinarian', 'student', 'other');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ 
+BEGIN
+    CREATE TYPE product_type AS ENUM ('course', 'subscription', 'bundle', 'event');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ 
+BEGIN
+    CREATE TYPE product_status AS ENUM ('active', 'inactive', 'draft', 'upcoming');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ 
+BEGIN
+    CREATE TYPE subscription_status AS ENUM ('active', 'canceled', 'past_due', 'unpaid', 'trialing');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ 
+BEGIN
+    CREATE TYPE purchase_status AS ENUM ('pending', 'completed', 'failed', 'refunded');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Profiles
-create table profiles (
+create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   full_name text not null,
   display_name text,
@@ -29,7 +59,7 @@ create table profiles (
 );
 
 -- Products
-create table products (
+create table if not exists products (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
   description text,
@@ -42,7 +72,7 @@ create table products (
 );
 
 -- Product Prices
-create table product_prices (
+create table if not exists product_prices (
   id uuid default uuid_generate_v4() primary key,
   product_id uuid references products on delete cascade not null,
   currency text default 'BRL' not null,
@@ -53,7 +83,7 @@ create table product_prices (
 );
 
 -- Purchases
-create table purchases (
+create table if not exists purchases (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   product_id uuid references products on delete restrict not null,
@@ -66,7 +96,7 @@ create table purchases (
 );
 
 -- Subscriptions
-create table subscriptions (
+create table if not exists subscriptions (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   product_id uuid references products on delete restrict not null,
@@ -80,7 +110,7 @@ create table subscriptions (
 );
 
 -- Entitlements (Source of truth for access)
-create table entitlements (
+create table if not exists entitlements (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   product_id uuid references products on delete cascade not null,
@@ -91,7 +121,7 @@ create table entitlements (
 );
 
 -- Courses
-create table courses (
+create table if not exists courses (
   id uuid default uuid_generate_v4() primary key,
   product_id uuid references products on delete cascade,
   title text not null,
@@ -104,7 +134,7 @@ create table courses (
 );
 
 -- Course Modules
-create table course_modules (
+create table if not exists course_modules (
   id uuid default uuid_generate_v4() primary key,
   course_id uuid references courses on delete cascade not null,
   title text not null,
@@ -115,7 +145,7 @@ create table course_modules (
 );
 
 -- Lessons
-create table lessons (
+create table if not exists lessons (
   id uuid default uuid_generate_v4() primary key,
   module_id uuid references course_modules on delete cascade not null,
   title text not null,
@@ -129,7 +159,7 @@ create table lessons (
 );
 
 -- Lesson Materials
-create table lesson_materials (
+create table if not exists lesson_materials (
   id uuid default uuid_generate_v4() primary key,
   lesson_id uuid references lessons on delete cascade not null,
   title text not null,
@@ -139,7 +169,7 @@ create table lesson_materials (
 );
 
 -- Lesson Progress
-create table lesson_progress (
+create table if not exists lesson_progress (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   lesson_id uuid references lessons on delete cascade not null,
@@ -150,14 +180,14 @@ create table lesson_progress (
 );
 
 -- Stories (Casos da Semana)
-create table story_categories (
+create table if not exists story_categories (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
   color text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create table story_groups (
+create table if not exists story_groups (
   id uuid default uuid_generate_v4() primary key,
   title text not null,
   thumbnail_url text,
@@ -167,7 +197,7 @@ create table story_groups (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create table story_items (
+create table if not exists story_items (
   id uuid default uuid_generate_v4() primary key,
   group_id uuid references story_groups on delete cascade not null,
   media_url text not null,
@@ -178,7 +208,7 @@ create table story_items (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create table story_views (
+create table if not exists story_views (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   story_item_id uuid references story_items on delete cascade not null,
@@ -187,7 +217,7 @@ create table story_views (
 );
 
 -- Notifications
-create table notifications (
+create table if not exists notifications (
   id uuid default uuid_generate_v4() primary key,
   title text not null,
   message text not null,
@@ -196,7 +226,7 @@ create table notifications (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-create table notification_reads (
+create table if not exists notification_reads (
   id uuid default uuid_generate_v4() primary key,
   profile_id uuid references profiles on delete cascade not null,
   notification_id uuid references notifications on delete cascade not null,
@@ -205,7 +235,7 @@ create table notification_reads (
 );
 
 -- Webhook Events (for idempotency)
-create table webhook_events (
+create table if not exists webhook_events (
   id uuid default uuid_generate_v4() primary key,
   provider text not null,
   external_id text not null,
@@ -218,7 +248,7 @@ create table webhook_events (
 );
 
 -- Audit Logs
-create table audit_logs (
+create table if not exists audit_logs (
   id uuid default uuid_generate_v4() primary key,
   actor_id uuid references profiles on delete set null,
   action text not null,

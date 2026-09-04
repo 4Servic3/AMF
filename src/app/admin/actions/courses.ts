@@ -52,13 +52,13 @@ export async function saveLesson(id: string | null, data: any) {
 
   if (id) {
     const { error } = await supabase
-      .from('course_lessons')
+      .from('lessons')
       .update(data)
       .eq('id', id)
     if (error) throw new Error('Error updating lesson')
   } else {
     const { error } = await supabase
-      .from('course_lessons')
+      .from('lessons')
       .insert(data)
     if (error) throw new Error('Error creating lesson')
   }

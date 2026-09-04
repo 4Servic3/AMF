@@ -53,24 +53,63 @@ export default async function AppHome() {
         .in('course_id', courseIds)
         .order('updated_at', { ascending: false });
 
+      // Agrupar progressos por curso e calcular % real baseada nas aulas obrigatórias
       const courseMap = new Map<string, UserCourseProgress>();
+      const progressesByCourse = (progresses || []).reduce((acc: any, prog: any) => {
+        if (!acc[prog.course_id]) acc[prog.course_id] = [];
+        acc[prog.course_id].push(prog);
+        return acc;
+      }, {});
 
-      // Popula o map com o progresso mais recente de cada curso
-      (progresses || []).forEach((prog: any) => {
-        if (!courseMap.has(prog.course_id)) {
-          // Precisamos calcular a % total real se baseando no histórico.
-          // Mas como os writes do client já limitam progress_percent, pegamos as médias.
-          courseMap.set(prog.course_id, {
-            courseId: prog.course_id,
-            courseTitle: prog.courses.title,
-            courseSlug: prog.courses.slug,
-            lastLessonTitle: prog.lessons.title,
-            lastLessonSlug: prog.lessons.slug, // Using slug or ID
-            progressPercent: prog.progress_percent || 0, // Simplified for MVP (in reality needs sum of all lessons / total lessons)
-            status: prog.is_completed ? 'completed' : 'in_progress',
+      for (const courseId of courseIds) {
+        // Pegar total de aulas de video obrigatorias do curso
+        const { data: mandatoryLessons } = await supabase
+          .from('lessons')
+          .select('id, module_id, course_modules!inner(course_id)')
+          .eq('course_modules.course_id', courseId)
+          .eq('type', 'video')
+          .eq('is_mandatory', true);
+          
+        const totalMandatory = mandatoryLessons?.length || 1; // fallback para 1 se não houver
+        const courseProgresses = progressesByCourse[courseId] || [];
+        
+        let sumPercent = 0;
+        let completedCount = 0;
+        let lastLessonTitle = undefined;
+        let lastLessonSlug = undefined;
+
+        if (courseProgresses.length > 0) {
+          lastLessonTitle = courseProgresses[0].lessons.title;
+          lastLessonSlug = courseProgresses[0].lessons.slug;
+          
+          mandatoryLessons?.forEach(ml => {
+            const lp = courseProgresses.find((p: any) => p.lesson_id === ml.id);
+            if (lp) {
+              sumPercent += Number(lp.progress_percent || 0);
+              if (lp.is_completed) completedCount++;
+            }
           });
         }
-      });
+        
+        const realProgressPercent = mandatoryLessons && mandatoryLessons.length > 0 
+          ? Math.min(100, Math.round(sumPercent / totalMandatory))
+          : 0;
+          
+        const isCompleted = mandatoryLessons && mandatoryLessons.length > 0 && completedCount === totalMandatory;
+
+        const { data: c } = await supabase.from('courses').select('title, slug').eq('id', courseId).single();
+        if (c) {
+          courseMap.set(courseId, {
+            courseId: courseId,
+            courseTitle: c.title,
+            courseSlug: c.slug,
+            lastLessonTitle: lastLessonTitle,
+            lastLessonSlug: lastLessonSlug,
+            progressPercent: realProgressPercent,
+            status: isCompleted ? 'completed' : (realProgressPercent > 0 ? 'in_progress' : 'not_started')
+          });
+        }
+      }
 
       // E os cursos que tem acesso mas nunca começou?
       for (const cid of courseIds) {

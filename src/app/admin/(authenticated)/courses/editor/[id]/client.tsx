@@ -4,11 +4,13 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/admin/ui/PageHeader'
 import MediaPicker from '@/components/admin/media/MediaPicker'
+import LessonVideoManager from '@/components/admin/courses/LessonVideoManager'
 import { saveCourse } from '@/app/admin/actions/courses'
 
 export default function CourseEditorClient({ id, initialData }: { id: string, initialData: any }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('geral')
+  const [activeLessonVideoId, setActiveLessonVideoId] = useState<string | null>(null)
   const [formData, setFormData] = useState(initialData || {
     title: '',
     description: '',
@@ -137,27 +139,96 @@ export default function CourseEditorClient({ id, initialData }: { id: string, in
 
           {activeTab === 'estrutura' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-amf-teal-900">Module & Lesson Builder</h3>
-              <p className="text-sm text-amf-muted">Create modules and add lessons to build your course structure.</p>
-              
-              {/* Dummy structure for now */}
-              <div className="border border-amf-border rounded-lg p-4 bg-amf-ivory-50">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-medium text-amf-teal-800">Module 1: Introduction</h4>
-                  <button className="text-sm text-amf-teal-600 hover:underline">Edit</button>
-                </div>
-                <div className="space-y-2 pl-4 border-l-2 border-amf-teal-200">
-                  <div className="bg-white p-3 border border-amf-border rounded shadow-sm text-sm flex justify-between">
-                    <span>Lesson 1: Welcome</span>
-                    <button className="text-amf-muted hover:text-amf-teal-600">Edit</button>
-                  </div>
-                  <button className="text-sm text-amf-teal-600 hover:underline mt-2">+ Add Lesson</button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-amf-teal-900">Estrutura de Módulos e Aulas</h3>
+                  <p className="text-sm text-amf-muted">Gerencie os módulos, aulas e vídeos do Mux vinculados ao curso.</p>
                 </div>
               </div>
-              
-              <button className="w-full py-3 border-2 border-dashed border-amf-border text-amf-muted rounded-lg hover:border-amf-teal-400 hover:text-amf-teal-600 transition-colors">
-                + Add New Module
-              </button>
+
+              {initialData?.course_modules && initialData.course_modules.length > 0 ? (
+                initialData.course_modules.map((mod: any, modIdx: number) => (
+                  <div key={mod.id || modIdx} className="border border-amf-border rounded-xl p-5 bg-amf-ivory-50 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold text-amf-teal-900 text-sm">
+                        Módulo {modIdx + 1}: {mod.title || 'Sem título'}
+                      </h4>
+                    </div>
+                    <div className="space-y-3 pl-3 border-l-2 border-amf-teal-200">
+                      {mod.lessons && mod.lessons.length > 0 ? (
+                        mod.lessons.map((lesson: any, lIdx: number) => (
+                          <div key={lesson.id || lIdx} className="space-y-3">
+                            <div className="bg-white p-4 border border-amf-border rounded-lg shadow-sm text-sm flex items-center justify-between">
+                              <div>
+                                <span className="font-medium text-amf-teal-950">
+                                  Aula {lIdx + 1}: {lesson.title}
+                                </span>
+                                <span className="text-xs text-amf-muted ml-2">
+                                  ({lesson.type || 'video'} • {lesson.status || 'draft'})
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveLessonVideoId(activeLessonVideoId === lesson.id ? null : lesson.id)
+                                }
+                                className="px-3 py-1.5 text-xs font-medium bg-amf-teal-50 hover:bg-amf-teal-100 text-amf-teal-800 rounded-lg transition-colors"
+                              >
+                                {activeLessonVideoId === lesson.id ? 'Fechar Vídeo' : 'Gerenciar Vídeo Mux'}
+                              </button>
+                            </div>
+
+                            {activeLessonVideoId === lesson.id && (
+                              <div className="pl-2">
+                                <LessonVideoManager
+                                  lessonId={lesson.id}
+                                  lessonTitle={lesson.title}
+                                  initialVideo={lesson.video_assets}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-amf-muted italic">Nenhuma aula cadastrada neste módulo.</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                /* Exemplo para cursos recém-criados ou novos */
+                <div className="border border-amf-border rounded-xl p-5 bg-amf-ivory-50 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-semibold text-amf-teal-900 text-sm">Módulo 1: Introdução Clínica</h4>
+                  </div>
+                  <div className="space-y-3 pl-3 border-l-2 border-amf-teal-200">
+                    <div className="bg-white p-4 border border-amf-border rounded-lg shadow-sm text-sm flex items-center justify-between">
+                      <div>
+                        <span className="font-medium text-amf-teal-950">Aula 1: Boas-vindas e Contextualização</span>
+                        <span className="text-xs text-amf-muted ml-2">(video • published)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveLessonVideoId(activeLessonVideoId === 'sample-lesson-1' ? null : 'sample-lesson-1')
+                        }
+                        className="px-3 py-1.5 text-xs font-medium bg-amf-teal-50 hover:bg-amf-teal-100 text-amf-teal-800 rounded-lg transition-colors"
+                      >
+                        {activeLessonVideoId === 'sample-lesson-1' ? 'Fechar Vídeo' : 'Gerenciar Vídeo Mux'}
+                      </button>
+                    </div>
+
+                    {activeLessonVideoId === 'sample-lesson-1' && (
+                      <div className="pl-2">
+                        <LessonVideoManager
+                          lessonId="sample-lesson-1"
+                          lessonTitle="Aula 1: Boas-vindas e Contextualização"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

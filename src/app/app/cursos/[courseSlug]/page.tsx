@@ -16,8 +16,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   const { data: course, error } = await supabase
     .from('courses')
     .select(`
-      id, title, slug, short_description, workload, instructor,
-      media_assets!cover_asset_id(url),
+      id, title, slug, short_description, workload, instructor_id,
+      media_assets!cover_asset_id(file_path),
       certificate_rule
     `)
     .eq('slug', courseSlug)
@@ -114,8 +114,8 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   }
 
   const coverUrl = Array.isArray(course.media_assets) 
-    ? course.media_assets[0]?.url 
-    : (course.media_assets as any)?.url || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+    ? course.media_assets[0]?.file_path 
+    : (course.media_assets as any)?.file_path || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
 
   const minCompletion = course.certificate_rule?.min_completion_percent || 100;
   const certificateEnabled = !!course.certificate_rule?.enabled;
@@ -136,9 +136,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           <p className="text-gray-600 mb-5 line-clamp-3 text-sm leading-relaxed">{course.short_description}</p>
           
           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-6">
-            {course.instructor && (
+            {course.instructor_id && (
               <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-md">
-                <span className="font-bold text-gray-700">{course.instructor}</span>
+                <span className="font-bold text-gray-700">Equipe AMF</span>
               </div>
             )}
             {course.workload && (

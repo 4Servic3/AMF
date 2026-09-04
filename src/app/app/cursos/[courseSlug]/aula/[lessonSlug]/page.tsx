@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Paywall } from '@/components/ui/paywall';
-import { CoursePlayer } from '@/components/ui/course-player';
+import { SecureLessonPlayer } from '@/components/player';
 import { PdfViewer } from '@/components/ui/pdf-viewer';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
@@ -124,14 +124,15 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
 
         {/* Dynamic Content Area */}
         {currentLesson.type === 'video' ? (
-          <div className="w-full bg-black">
-            <CoursePlayer 
-              userId={user.id} 
-              lessonId={currentLesson.id} 
-              videoId={currentLesson.video_asset_id || ''}
-              courseSlug={courseSlug}
-              initialPositionSeconds={0}
-            />
+          <div className="w-full bg-[#160820] flex items-center justify-center p-0 md:p-6 lg:p-8 shrink-0">
+            <div className="w-full max-w-5xl">
+              <SecureLessonPlayer 
+                lessonId={currentLesson.id} 
+                courseSlug={courseSlug}
+                title={currentLesson.title}
+                nextLessonHref={nextLesson ? `/app/cursos/${courseSlug}/aula/${nextLesson.id}` : undefined}
+              />
+            </div>
           </div>
         ) : currentLesson.type === 'external_link' ? (
           <div className="flex-1 flex items-center justify-center p-6 bg-[#FAF7F1]">

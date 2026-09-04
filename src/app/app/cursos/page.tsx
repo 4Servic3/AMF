@@ -23,7 +23,7 @@ export default async function Catalog() {
       short_description,
       status,
       workload,
-      media_assets!cover_asset_id(url)
+      media_assets!cover_asset_id(file_path)
     `)
     .eq('status', 'published');
 
@@ -68,8 +68,8 @@ export default async function Catalog() {
     // Default covers or specific if media_asset exists
     // The query above aliases media_assets to 'media_assets' or it might be an array.
     const coverUrl = Array.isArray(course.media_assets) 
-      ? course.media_assets[0]?.url 
-      : (course.media_assets as any)?.url || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+      ? course.media_assets[0]?.file_path 
+      : (course.media_assets as any)?.file_path || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
 
     return {
       id: course.id,

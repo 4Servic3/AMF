@@ -16,7 +16,7 @@ export default async function CourseEditorPage({ params }: { params: Promise<{ i
   if (id !== 'new') {
     const { data } = await supabase
       .from('courses')
-      .select('*')
+      .select('*, course_modules(*, lessons(*, video_assets(*)))')
       .eq('id', id)
       .single()
     initialData = data

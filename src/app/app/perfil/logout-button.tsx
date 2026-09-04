@@ -15,11 +15,22 @@ export function LogoutButton() {
     setLoading(true);
 
     try {
-      // Simulação de chamada de API para invalidar sessão/limpar cache
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      // Redireciona de forma segura usando o router do Next
-      router.push('/');
-      router.refresh();
+      // Sign out directly via supabase client
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+
+      // Clear PWA caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      // Clear local storages
+      localStorage.clear();
+      sessionStorage.clear();
+
+      window.location.href = '/entrar';
     } catch (err) {
       console.error('Erro ao sair da conta:', err);
       alert('Não foi possível sair da conta no momento.');
