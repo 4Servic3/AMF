@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://image.mux.com https://*.supabase.co; media-src 'self' blob: https://stream.mux.com; connect-src 'self' https://*.supabase.co https://stats.mux.com https://api.mux.com https://storage.googleapis.com; worker-src 'self' blob:; font-src 'self'; frame-src 'self' blob:;"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://image.mux.com https://*.supabase.co; media-src 'self' blob: https://stream.mux.com; connect-src 'self' https://*.supabase.co https://stream.mux.com https://stats.mux.com https://*.litix.io https://litix.io https://api.mux.com https://storage.googleapis.com; worker-src 'self' blob:; font-src 'self'; frame-src 'self' blob:;"
           },
           {
             key: 'X-Frame-Options',
