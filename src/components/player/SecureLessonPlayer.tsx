@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import MuxPlayer from '@mux/mux-player-react';
+import MuxPlayer from '@mux/mux-player-react/lazy';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -42,7 +42,11 @@ type PlayerStatus =
   | 'offline'
   | 'error';
 
-export function SecureLessonPlayer({
+export function SecureLessonPlayer(props: SecureLessonPlayerProps) {
+  return <LessonPlayerSession key={props.lessonId} {...props} />;
+}
+
+function LessonPlayerSession({
   lessonId,
   courseSlug,
   title,
@@ -65,9 +69,14 @@ export function SecureLessonPlayer({
   const lastPositionRef = useRef<number>(0);
   const currentDurationRef = useRef<number>(0);
   const isPlayingRef = useRef<boolean>(false);
+  const sessionInFlight = useRef(false);
+  const progressInFlight = useRef(false);
 
   // 1. Fetch Session from same-origin endpoint
   const fetchSession = useCallback(async (isRetry = false) => {
+    if (sessionInFlight.current) return;
+    sessionInFlight.current = true;
+    const positionBeforeRefresh = lastPositionRef.current;
     try {
       if (!window.navigator.onLine) {
         setIsOnline(false);
@@ -75,7 +84,7 @@ export function SecureLessonPlayer({
         return;
       }
 
-      setStatus('loading');
+      if (!isRetry) setStatus('loading');
       setErrorMessage(null);
 
       const res = await fetch(`/api/courses/lessons/${lessonId}/playback-session`, {
@@ -111,16 +120,14 @@ export function SecureLessonPlayer({
       // Memory-only storage of session and tokens
       setSession(data);
       currentDurationRef.current = data.durationSeconds || 0;
+      if (isRetry) data.resumeAtSeconds = positionBeforeRefresh;
       lastPositionRef.current = data.resumeAtSeconds || 0;
 
-      if (data.resumeAtSeconds > 15) {
+      if (!isRetry && data.resumeAtSeconds > 15) {
         setShowRestartBanner(true);
       }
 
       setStatus('ready');
-      if (isRetry) {
-        retryCountRef.current += 1;
-      }
     } catch (err) {
       if (!window.navigator.onLine) {
         setIsOnline(false);
@@ -129,10 +136,13 @@ export function SecureLessonPlayer({
         setStatus('error');
         setErrorMessage('Não foi possível conectar ao serviço de vídeo. Verifique sua conexão.');
       }
-    }
+    } finally { sessionInFlight.current = false; }
   }, [lessonId]);
 
   useEffect(() => {
+    retryCountRef.current = 0;
+    lastPositionRef.current = 0;
+    setIsCompleted(false);
     fetchSession();
   }, [fetchSession]);
 
@@ -177,10 +187,20 @@ export function SecureLessonPlayer({
     };
   }, [session, fetchSession]);
 
+  useEffect(() => {
+    if (!session?.expiresAt) return;
+    const delay = Math.max(1000, new Date(session.expiresAt).getTime() - Date.now() - 120000);
+    const timer = setTimeout(() => { void fetchSession(true); }, delay);
+    return () => clearTimeout(timer);
+  }, [session?.expiresAt, fetchSession]);
+
   // 4. Progress Reporting Function (monotonic & server-authoritative)
   const reportProgress = useCallback(
     async (position: number, isEnded = false, useKeepalive = false) => {
       if (position <= 0 && !isEnded) return;
+      if (progressInFlight.current && !isEnded && !useKeepalive) return;
+      progressInFlight.current = true;
+      lastProgressSentTimeRef.current = Date.now();
 
       const payload = {
         position_seconds: Math.floor(position),
@@ -216,10 +236,11 @@ export function SecureLessonPlayer({
             setIsCompleted(true);
             onComplete?.();
           }
+          return Boolean(data.is_completed);
         }
       } catch (e) {
         // Silently catch network transient errors in background progress ping
-      }
+      } finally { progressInFlight.current = false; }
     },
     [lessonId, isCompleted, onComplete, onProgressUpdate]
   );
@@ -293,13 +314,11 @@ export function SecureLessonPlayer({
     }
   };
 
-  const handleEnded = () => {
+  const handleEnded = async () => {
     isPlayingRef.current = false;
-    reportProgress(lastPositionRef.current, true);
-    setIsCompleted(true);
-    onComplete?.();
+    const saved = await reportProgress(lastPositionRef.current, true);
 
-    if (nextLessonHref) {
+    if (saved && nextLessonHref) {
       setAutoAdvanceCountdown(5);
     }
   };
@@ -307,6 +326,7 @@ export function SecureLessonPlayer({
   const handleError = () => {
     // Attempt 1 automatic refresh if token might have expired or stalled
     if (retryCountRef.current < 1) {
+      retryCountRef.current += 1;
       fetchSession(true);
     } else {
       setStatus('error');
@@ -343,7 +363,7 @@ export function SecureLessonPlayer({
       >
         <div className="w-12 h-12 rounded-full border-3 border-[#0F6466] border-t-transparent animate-spin mb-4" />
         <h3 className="text-base font-semibold tracking-wide text-[#FAF7F1]">Carregando aula segura...</h3>
-        <p className="text-xs text-white/50 mt-1">Estabelecendo sessão criptografada</p>
+        <p className="text-xs text-white/50 mt-1">Preparando o vídeo</p>
       </div>
     );
   }

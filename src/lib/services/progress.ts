@@ -106,7 +106,7 @@ export async function updateSecureProgress(
   const now = new Date().toISOString();
 
   // 4. Idempotent upsert
-  await supabase.from('lesson_progress').upsert({
+  const savedProgress = await supabase.from('lesson_progress').upsert({
     profile_id: userId,
     lesson_id: lessonId,
     course_id: courseId,
@@ -121,6 +121,7 @@ export async function updateSecureProgress(
   }, {
     onConflict: 'profile_id,lesson_id'
   });
+  if (savedProgress?.error) throw new Error('Não foi possível salvar o progresso.');
 
   trackEvent('video_progress', { userId, lessonId, positionSeconds: newPosition, percent: newPercent });
 

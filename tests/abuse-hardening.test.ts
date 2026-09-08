@@ -41,6 +41,7 @@ vi.mock('@/lib/supabase/service-role', () => ({
   createServiceRoleClient: vi.fn(() => ({
     from: vi.fn(() => ({
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+      select: vi.fn().mockReturnValue({eq: vi.fn().mockReturnValue({maybeSingle: (...args: unknown[]) => mockVideoAssetsSelect(...args)})}),
     })),
   })),
 }));
@@ -144,6 +145,7 @@ describe('ABUSE & HARDENING TEST SUITE (PROMPT 9)', () => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     vi.stubEnv('MUX_TOKEN_ID', 'test_token_id');
+    vi.stubEnv('MUX_ALLOWED_ORIGINS', 'https://amf-eight.vercel.app');
     vi.stubEnv('MUX_TOKEN_SECRET', 'test_token_secret');
     vi.stubEnv('MUX_SIGNING_KEY_ID', 'test_key_id');
     const privatePem = privateKey.export({ type: 'pkcs8', format: 'pem' }) as string;
@@ -370,7 +372,7 @@ describe('ABUSE & HARDENING TEST SUITE (PROMPT 9)', () => {
 
       expect(res.status).toBe(403);
       const data = await res.json();
-      expect(data.error).toContain('MFA/AAL2');
+      expect(data.error).toContain('duas etapas');
     });
   });
 

@@ -59,7 +59,6 @@ export async function getAdminContext() {
 }
 
 export async function requirePermission(permissionKey: string) {
-  const supabase = await createClient()
   const { session } = await getAdminContext()
   
   const hasAccess = await hasPermission(permissionKey)
@@ -82,7 +81,9 @@ export async function hasPermission(permissionKey: string) {
 export async function requireRecentReauthentication(maxAgeSeconds: number = 300) {
   const session = await requireAal2()
   
-  const lastAuthTime = new Date(session.user.updated_at || session.user.created_at).getTime()
+  // Use last_sign_in_at which reflects the actual last authentication time,
+  // not updated_at which changes on any profile update
+  const lastAuthTime = new Date(session.user.last_sign_in_at || session.user.created_at).getTime()
   const now = Date.now()
   
   if ((now - lastAuthTime) / 1000 > maxAgeSeconds) {

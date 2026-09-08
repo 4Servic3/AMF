@@ -25,6 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       .from('lesson_materials')
       .select('storage_path, bucket_name, status, download_policy, name, mime_type, size_bytes')
       .eq('id', materialId)
+      .eq('course_id', course.id)
       .eq('status', 'published')
       .single();
 
@@ -36,30 +37,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return new NextResponse('Download not allowed', { status: 403 });
     }
 
-    // Baixa do Storage usando supabase.storage
+    // Deliver directly from Storage: large PDFs must not pass through a Vercel Function.
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from(material.bucket_name || 'materials')
-      .download(material.storage_path);
+      .createSignedUrl(material.storage_path, 300, { download: material.name || 'document.pdf' });
 
     if (downloadError || !fileData) {
       console.error('Download error:', downloadError);
       return new NextResponse('Error downloading file', { status: 500 });
     }
 
-    // Sanitize filename to prevent header injection or traversal chars
-    const safeFilename = (material.name || 'document.pdf').replace(/[^a-zA-Z0-9.\-_ ]/g, '');
-
-    // Convert Blob to Response stream
-    const res = new NextResponse(fileData, {
-      status: 200,
-      headers: {
-        'Content-Type': material.mime_type || 'application/pdf',
-        'Content-Length': fileData.size.toString(),
-        'Content-Disposition': `attachment; filename="${safeFilename}"`,
-        'Cache-Control': 'private, no-store, max-age=0'
-      }
-    });
+    const res = NextResponse.redirect(fileData.signedUrl, 302);
+    res.headers.set('Cache-Control', 'private, no-store, max-age=0');
 
     // Audit log
     await supabase.from('audit_logs').insert({

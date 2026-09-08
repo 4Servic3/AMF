@@ -1,3 +1,4 @@
+-- MANUAL ONLY. Never include this destructive recovery script in forward migrations.
 -- Rollback: Mux Video Domain & RLS Hardening
 -- Reverts tables and constraints created by 20260826000000_mux_video_domain.sql
 

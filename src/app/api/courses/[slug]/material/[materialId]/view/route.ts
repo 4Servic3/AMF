@@ -25,6 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       .from('lesson_materials')
       .select('storage_path, bucket_name, status, view_policy')
       .eq('id', materialId)
+      .eq('course_id', course.id)
       .eq('status', 'published')
       .single();
 
@@ -39,7 +40,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     const { data, error } = await supabase
       .storage
       .from(material.bucket_name || 'materials')
-      .createSignedUrl(material.storage_path, 15); // Expira em 15 segundos
+      .createSignedUrl(material.storage_path, 300);
 
     if (error || !data) {
       return NextResponse.json({ error: 'Failed to generate access URL' }, { status: 500 });

@@ -34,7 +34,7 @@ export default async function WorkQueue() {
     { label: 'Em revisão', count: emRevisao, icon: Clock, href: '/admin/cases?status=review', color: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10' },
     { label: 'Agendados', count: agendados, icon: Calendar, href: '/admin/cases?status=scheduled', color: 'text-[#0F766E]', bg: 'bg-[#0F766E]/10' },
     { label: 'Tickets abertos', count: tickets, icon: TicketIcon, href: '/admin/support?status=open', color: 'text-[#6B21A8]', bg: 'bg-[#6B21A8]/10' },
-    { label: 'Falhas de job', count: falhas, icon: XCircle, href: '/admin/ops/jobs?status=failed', color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Falhas de job', count: falhas, icon: XCircle, href: '/admin/operations', color: 'text-red-600', bg: 'bg-red-50' },
   ];
 
   return (

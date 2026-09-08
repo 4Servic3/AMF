@@ -44,9 +44,11 @@ describe('Mux Origin Security', () => {
   it('allows vercel preview subdomains only in preview environment', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('VERCEL_URL', 'amf-git-preview-branch.vercel.app');
 
     expect(isOriginAllowed('https://amf-git-preview-branch.vercel.app')).toBe(true);
     expect(isOriginAllowed('https://evil.com')).toBe(false);
+    expect(isOriginAllowed('https://another-project.vercel.app')).toBe(false);
   });
 
   it('allows localhost and local network in development', () => {

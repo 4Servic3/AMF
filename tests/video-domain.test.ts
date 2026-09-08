@@ -9,11 +9,11 @@ describe('Mux Video Domain Migration & Constraints Audit', () => {
   );
   const rollbackPath = path.resolve(
     import.meta.dirname,
-    '../supabase/migrations/20260826000000_mux_video_domain_rollback.sql'
+    '../supabase/rollback/20260826000000_mux_video_domain.sql'
   );
 
   const migrationSql = fs.readFileSync(migrationPath, 'utf8');
-  const rollbackSql = fs.readFileSync(rollbackPath, 'utf8');
+  const rollbackSql = fs.readFileSync(rollbackPath, 'utf8').replace(/\r\n/g, '\n');
 
   it('migration file exists and contains all required table definitions', () => {
     expect(migrationSql).toContain('ALTER TABLE video_assets ADD COLUMN IF NOT EXISTS mux_upload_id');

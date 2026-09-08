@@ -62,7 +62,7 @@ export async function POST(
 
     const { position_seconds, duration_seconds, is_ended } = body;
 
-    if (typeof position_seconds !== 'number' || position_seconds < 0) {
+    if (typeof position_seconds !== 'number' || !Number.isFinite(position_seconds) || position_seconds < 0) {
       return NextResponse.json(
         { error: 'position_seconds inválido.' },
         { status: 400 }

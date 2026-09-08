@@ -2,6 +2,16 @@
 
 import { requireAal2, requirePermission } from '@/lib/auth/dal'
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+
+const titleSchema = z.string().trim().min(1).max(200)
+const statusSchema = z.enum(['draft', 'published', 'archived'])
+function refreshCourses() {
+  revalidatePath('/admin/courses', 'layout')
+  revalidatePath('/app/cursos', 'layout')
+  revalidatePath('/app')
+}
 
 export async function saveCourse(id: string | null, data: any) {
   await requireAal2()
@@ -9,60 +19,89 @@ export async function saveCourse(id: string | null, data: any) {
   const supabase = await createClient()
 
   if (id && id !== 'new') {
+    const input = z.object({ title: titleSchema, description: z.string().max(20000).nullable().optional(), slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) }).parse(data)
     const { error } = await supabase
       .from('courses')
-      .update(data)
+      .update(input)
       .eq('id', id)
+      .select('id').single()
       
     if (error) throw new Error('Error updating course')
   } else {
-    const { error } = await supabase
+    const input = z.object({ title: titleSchema, description: z.string().max(20000).nullable().optional(), slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) }).parse(data)
+    const { data: created, error } = await supabase
       .from('courses')
-      .insert(data)
+      .insert({ ...input, status: 'draft', is_published: false })
+      .select('id').single()
       
     if (error) throw new Error('Error creating course')
+    id = created.id
   }
-  return { success: true }
+  refreshCourses()
+  return { success: true, id: id! }
 }
 
 export async function saveModule(id: string | null, data: any) {
   await requireAal2()
   await requirePermission('courses.manage')
   const supabase = await createClient()
+  const input = z.object({ title: titleSchema, status: statusSchema }).parse(data)
+  if (input.status === 'published') await requirePermission('content.publish')
 
   if (id) {
     const { error } = await supabase
       .from('course_modules')
-      .update(data)
+      .update(input)
       .eq('id', id)
+      .select('id').single()
     if (error) throw new Error('Error updating module')
   } else {
-    const { error } = await supabase
+    const courseId = z.uuid().parse(data.course_id)
+    const { data: last, error: readError } = await supabase.from('course_modules').select('order_index').eq('course_id', courseId).order('order_index', { ascending: false }).limit(1)
+    if (readError) throw new Error('Falha ao consultar módulos.')
+    const { data: created, error } = await supabase
       .from('course_modules')
-      .insert(data)
+      .insert({ ...input, course_id: courseId, order_index: (last?.[0]?.order_index ?? -1) + 1 })
+      .select('id').single()
     if (error) throw new Error('Error creating module')
+    id = created.id
   }
-  return { success: true }
+  refreshCourses()
+  return { success: true, id: id! }
 }
 
 export async function saveLesson(id: string | null, data: any) {
   await requireAal2()
   await requirePermission('courses.manage')
   const supabase = await createClient()
+  const input = z.object({ title: titleSchema, status: statusSchema }).parse(data)
+  if (input.status === 'published') {
+    await requirePermission('content.publish')
+    const { data: lesson } = await supabase.from('lessons').select('type, video_assets(status, playback_policy, mux_playback_id), external_resource_id').eq('id', id || '').maybeSingle()
+    const video = lesson?.video_assets as unknown as { status: string; playback_policy: string; mux_playback_id: string } | null
+    if (!lesson || (lesson.type === 'video' && (!video || video.status !== 'ready' || video.playback_policy !== 'signed' || !video.mux_playback_id))) throw new Error('Envie e vincule um vídeo pronto antes de publicar a aula.')
+  }
 
   if (id) {
     const { error } = await supabase
       .from('lessons')
-      .update(data)
+      .update({ ...input, is_published: input.status === 'published' })
       .eq('id', id)
+      .select('id').single()
     if (error) throw new Error('Error updating lesson')
   } else {
+    const moduleId = z.uuid().parse(data.module_id)
+    const { data: last, error: readError } = await supabase.from('lessons').select('order_index').eq('module_id', moduleId).order('order_index', { ascending: false }).limit(1)
+    if (readError) throw new Error('Falha ao consultar aulas.')
+    const lessonId = crypto.randomUUID()
     const { error } = await supabase
       .from('lessons')
-      .insert(data)
+      .insert({ ...input, id: lessonId, slug: 'aula-' + lessonId, module_id: moduleId, type: 'video', order_index: (last?.[0]?.order_index ?? -1) + 1, is_published: false })
     if (error) throw new Error('Error creating lesson')
+    id = lessonId
   }
-  return { success: true }
+  refreshCourses()
+  return { success: true, id: id! }
 }
 
 export async function saveGlobalQuestion(id: string | null, data: any) {
@@ -154,7 +193,9 @@ export async function publishCourse(courseId: string, currentVersion: number) {
       is_published: true, 
       version: course.version + 1 
     })
-    .eq('id', courseId);
+    .eq('id', courseId)
+    .eq('version', currentVersion)
+    .select('id').single();
 
   if (updateError) throw new Error('Falha ao publicar curso.');
 
@@ -165,7 +206,7 @@ export async function publishCourse(courseId: string, currentVersion: number) {
     details: { previousVersion: course.version }
   });
 
-  revalidatePath('/admin/courses');
+  refreshCourses();
   return { success: true, newVersion: course.version + 1 };
 }
 

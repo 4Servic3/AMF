@@ -43,8 +43,8 @@ export async function createDirectUpload(params: DirectUploadParams): Promise<Di
   const client = getMuxClient();
   const creds = getMuxCredentials();
 
-  const newAssetSettings: Record<string, any> = {
-    playback_policy: ['signed'],
+  const newAssetSettings: Mux.Video.Assets.AssetOptions = {
+    playback_policies: ['signed'],
     max_resolution_tier: '1080p',
   };
 
@@ -52,15 +52,13 @@ export async function createDirectUpload(params: DirectUploadParams): Promise<Di
     newAssetSettings.passthrough = passthrough;
   }
 
-  // Se houver Playback Restriction configurada no ambiente, vincular ao asset
-  if (creds.playbackRestrictionId) {
-    newAssetSettings.playback_restriction_id = creds.playbackRestrictionId;
-  }
+  // Playback restrictions belong to signed token claims, not asset creation.
 
   try {
     const upload = await client.video.uploads.create({
       new_asset_settings: newAssetSettings,
       cors_origin: corsOrigin,
+      timeout: 86400,
     });
 
     if (!upload.url || !upload.id) {

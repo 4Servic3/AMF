@@ -43,7 +43,7 @@ export function isOriginAllowed(origin: string | null): boolean {
   if (env === 'preview') {
     try {
       const url = new URL(normalized);
-      if (url.protocol === 'https:' && url.hostname.endsWith('.vercel.app')) {
+      if (url.protocol === 'https:' && [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL].includes(url.hostname)) {
         return true;
       }
     } catch {

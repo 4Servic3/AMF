@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 type FeatureFlags = {
   member_courses_enabled: boolean;
@@ -19,10 +19,10 @@ const defaultFlags: FeatureFlags = {
   member_academy_enabled: false,
 };
 
-export const getFeatureFlags = unstable_cache(
+export const getFeatureFlags = cache(
   async (): Promise<FeatureFlags> => {
+    const supabase = await createClient();
     try {
-      const supabase = await createClient();
       const { data, error } = await supabase
         .from('feature_flags')
         .select('key, enabled');
@@ -44,7 +44,5 @@ export const getFeatureFlags = unstable_cache(
       console.error('Exception ao buscar feature flags', err);
       return defaultFlags;
     }
-  },
-  ['feature-flags'],
-  { revalidate: 60, tags: ['feature-flags'] }
+  }
 );

@@ -1,7 +1,7 @@
 'use client'
 
 import { Download } from 'lucide-react'
-import { exportAuditLogsCSV } from '../actions/reports'
+import { exportAuditLogsCSV } from '../../actions/reports'
 import { useState } from 'react'
 
 export function ExportButton() {

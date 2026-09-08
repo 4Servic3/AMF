@@ -24,8 +24,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     const { data: lesson } = await supabase
       .from('lessons')
-      .select('type, status, external_resource_id')
+      .select('type, status, external_resource_id, course_modules!inner(course_id,status)')
       .eq('id', lessonId)
+      .eq('course_modules.course_id', course.id)
+      .eq('course_modules.status', 'published')
       .eq('status', 'published')
       .single();
 
@@ -41,6 +43,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     if (!extRes || extRes.status !== 'active') {
       return new NextResponse('Link disabled', { status: 400 });
+    }
+    const destination = new URL(extRes.private_destination_url);
+    if (destination.protocol !== 'https:' || !['chat.whatsapp.com','wa.me','api.whatsapp.com'].includes(destination.hostname)) {
+      return new NextResponse('Destino não autorizado', {status:403});
     }
 
     // Server-side audit for accessing private community
@@ -65,7 +71,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       completed_at: new Date().toISOString()
     }, { onConflict: 'profile_id,lesson_id' });
 
-    return NextResponse.redirect(extRes.private_destination_url, 302);
+    const response = NextResponse.redirect(destination, 302);
+    response.headers.set('Cache-Control','private, no-store');
+    return response;
 
   } catch (err) {
     console.error('WhatsApp redirect error:', err);

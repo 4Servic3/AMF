@@ -98,7 +98,8 @@ export async function POST(
     const { data: canManage } = await supabase.rpc('has_permission', {
       required_permission: 'courses.videos.manage',
     });
-    const isAdmin = Boolean(canManage || profile?.role === 'admin' || profile?.role === 'superadmin');
+    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const isAdmin = Boolean(canManage && assurance?.currentLevel === 'aal2');
 
     if (
       !isAdmin &&
@@ -117,7 +118,7 @@ export async function POST(
       course_uuid: course.id,
     });
 
-    if (!hasAccess) {
+    if (!hasAccess && !isAdmin) {
       return NextResponse.json(
         { error: 'Você não possui acesso ativo a este curso.' },
         { status: 403 }
@@ -132,7 +133,7 @@ export async function POST(
       .eq('course_id', course.id)
       .maybeSingle();
 
-    if (enrollment) {
+    if (enrollment && !isAdmin) {
       if (enrollment.status === 'suspended' || enrollment.status === 'cancelled') {
         return NextResponse.json(
           { error: 'Matrícula suspensa ou cancelada.' },
