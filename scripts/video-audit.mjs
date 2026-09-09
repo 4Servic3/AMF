@@ -18,6 +18,8 @@ for (const [table, columns] of [
 try {
   const mux = new Mux({tokenId:process.env.MUX_TOKEN_ID,tokenSecret:process.env.MUX_TOKEN_SECRET});
   const assets = await mux.video.assets.list({limit:10});
+  const uploads = await mux.video.uploads.list({limit:3});
+  console.log(JSON.stringify({recentUploads:uploads.data.map(u=>({id:u.id,status:u.status,cors_origin:u.cors_origin,destination:u.url?new URL(u.url).origin:null}))}));
   console.log(JSON.stringify({mux:assets.data.map(a=>({id:a.id,status:a.status,duration:a.duration,playback_ids:a.playback_ids}))}));
   for (const asset of assets.data) {
     const playback = asset.playback_ids?.find(p=>p.policy==='signed');
