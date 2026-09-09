@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Image from 'next/image'
 
 interface CourseCoverUploadProps {
   courseId: string
@@ -29,8 +28,8 @@ export default function CourseCoverUpload({
       setError('Formato inválido. Use JPG, PNG ou WebP.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Imagem muito grande. Máximo 5 MB.')
+    if (file.size > 3 * 1024 * 1024) {
+      setError('Imagem muito grande. Máximo 3 MB.')
       return
     }
 
@@ -85,7 +84,7 @@ export default function CourseCoverUpload({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-amf-ink-700">Imagem de capa</span>
-        <span className="text-xs text-amf-muted-600">JPG, PNG ou WebP • Máx. 5 MB</span>
+        <span className="text-xs text-amf-muted-600">JPG, PNG ou WebP • Máx. 3 MB</span>
       </div>
 
       {/* Drop zone */}

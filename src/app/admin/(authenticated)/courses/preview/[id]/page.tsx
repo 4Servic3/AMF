@@ -16,13 +16,14 @@ export default async function CoursePreviewPage({
   const { id } = await params
 
   const supabase = await createClient()
+  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
   // Admin bypass: fetch course regardless of status (RLS allows via courses.manage)
   const { data: course, error } = await supabase
     .from('courses')
     .select(`
       id, title, slug, short_description, workload, status,
-      cover:media_assets!cover_asset_id(object_path, bucket)
+      cover:media_assets!cover_asset_id(file_path)
     `)
     .eq('id', id)
     .single()

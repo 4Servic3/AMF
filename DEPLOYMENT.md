@@ -19,7 +19,9 @@
 
 ## Cursos e vídeos
 
-Em `/admin/courses`, abrir **Novo curso**, salvar as informações e adicionar módulo e aula. Em **Gerenciar vídeo**, enviar o arquivo ou selecionar um vídeo da biblioteca. Aguardar o processamento e confirmar **Usar este vídeo na aula**. Publicar a aula e o módulo; publicar o curso por último.
+Em `/admin/courses`, abrir **Novo curso**, salvar as informações, enviar a capa (JPG/PNG/WebP até 3 MB) e adicionar módulo e aula. Em **Gerenciar vídeo**, enviar o arquivo ou selecionar um vídeo da biblioteca. Aguardar o processamento e confirmar **Usar este vídeo na aula**. **Publicar curso e aulas** valida e libera todos os módulos e aulas não arquivados em uma transação. Cursos publicados continuam editáveis; **Publicar novas aulas** libera novas aulas salvas.
+
+**Agendar** usa data e hora de Brasília. O job `amf-course-publication` do Supabase Cron verifica agendamentos a cada minuto. O curso permanece em rascunho até a execução, que repete a validação dos vídeos. Falhas são registradas em `publication_schedules.last_error` e exibidas no editor. É possível cancelar o agendamento. A migração `20260909000000_course_publication.sql` instala as funções e o job; não há endpoint público de cron.
 
 O arquivo é transferido diretamente ao endereço regional fornecido pela Mux. A Vercel atende apenas a autorização e o registro do envio, sem transportar o arquivo de vídeo. A política `connect-src` permite os destinos HTTPS da Mux. A reprodução continua exigindo tokens assinados e autorização do aluno.
 

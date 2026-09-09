@@ -136,86 +136,31 @@ export async function saveGlobalQuestion(id: string | null, data: any) {
 // ─── Publish Course ───────────────────────────────────────────────────────────
 
 export async function publishCourse(courseId: string, currentVersion: number) {
-  await requireAal2()
-
-  if (!(await hasPermission('content.publish'))) {
-    throw new Error('Você não tem permissão para publicar cursos.')
-  }
-
-  const supabase = await createClient()
-
-  // Optimistic locking via version
-  const { data: course, error: courseError } = await supabase
-    .from('courses')
-    .select('id, title, slug, cover_asset_id, status, version')
-    .eq('id', courseId)
-    .single()
-
-  if (courseError || !course) throw new Error('Curso não encontrado.')
-  if (course.version !== currentVersion) throw new Error('Conflito de edição detectado (versão desatualizada).')
-  if (!course.title || !course.slug) throw new Error('Título e Slug são obrigatórios.')
-
-  // Fetch modules and lessons
-  const { data: modules } = await supabase
-    .from('course_modules')
-    .select('id, title, lessons ( id, type, video_asset_id, external_resource_id, status )')
-    .eq('course_id', courseId)
-    .eq('status', 'published')
-
-  if (!modules || modules.length === 0) {
-    throw new Error('O curso precisa ter pelo menos um módulo publicado.')
-  }
-
-  let hasPublishableItem = false
-
-  for (const mod of modules) {
-    for (const lesson of mod.lessons) {
-      if (lesson.status === 'published') {
-        hasPublishableItem = true
-
-        if (lesson.type === 'video') {
-          if (!lesson.video_asset_id) throw new Error(`Aula de vídeo sem asset associado (ID: ${lesson.id}).`)
-          const { data: video } = await supabase.from('video_assets').select('status').eq('id', lesson.video_asset_id).single()
-          if (video?.status !== 'ready') throw new Error(`Vídeo da aula não está pronto (Status: ${video?.status}).`)
-        }
-
-        if (lesson.type === 'external_link') {
-          if (!lesson.external_resource_id) throw new Error(`Aula de link externo sem recurso associado (ID: ${lesson.id}).`)
-          const { data: ext } = await supabase.from('external_resources').select('status').eq('id', lesson.external_resource_id).single()
-          if (ext?.status !== 'active') throw new Error('Link externo inválido ou inativo.')
-        }
-      }
-    }
-  }
-
-  if (!hasPublishableItem) {
-    throw new Error('O curso precisa ter pelo menos um item (aula/material) publicável.')
-  }
-
-  const { error: updateError } = await supabase
-    .from('courses')
-    .update({
-      status: 'published',
-      is_published: true,
-      version: course.version + 1
-    })
-    .eq('id', courseId)
-    .eq('version', currentVersion)
-    .select('id').single()
-
-  if (updateError) throw new Error('Falha ao publicar curso.')
-
-  await writeAdminAuditEvent({
-    action: 'publish_course',
-    resourceType: 'course',
-    resourceId: courseId,
-    details: { previousVersion: course.version }
+  const session = await requireAal2()
+  await requirePermission('content.publish')
+  const { createServiceRoleClient } = await import('@/lib/supabase/service-role')
+  const { data, error } = await createServiceRoleClient().rpc('publish_course_bundle', {
+    p_course: z.string().uuid().parse(courseId), p_actor: session.user.id,
+    p_version: z.number().int().parse(currentVersion),
   })
-
+  if (error) return { success: false, error: error.code === 'P0001' ? error.message : 'Não foi possível publicar. Tente novamente.' }
   refreshCourses()
-  return { success: true, newVersion: course.version + 1 }
+  return { success: true, newVersion: data }
 }
 
+export async function scheduleCourse(courseId: string, currentVersion: number, publishAt: string | null) {
+  const session = await requireAal2()
+  await requirePermission('content.publish')
+  const { createServiceRoleClient } = await import('@/lib/supabase/service-role')
+  const { error } = await createServiceRoleClient().rpc('schedule_course_publication', {
+    p_course: z.string().uuid().parse(courseId), p_actor: session.user.id,
+    p_version: z.number().int().parse(currentVersion),
+    p_at: publishAt === null ? null : z.string().datetime().parse(publishAt),
+  })
+  if (error) return { success: false, error: error.code === 'P0001' ? error.message : 'Não foi possível agendar. Tente novamente.' }
+  refreshCourses()
+  return { success: true }
+}
 // ─── External Links ───────────────────────────────────────────────────────────
 
 export async function addExternalLink(allowedHostname: string, label: string, url: string) {

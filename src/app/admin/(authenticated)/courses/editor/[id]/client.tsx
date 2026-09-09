@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import PageHeader from '@/components/admin/ui/PageHeader'
 import StatusBadge from '@/components/admin/ui/StatusBadge'
 import LessonVideoManager, { type LessonVideoData } from '@/components/admin/courses/LessonVideoManager'
 import CourseCoverUpload from '@/components/admin/courses/CourseCoverUpload'
+import CoursePublicationPanel, { type CourseSchedule } from '@/components/admin/courses/CoursePublicationPanel'
 import CourseAdminAccessPanel from '@/components/admin/courses/CourseAdminAccessPanel'
-import { saveCourse, saveModule, saveLesson, publishCourse } from '@/app/admin/actions/courses'
+import { saveCourse, saveModule, saveLesson } from '@/app/admin/actions/courses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lesson = {
@@ -47,9 +47,10 @@ interface Props {
   initialData: Course | null
   initialCoverUrl: string | null
   initialAccessList: any[]
+  initialSchedule: CourseSchedule
 }
 
-export default function CourseEditorClient({ id, initialData, initialCoverUrl, initialAccessList }: Props) {
+export default function CourseEditorClient({ id, initialData, initialCoverUrl, initialAccessList, initialSchedule }: Props) {
   const router = useRouter()
   const isNew = id === 'new'
 
@@ -65,11 +66,10 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
       : { title: '', description: '', short_description: '', slug: '', workload: '' }
   )
   const [coverUrl, setCoverUrl] = useState<string | null>(initialCoverUrl)
+  const [slugEdited, setSlugEdited] = useState(false)
   const [activeVideo, setActiveVideo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [showPublishConfirm, setShowPublishConfirm] = useState(false)
-  const [isPending, startTransition] = useTransition()
 
   const isPublished = initialData?.status === 'published'
   const isArchived = initialData?.status === 'archived'
@@ -100,7 +100,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
   // Auto-generate slug from title when creating new course
   const handleTitleChange = (value: string) => {
     const newForm: typeof form = { ...form, title: value }
-    if (isNew && !form.slug) {
+    if (isNew && !slugEdited) {
       newForm.slug = value
         .toLowerCase()
         .normalize('NFD')
@@ -224,7 +224,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
                     pattern="[a-z0-9]+(-[a-z0-9]+)*"
                     placeholder="nome-do-curso"
                     value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                    onChange={(e) => { setSlugEdited(true); setForm({ ...form, slug: e.target.value }) }}
                   />
                 </div>
                 <p className="text-xs text-amf-muted-600 mt-1">Apenas letras minúsculas, números e hífens.</p>
@@ -516,111 +516,18 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
 
         {/* ── Section 4: Gestão de acesso ─────────────────────── */}
         {!isNew && (
+          <details className="rounded-xl border border-amf-border bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium">Acesso dos alunos (opcional)</summary>
           <CourseAdminAccessPanel
             courseId={id}
             courseTitle={initialData?.title ?? ''}
             initialEntitlements={initialAccessList}
           />
+          </details>
         )}
       </div>
 
-      {/* ── Sticky Footer: Publicar Curso ────────────────────── */}
-      {!isNew && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-amf-border bg-white/95 backdrop-blur-sm">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-            <div className="text-sm text-amf-muted-600">
-              {isPublished ? (
-                <span className="flex items-center gap-1.5 text-green-700">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Curso publicado — visível para alunos com acesso
-                </span>
-              ) : (
-                <span>Este curso está em <strong>rascunho</strong> — não visível para alunos.</span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {!isPublished && !isArchived && (
-                <button
-                  type="button"
-                  onClick={() => setShowPublishConfirm(true)}
-                  disabled={busy}
-                  className="rounded-lg bg-amf-teal-400 hover:bg-amf-teal-300 text-amf-petrol-950 px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Publicar curso
-                </button>
-              )}
-              {isPublished && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 text-green-800 px-4 py-2 text-sm font-medium">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Publicado
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Publish Confirmation Modal ───────────────────────── */}
-      {showPublishConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amf-teal-400/15 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amf-petrol-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-amf-ink-900">Publicar curso</h3>
-            </div>
-            <p className="text-sm text-amf-muted-600">
-              Ao publicar, o curso ficará disponível para os alunos que têm acesso concedido.
-              Certifique-se de que todos os módulos e aulas relevantes estejam publicados antes de continuar.
-            </p>
-            <div className="rounded-lg bg-amf-ivory-100 border border-amf-border px-4 py-3 text-sm text-amf-ink-700">
-              <strong>Requisitos:</strong>
-              <ul className="mt-1.5 space-y-0.5 list-disc list-inside text-amf-muted-600">
-                <li>Pelo menos 1 módulo publicado</li>
-                <li>Pelo menos 1 aula publicada com vídeo pronto</li>
-                <li>Título e slug preenchidos</li>
-              </ul>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowPublishConfirm(false)}
-                className={btnSecondary}
-                disabled={busy}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setShowPublishConfirm(false)
-                  run(async () => {
-                    await publishCourse(id, initialData!.version)
-                  })
-                }}
-                className="rounded-lg bg-amf-teal-400 hover:bg-amf-teal-300 text-amf-petrol-950 px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50"
-              >
-                {busy ? 'Publicando…' : 'Confirmar publicação'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {!isNew && <div className="mt-6"><CoursePublicationPanel courseId={id} version={initialData!.version} status={initialData!.status} slug={form.slug} schedule={initialSchedule} saveInformation={() => saveCourse(id, form)} /></div>}
     </div>
   )
 }

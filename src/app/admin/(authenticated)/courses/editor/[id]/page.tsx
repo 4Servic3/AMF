@@ -15,6 +15,7 @@ export default async function CourseEditorPage({ params }: { params: Promise<{ i
   let initialData = null
   let coverUrl: string | null = null
   let accessList: any[] = []
+  let schedule = null
 
   if (id !== 'new') {
     // Validate UUID format before querying
@@ -76,6 +77,10 @@ export default async function CourseEditorPage({ params }: { params: Promise<{ i
     }
 
     initialData = data
+    const { data: planned } = await supabaseAdmin.from('publication_schedules')
+      .select('status,publish_at,last_error').eq('entity_type', 'course').eq('entity_id', id)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    schedule = planned
 
     // Load access list (never break the editor if this fails)
     try {
@@ -91,6 +96,7 @@ export default async function CourseEditorPage({ params }: { params: Promise<{ i
       initialData={initialData}
       initialCoverUrl={coverUrl}
       initialAccessList={accessList}
+      initialSchedule={schedule}
     />
   )
 }
