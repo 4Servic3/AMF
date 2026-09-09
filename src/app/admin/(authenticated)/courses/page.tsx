@@ -22,28 +22,24 @@ export default async function CoursesPage() {
       id,
       title,
       status,
-      productType,
       created_at
     `)
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching courses:', error)
+    throw new Error('Não foi possível carregar os cursos.')
   }
 
   const columns = [
     {
-      header: 'Title',
+      header: 'Curso',
       accessorKey: 'title',
       cell: (row: any) => (
         <Link href={`/admin/courses/editor/${row.id}`} className="font-medium text-amf-teal-600 hover:text-amf-teal-700 hover:underline">
           {row.title}
         </Link>
       )
-    },
-    {
-      header: 'Product Type',
-      cell: (row: any) => row.productType || 'Course'
     },
     {
       header: 'Status',
@@ -58,7 +54,7 @@ export default async function CoursesPage() {
       }
     },
     {
-      header: 'Created At',
+      header: 'Criado em',
       cell: (row: any) => new Date(row.created_at || Date.now()).toLocaleDateString()
     }
   ]
@@ -66,12 +62,12 @@ export default async function CoursesPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
-        <PageHeader title="Courses" description="Manage courses, modules, lessons and question banks." />
+        <PageHeader title="Cursos" description="Cadastre cursos, organize módulos e aulas e envie os vídeos." />
         <Link 
           href="/admin/courses/editor/new"
           className="bg-amf-teal-600 hover:bg-amf-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
         >
-          Create Course
+          Novo curso
         </Link>
       </div>
 
