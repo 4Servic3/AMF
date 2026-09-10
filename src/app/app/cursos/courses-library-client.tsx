@@ -206,9 +206,9 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
             <div className="flex flex-col gap-4 min-w-0">
               {inProgressProducts.map(p => (
                 <Link key={p.id} href={p.destinationUrl} className="group outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-[20px] min-w-0 block">
-                  <div className="w-full bg-white rounded-[20px] border border-[#DED5C8] p-3 shadow-sm hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-[minmax(112px,38%)_minmax(0,1fr)] gap-4 min-w-0">
-                    <div className="h-[100px] bg-gray-200 rounded-[12px] relative overflow-hidden shrink-0">
-                      {p.coverUrl && <Image src={p.coverUrl} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 140px, 140px" />}
+                  <div className="w-full bg-white rounded-[20px] border border-[#DED5C8] p-3 shadow-sm hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-1 gap-4 min-w-0">
+                    <div className="aspect-video bg-gray-200 rounded-[12px] relative overflow-hidden shrink-0">
+                      {p.coverUrl && <Image src={p.coverUrl} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 700px" />}
                     </div>
                     <div className="flex flex-col min-w-0 py-0.5 justify-between">
                       <div className="min-w-0">
@@ -314,11 +314,11 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
 
                 return (
                   <Link key={p.id} href={p.destinationUrl} className="group block outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-[16px] min-w-0">
-                    <div className="w-full bg-white rounded-[16px] border border-[#DED5C8] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-[minmax(88px,30%)_minmax(0,1fr)_auto] gap-3 items-center min-w-0">
+                    <div className="w-full bg-white rounded-[16px] border border-[#DED5C8] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center min-w-0">
                       
                       {/* Imagem */}
-                      <div className="h-[72px] bg-gray-200 rounded-[10px] relative overflow-hidden shrink-0">
-                        {p.coverUrl && <Image src={p.coverUrl} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100px, 100px" />}
+                      <div className="col-span-2 aspect-video bg-gray-200 rounded-[10px] relative overflow-hidden shrink-0">
+                        {p.coverUrl && <Image src={p.coverUrl} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 700px" />}
                       </div>
                       
                       {/* Info Central */}

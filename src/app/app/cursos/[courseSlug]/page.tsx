@@ -17,6 +17,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     .from('courses')
     .select(`
       id, title, slug, short_description, workload, instructor_id,
+      thumbnail_url,
       media_assets!cover_asset_id(file_path),
       certificate_rule
     `)
@@ -113,9 +114,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     progressPercent = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
   }
 
-  const coverPath = Array.isArray(course.media_assets)
+  const coverPath = course.thumbnail_url || (Array.isArray(course.media_assets)
     ? course.media_assets[0]?.file_path 
-    : (course.media_assets as any)?.file_path || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+    : (course.media_assets as any)?.file_path) || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
   const coverUrl = coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
     ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl : coverPath;
 

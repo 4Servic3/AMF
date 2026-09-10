@@ -123,6 +123,7 @@ export async function POST(
 
     revalidatePath('/admin/courses', 'layout')
     revalidatePath('/app/cursos', 'layout')
+    revalidatePath('/app')
     return NextResponse.json({ coverUrl: publicUrl, assetId }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (err: any) {
     // requireAal2/requirePermission redirect internally; if they throw, re-throw

@@ -23,6 +23,7 @@ export default async function Catalog() {
       short_description,
       status,
       workload,
+      thumbnail_url,
       media_assets!cover_asset_id(file_path)
     `)
     .eq('status', 'published');
@@ -67,9 +68,9 @@ export default async function Catalog() {
 
     // Default covers or specific if media_asset exists
     // The query above aliases media_assets to 'media_assets' or it might be an array.
-    const coverPath = Array.isArray(course.media_assets)
+    const coverPath = course.thumbnail_url || (Array.isArray(course.media_assets)
       ? course.media_assets[0]?.file_path 
-      : (course.media_assets as any)?.file_path || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+      : (course.media_assets as any)?.file_path) || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
     const coverUrl = coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
       ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl : coverPath;
 

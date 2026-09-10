@@ -6,6 +6,7 @@ export type UserCourseProgress = {
   courseId: string;
   courseTitle: string;
   courseSlug: string;
+  coverUrl?: string | null;
   lastLessonTitle?: string;
   lastLessonSlug?: string;
   progressPercent: number;
@@ -56,6 +57,7 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
       <div className="flex flex-col gap-4">
         {/* Card Principal */}
         <div className="bg-white rounded-[20px] p-5 border border-[#DED5C9] shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col relative overflow-hidden">
+          {primaryCourse.coverUrl && <img src={primaryCourse.coverUrl} alt={primaryCourse.courseTitle} className="w-[calc(100%+2.5rem)] max-w-none -mx-5 -mt-5 mb-5 aspect-video object-cover" />}
           <div className="flex items-start justify-between mb-4 relative z-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#FAF7F1] flex items-center justify-center flex-shrink-0">

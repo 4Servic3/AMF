@@ -97,12 +97,13 @@ export default async function AppHome() {
           
         const isCompleted = mandatoryLessons && mandatoryLessons.length > 0 && completedCount === totalMandatory;
 
-        const { data: c } = await supabase.from('courses').select('title, slug').eq('id', courseId).single();
+        const { data: c } = await supabase.from('courses').select('title, slug, thumbnail_url').eq('status', 'published').eq('id', courseId).single();
         if (c) {
           courseMap.set(courseId, {
             courseId: courseId,
             courseTitle: c.title,
             courseSlug: c.slug,
+            coverUrl: c.thumbnail_url,
             lastLessonTitle: lastLessonTitle,
             lastLessonSlug: lastLessonSlug,
             progressPercent: realProgressPercent,
@@ -115,12 +116,13 @@ export default async function AppHome() {
       for (const cid of courseIds) {
         if (!courseMap.has(cid)) {
           // Fetch course metadata
-          const { data: c } = await supabase.from('courses').select('title, slug').eq('id', cid).single();
+          const { data: c } = await supabase.from('courses').select('title, slug, thumbnail_url').eq('status', 'published').eq('id', cid).single();
           if (c) {
             courseMap.set(cid, {
               courseId: cid,
               courseTitle: c.title,
               courseSlug: c.slug,
+            coverUrl: c.thumbnail_url,
               progressPercent: 0,
               status: 'not_started'
             });
