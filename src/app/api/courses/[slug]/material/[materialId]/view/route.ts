@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string, materialId: string }> }) {
   try {
@@ -23,8 +24,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     const { data: material } = await supabase
       .from('lesson_materials')
-      .select('storage_path, bucket_name, status, view_policy')
+      .select('storage_path, bucket_name, status, view_policy, mime_type, lessons!inner(status,course_modules!inner(status))')
       .eq('id', materialId)
+      .eq('lessons.status','published')
+      .eq('lessons.course_modules.status','published')
       .eq('course_id', course.id)
       .eq('status', 'published')
       .single();
@@ -33,13 +36,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return NextResponse.json({ error: 'Material not found' }, { status: 404 });
     }
 
-    if (material.view_policy === 'disabled') {
+    if (material.view_policy === 'disabled' || material.mime_type !== 'application/pdf') {
       return NextResponse.json({ error: 'Viewing not allowed' }, { status: 403 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await createServiceRoleClient()
       .storage
-      .from(material.bucket_name || 'materials')
+      .from(material.bucket_name || 'course-materials')
       .createSignedUrl(material.storage_path, 300);
 
     if (error || !data) {

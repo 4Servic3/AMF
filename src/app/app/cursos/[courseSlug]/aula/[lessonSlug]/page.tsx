@@ -17,6 +17,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   const { data: course } = await supabase
     .from('courses')
     .select('id, title, status')
+    .eq('status', 'published')
     .eq('slug', courseSlug)
     .single();
 
@@ -46,13 +47,18 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   // 3. Fetch current lesson
   const { data: currentLesson } = await supabase
     .from('lessons')
-    .select('*, course_modules!inner(course_id), lesson_materials(id)')
+    .select('*, course_modules!inner(course_id,status), lesson_materials(id,name,title,mime_type,status)')
     .eq('id', lessonSlug)
+    .eq('status','published')
     .single();
 
-  if (!currentLesson || currentLesson.course_modules.course_id !== course.id) {
+  if (!currentLesson || currentLesson.course_modules.course_id !== course.id || currentLesson.course_modules.status !== 'published') {
     notFound();
   }
+
+  type Material = { id: string; name: string | null; title: string; mime_type: string | null; status: string };
+  const materials = ((currentLesson.lesson_materials || []) as Material[]).filter(m => m.status === 'published');
+  const pdf = materials.find(m => m.mime_type === 'application/pdf');
 
   // 4. Fetch curriculum for sidebar
   const supabaseAdmin = createAdminClient(
@@ -172,17 +178,17 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
           </div>
         ) : (
           <div className="w-full bg-[#FAF7F1] flex flex-col items-center">
-             {currentLesson.lesson_materials && currentLesson.lesson_materials.length > 0 ? (
+             {pdf ? (
                 <PdfViewer 
                   courseSlug={courseSlug}
-                  materialId={currentLesson.lesson_materials[0].id}
+                  materialId={pdf.id}
                   title={currentLesson.title}
                 />
              ) : (
                <div className="flex-1 flex flex-col items-center justify-center p-6 w-full mt-24">
                  <div className="bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
                   <h2 className="text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
-                  <p className="text-gray-600 mb-6">Este material não possui um arquivo anexado no momento.</p>
+                  <p className="text-gray-600 mb-6">Baixe os arquivos disponíveis abaixo para acompanhar esta aula.</p>
                  </div>
                </div>
              )}
@@ -191,6 +197,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
 
         {/* Lower Controls */}
         <div className="px-6 py-8 flex flex-col gap-8 max-w-4xl mx-auto w-full shrink-0">
+          {materials.length > 0 && <section aria-label="Materiais da aula" className="space-y-3"><h2 className="font-semibold">Materiais da aula</h2>{materials.map(material => <a key={material.id} className="block rounded-lg border p-3 text-sm underline" href={`/api/courses/${courseSlug}/material/${material.id}/download`}>Baixar {material.name || material.title}</a>)}</section>}
           <div className="flex items-center justify-between">
             {prevLesson ? (
               <Link href={`/app/cursos/${courseSlug}/aula/${prevLesson.id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#160820] transition-colors">

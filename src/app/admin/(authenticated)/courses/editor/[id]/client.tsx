@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import StatusBadge from '@/components/admin/ui/StatusBadge'
 import LessonVideoManager, { type LessonVideoData } from '@/components/admin/courses/LessonVideoManager'
+import LessonMaterials from '@/components/admin/courses/LessonMaterials'
 import CourseCoverUpload from '@/components/admin/courses/CourseCoverUpload'
 import CoursePublicationPanel, { type CourseSchedule } from '@/components/admin/courses/CoursePublicationPanel'
 import CourseAdminAccessPanel from '@/components/admin/courses/CourseAdminAccessPanel'
-import { saveCourse, saveModule, saveLesson } from '@/app/admin/actions/courses'
+import { saveCourse, saveModule, saveLesson, publishCourse } from '@/app/admin/actions/courses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lesson = {
@@ -190,6 +191,10 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
               run(async () => {
                 const result = await saveCourse(id, form)
                 if (isNew) router.replace('/admin/courses/editor/' + result.id)
+                else {
+                  const publication = await publishCourse(id, initialData!.version)
+                  if (!publication.success) throw new Error(publication.error)
+                }
               })
             }}
           >
@@ -275,14 +280,15 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 flex flex-wrap gap-3">
               <button
                 type="submit"
                 disabled={busy}
                 className="rounded-lg bg-amf-petrol-900 hover:bg-amf-petrol-700 text-white px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
               >
-                {busy ? 'Salvando…' : isNew ? 'Criar curso' : 'Salvar informações'}
+                {busy ? 'Salvando…' : isNew ? 'Criar curso' : 'Salvar e publicar'}
               </button>
+              {!isNew && <button type="button" className={btnSecondary} disabled={busy} onClick={() => run(async () => { await saveCourse(id, form) })}>Salvar informações sem publicar</button>}
             </div>
           </form>
         </section>
@@ -444,7 +450,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
                           <button className={btnSecondary} disabled={busy}>
                             Salvar
                           </button>
-                          {lesson.type === 'video' && (
+                          {(
                             <button
                               type="button"
                               className={btnSecondary}
@@ -452,19 +458,22 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
                                 setActiveVideo(activeVideo === lesson.id ? null : lesson.id)
                               }
                             >
-                              {activeVideo === lesson.id ? 'Fechar vídeo' : 'Gerenciar vídeo'}
+                              {activeVideo === lesson.id ? 'Fechar conteúdo' : 'Vídeo e arquivos'}
                             </button>
                           )}
                         </form>
 
                         {/* Video manager */}
                         {activeVideo === lesson.id && (
+                          <>
                           <LessonVideoManager
                             lessonId={lesson.id}
                             lessonTitle={lesson.title}
                             initialVideo={lesson.video_assets}
                             onVideoUpdated={() => router.refresh()}
                           />
+                          <LessonMaterials lessonId={lesson.id} onUpdated={() => router.refresh()} />
+                          </>
                         )}
                       </div>
                     ))}
@@ -494,7 +503,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
                           required
                           maxLength={200}
                           aria-label={`Nova aula em ${mod.title}`}
-                          placeholder="Título da nova aula de vídeo…"
+                          placeholder="Título da nova aula…"
                         />
                         <button className={btnSecondary} disabled={busy}>
                           + Aula

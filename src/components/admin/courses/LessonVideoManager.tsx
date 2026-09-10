@@ -24,7 +24,7 @@ export default function LessonVideoManager({lessonId,lessonTitle,initialVideo=nu
   const [hasMore,setHasMore]=useState(false);
   const uploadId=useRef<string|null>(null);
   const pending=upload?.video_assets;
-  const processing=!!pending && ['pending','uploading','processing'].includes(pending.status);
+  const processing=!!pending && pending.id!==video?.id && ['pending','uploading','processing','ready'].includes(pending.status);
   const request=useCallback(async(path:string,method='GET',body?:object)=>{
     const res=await fetch(base+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
     const data=await res.json();
@@ -77,8 +77,7 @@ export default function LessonVideoManager({lessonId,lessonTitle,initialVideo=nu
     <p className="text-sm">{video?.status==='ready'?'Vídeo disponível • '+Math.round((video.duration_seconds||0)/60)+' min':'Esta aula ainda não tem um vídeo pronto.'}</p>
     {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     {pending && pending.id!==video?.id && <div className="rounded-lg bg-amber-50 p-4 space-y-3" role="status">
-      <p className="text-sm">{pending.status==='ready'?'Seu vídeo está pronto. Confirme para disponibilizá-lo nesta aula.':pending.status==='errored'?pending.error_message || 'O envio falhou. Tente novamente.':sending?'Enviando arquivo…':'Aguardando o envio ou processamento do vídeo…'}</p>
-      {pending.status==='ready' && <button className={button+' bg-amf-teal-600 text-white'} disabled={busy} onClick={()=>run(()=>publish(pending.id))}>Usar este vídeo na aula</button>}
+      <p className="text-sm">{pending.status==='ready'?'Finalizando o vínculo automático do vídeo…':pending.status==='errored'?pending.error_message || 'O envio falhou. Tente novamente.':sending?'Enviando arquivo…':'Processando: o vídeo será vinculado automaticamente à aula.'}</p>
     </div>}
     <div className="flex flex-wrap gap-2">
       <button className={button} disabled={busy||sending||processing} onClick={()=>setShowUploader(true)}>{video?'Enviar novo vídeo':'Enviar vídeo'}</button>

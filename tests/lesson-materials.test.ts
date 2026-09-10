@@ -1,0 +1,14 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+const mocks=vi.hoisted(()=>({admin:vi.fn(),rpc:vi.fn(),from:vi.fn()}));
+vi.mock('@/lib/mux/admin',async()=>({...await vi.importActual<any>('@/lib/mux/admin'),requireVideoAdmin:mocks.admin}));
+vi.mock('@/lib/supabase/service-role',()=>({createServiceRoleClient:()=>({rpc:mocks.rpc,from:mocks.from})}));
+vi.mock('next/cache',()=>({revalidatePath:vi.fn()}));
+import {POST,PATCH} from '@/app/api/admin/courses/lessons/[lessonId]/materials/route';
+const lessonId='11111111-1111-4111-8111-111111111111';
+const ctx={params:Promise.resolve({lessonId})};
+const req=(body:object)=>new Request('https://amf-eight.vercel.app',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+beforeEach(()=>{vi.resetAllMocks();mocks.admin.mockResolvedValue({id:'admin'});});
+it('rejects oversized uploads before allocating storage',async()=>{expect((await POST(req({name:'file.zip',size:52428801,mime:''}),ctx)).status).toBe(400);expect(mocks.from).not.toHaveBeenCalled();});
+it('requires administrator authorization before finalizing',async()=>{mocks.admin.mockRejectedValue(new Error('denied'));expect((await PATCH(req({id:lessonId}),ctx)).status).toBe(503);expect(mocks.rpc).not.toHaveBeenCalled();});
+it('never reports success when the file transfer is incomplete',async()=>{mocks.rpc.mockResolvedValue({error:{message:'upload_incomplete'}});expect((await PATCH(req({id:lessonId}),ctx)).status).toBe(409);});
+it('binds finalization to the current lesson',async()=>{mocks.rpc.mockResolvedValue({error:null});expect((await PATCH(req({id:lessonId}),ctx)).status).toBe(200);expect(mocks.rpc).toHaveBeenCalledWith('finish_lesson_material',{p_material:lessonId,p_lesson:lessonId});});

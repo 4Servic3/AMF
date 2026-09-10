@@ -39,5 +39,6 @@ export async function syncVideo(videoId: string) {
   // A deletion/cancellation wins over a concurrent ready notification.
   checkDb(await db.from('video_assets').update(values).eq('id',videoId).neq('status','archived'));
   if (local.mux_upload_id) checkDb(await db.from('video_uploads').update({status:asset.status === 'errored' ? 'errored':'asset_created'}).eq('mux_upload_id',local.mux_upload_id).neq('status','cancelled'));
+  if (ready && local.mux_upload_id) checkDb(await db.rpc('activate_uploaded_video',{p_video:videoId}));
   return {...local,...values};
 }

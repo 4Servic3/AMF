@@ -42,7 +42,7 @@ export default function CoursePublicationPanel({ courseId, version, status, slug
   return <section className="rounded-xl border border-amf-border bg-white p-6 space-y-4" aria-label="Publicação do curso">
     <h2 className="font-semibold text-amf-ink-900">3. Publicar</h2>
     <p className="text-sm text-amf-muted-600">{published
-      ? 'O curso já está no catálogo. Você pode trocar a capa e editar as informações. Use Publicar novas aulas para liberar as aulas adicionadas.'
+      ? 'O curso já está no catálogo. Você pode trocar a capa e editar as informações. Use Salvar e publicar para liberar as aulas adicionadas.'
       : 'Ao publicar, o curso aparece no catálogo e suas aulas ficam disponíveis para os alunos com acesso. Todos os vídeos precisam estar prontos e vinculados.'}</p>
     <p className="text-xs text-amf-muted-600">Esta ação salva as informações acima e publica os módulos e aulas salvos, exceto os arquivados.</p>
     {pending && <div role="status" className="rounded-lg bg-amber-50 p-3 text-sm">Agendado para {new Date(schedule.publish_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} — Brasília.
@@ -60,7 +60,7 @@ export default function CoursePublicationPanel({ courseId, version, status, slug
     {message && <p role="status" className="text-sm rounded-lg bg-amf-ivory-100 p-3">{message}</p>}
     <div className="flex flex-wrap items-center gap-4">
       <button type="button" disabled={busy || status === 'archived'} onClick={() => submit()} className="rounded-lg bg-amf-petrol-900 text-white px-5 py-3 text-sm font-semibold disabled:opacity-50">
-        {busy ? 'Salvando…' : published ? 'Publicar novas aulas' : mode === 'later' ? 'Agendar publicação' : 'Publicar curso e aulas'}
+        {busy ? 'Salvando…' : published ? 'Salvar e publicar alterações' : mode === 'later' ? 'Agendar publicação' : 'Salvar e publicar curso'}
       </button>
       {published && <Link className="text-sm underline" href={'/app/cursos/' + slug} target="_blank">Ver curso na plataforma</Link>}
     </div>
