@@ -23,6 +23,7 @@ export default async function Catalog() {
       short_description,
       status,
       workload,
+      all_students,
       thumbnail_url,
       media_assets!cover_asset_id(file_path)
     `)
@@ -39,11 +40,11 @@ export default async function Catalog() {
   if (user) {
     const { data: ent } = await supabase
       .from('entitlements')
-      .select('resource_id')
+      .select('resource_id,starts_at,expires_at')
       .eq('profile_id', user.id)
       .eq('status', 'active');
       // ideally check expires_at, etc.
-    entitlements = ent || [];
+    entitlements = (ent || []).filter(e => (!e.starts_at || new Date(e.starts_at).getTime() <= Date.now()) && (!e.expires_at || new Date(e.expires_at).getTime() > Date.now()));
 
     const { data: prog } = await supabase
       .from('lesson_progress')
@@ -59,7 +60,7 @@ export default async function Catalog() {
     const courseProgress = progresses.find(p => p.course_id === course.id);
     let accessState: 'locked' | 'unlocked' | 'in_progress' | 'active_subscription' = 'locked';
     
-    if (entitlementSet.has(course.id)) {
+    if ((user && course.all_students) || entitlementSet.has(course.id)) {
       accessState = 'unlocked';
       if (courseProgress && courseProgress.status === 'in_progress') {
         accessState = 'in_progress';

@@ -2,6 +2,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import { verifyWebhookSignature, recordWebhookMetric } from '@/lib/mux';
 import { syncVideo } from '@/lib/mux/sync';
 import { checkDb } from '@/lib/mux/admin';
+import { syncCaseStory } from '@/lib/mux/case-stories';
 
 export async function POST(req: Request) {
   const correlationId = crypto.randomUUID();
@@ -28,6 +29,10 @@ export async function POST(req: Request) {
     } else storedId=saved.data.id;
     const data=event.data || {};
     const byUpload = event.type.startsWith('video.upload.');
+    if (typeof data.passthrough === 'string' && /^case-story:[0-9a-f-]{36}$/i.test(data.passthrough)
+      && ['video.asset.ready','video.asset.errored'].includes(event.type)) {
+      await syncCaseStory(data.passthrough.slice('case-story:'.length));
+    }
     if (byUpload || ['video.asset.ready','video.asset.errored','video.asset.deleted'].includes(event.type)) {
       const lookup = db.from('video_assets').select('id,status');
       const found = data.passthrough && /^[0-9a-f-]{36}$/i.test(data.passthrough)

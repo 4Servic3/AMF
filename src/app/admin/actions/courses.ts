@@ -208,126 +208,41 @@ export async function addExternalLink(allowedHostname: string, label: string, ur
 
 // ─── Course Access Management ─────────────────────────────────────────────────
 
-export async function grantCourseAccess(
-  courseId: string,
-  userEmail: string,
-  expiresAt: string | null
-) {
-  await requireAal2()
+async function manageCourseAccess(courseId: string, changes: Record<string, unknown> = {}) {
+  const session = await requireAal2()
   await requirePermission('users.manage')
-  const supabase = await createClient()
-
-  const emailParsed = z.string().email().parse(userEmail)
-  const courseIdParsed = z.string().uuid().parse(courseId)
-
-  // Look up user by email
-  const { data: userRecord, error: userError } = await supabase
-    .from('users')
-    .select('id, first_name, last_name, email')
-    .eq('email', emailParsed)
-    .maybeSingle()
-
-  if (userError) throw new Error('Erro ao buscar usuário: ' + userError.message)
-  if (!userRecord) throw new Error(`Nenhum usuário encontrado com o e-mail "${emailParsed}".`)
-
-  // Check for existing active entitlement
-  const { data: existing } = await supabase
-    .from('entitlements')
-    .select('id, status')
-    .eq('profile_id', userRecord.id)
-    .eq('resource_id', courseIdParsed)
-    .eq('resource_type', 'course')
-    .eq('status', 'active')
-    .maybeSingle()
-
-  if (existing) {
-    throw new Error(`${emailParsed} já tem acesso ativo a este curso.`)
-  }
-
-  // Create entitlement
-  const { data: entitlement, error: insertError } = await supabase
-    .from('entitlements')
-    .insert({
-      profile_id: userRecord.id,
-      resource_id: courseIdParsed,
-      resource_type: 'course',
-      status: 'active',
-      origin: 'admin_manual',
-      starts_at: new Date().toISOString(),
-      expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-    })
-    .select(`
-      id, profile_id, status, starts_at, expires_at,
-      users:profile_id (first_name, last_name, email)
-    `)
-    .single()
-
-  if (insertError || !entitlement) {
-    throw new Error('Não foi possível conceder acesso: ' + (insertError?.message ?? 'erro desconhecido'))
-  }
-
-  await writeAdminAuditEvent({
-    action: 'grant_course_access',
-    resourceType: 'course',
-    resourceId: courseIdParsed,
-    details: { userId: userRecord.id, userEmail: emailParsed, expiresAt },
+  const { createServiceRoleClient } = await import('@/lib/supabase/service-role')
+  const { data, error } = await createServiceRoleClient().rpc('course_access_admin', {
+    p_course: z.string().uuid().parse(courseId), p_actor: session.user.id, ...changes,
   })
-
-  revalidatePath(`/admin/courses/editor/${courseId}`)
-
-  return entitlement
+  if (error) return { success: false as const, error: error.code === 'P0001' ? error.message : 'Não foi possível atualizar o acesso. Tente novamente.' }
+  if (Object.keys(changes).length) refreshCourses()
+  return { success: true as const, entitlements: data ?? [] }
 }
 
-export async function revokeCourseAccess(entitlementId: string) {
-  await requireAal2()
-  await requirePermission('users.manage')
-  const supabase = await createClient()
+export async function grantCourseAccess(courseId: string, email: string, expiresAt: string | null) {
+  const parsed = z.string().trim().email().safeParse(email)
+  if (!parsed.success) return { success: false as const, error: 'Informe um e-mail válido.' }
+  let expiry: string | null = null
+  if (expiresAt) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) return { success: false as const, error: 'Data inválida.' }
+    const date = new Date(expiresAt + 'T23:59:59-03:00')
+    if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) return { success: false as const, error: 'Escolha uma data de expiração futura.' }
+    expiry = date.toISOString()
+  }
+  return manageCourseAccess(courseId, { p_email: parsed.data.toLowerCase(), p_expires: expiry })
+}
 
-  const idParsed = z.string().uuid().parse(entitlementId)
+export async function revokeCourseAccess(courseId: string, entitlementId: string) {
+  return manageCourseAccess(courseId, { p_revoke: z.string().uuid().parse(entitlementId) })
+}
 
-  const { data: ent, error: findError } = await supabase
-    .from('entitlements')
-    .select('id, profile_id, resource_id')
-    .eq('id', idParsed)
-    .single()
-
-  if (findError || !ent) throw new Error('Entitlement não encontrado.')
-
-  const { error: updateError } = await supabase
-    .from('entitlements')
-    .update({ status: 'revoked' })
-    .eq('id', idParsed)
-
-  if (updateError) throw new Error('Não foi possível revogar acesso: ' + updateError.message)
-
-  await writeAdminAuditEvent({
-    action: 'revoke_course_access',
-    resourceType: 'course',
-    resourceId: ent.resource_id,
-    details: { userId: ent.profile_id, entitlementId: idParsed },
-  })
-
-  revalidatePath(`/admin/courses/editor/${ent.resource_id}`)
+export async function setCourseAllStudents(courseId: string, enabled: boolean) {
+  return manageCourseAccess(courseId, { p_all: z.boolean().parse(enabled) })
 }
 
 export async function getCourseAccessList(courseId: string) {
-  await requireAal2()
-  await requirePermission('users.manage')
-  const supabase = await createClient()
-
-  const courseIdParsed = z.string().uuid().parse(courseId)
-
-  const { data, error } = await supabase
-    .from('entitlements')
-    .select(`
-      id, profile_id, status, starts_at, expires_at,
-      users:profile_id (first_name, last_name, email)
-    `)
-    .eq('resource_id', courseIdParsed)
-    .eq('resource_type', 'course')
-    .order('starts_at', { ascending: false })
-
-  if (error) throw new Error('Não foi possível carregar a lista de acessos: ' + error.message)
-
-  return data ?? []
+  const result = await manageCourseAccess(courseId)
+  if (!result.success) throw new Error(result.error)
+  return result.entitlements
 }

@@ -26,6 +26,7 @@ type Module = {
   lessons: Lesson[]
 }
 type Course = {
+  all_students: boolean
   title: string
   description: string | null
   short_description: string | null
@@ -531,6 +532,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
             courseId={id}
             courseTitle={initialData?.title ?? ''}
             initialEntitlements={initialAccessList}
+            initialAllStudents={initialData?.all_students ?? false}
           />
           </details>
         )}

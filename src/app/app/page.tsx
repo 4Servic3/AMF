@@ -29,12 +29,13 @@ export default async function AppHome() {
     // Pegamos os cursos que o usuário tem acesso
     const { data: entitlements } = await supabase
       .from('entitlements')
-      .select('resource_id')
+      .select('resource_id,starts_at,expires_at')
       .eq('profile_id', session.user.id)
       .eq('resource_type', 'course')
       .eq('status', 'active');
       
-    const courseIds = (entitlements || []).map(e => e.resource_id);
+    const { data: openCourses } = await supabase.from('courses').select('id').eq('all_students', true).eq('status', 'published');
+    const courseIds = [...new Set([...(entitlements || []).filter(e => (!e.starts_at || new Date(e.starts_at).getTime() <= Date.now()) && (!e.expires_at || new Date(e.expires_at).getTime() > Date.now())).map(e => e.resource_id), ...(openCourses || []).map(c => c.id)])];
 
     if (courseIds.length > 0) {
       // Pegar o progresso real atualizado por último

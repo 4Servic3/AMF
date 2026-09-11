@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { grantCourseAccess, revokeCourseAccess } from '@/app/admin/actions/courses'
+import { grantCourseAccess, revokeCourseAccess, setCourseAllStudents } from '@/app/admin/actions/courses'
 
 interface Entitlement {
   id: string
@@ -15,15 +15,18 @@ interface Entitlement {
 interface CourseAdminAccessPanelProps {
   courseId: string
   courseTitle: string
+  initialAllStudents?: boolean
   initialEntitlements: Entitlement[]
 }
 
 export default function CourseAdminAccessPanel({
   courseId,
   courseTitle,
+  initialAllStudents = false,
   initialEntitlements,
 }: CourseAdminAccessPanelProps) {
   const [entitlements, setEntitlements] = useState(initialEntitlements)
+  const [allStudents, setAllStudents] = useState(initialAllStudents)
   const [email, setEmail] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -39,7 +42,8 @@ export default function CourseAdminAccessPanel({
     startTransition(async () => {
       try {
         const result = await grantCourseAccess(courseId, email.trim(), expiresAt || null)
-        setEntitlements((prev) => [result as unknown as Entitlement, ...prev])
+        if (!result.success) { showMessage('error', result.error); return }
+        setEntitlements(result.entitlements)
         setEmail('')
         setExpiresAt('')
         showMessage('success', `Acesso concedido para ${email.trim()}.`)
@@ -52,7 +56,8 @@ export default function CourseAdminAccessPanel({
   const handleRevoke = (entitlementId: string, userEmail: string) => {
     startTransition(async () => {
       try {
-        await revokeCourseAccess(entitlementId)
+        const result = await revokeCourseAccess(courseId, entitlementId)
+        if (!result.success) { showMessage('error', result.error); return }
         setEntitlements((prev) =>
           prev.map((e) => (e.id === entitlementId ? { ...e, status: 'revoked' } : e))
         )
@@ -63,8 +68,8 @@ export default function CourseAdminAccessPanel({
     })
   }
 
-  const active = entitlements.filter((e) => e.status === 'active')
-  const revoked = entitlements.filter((e) => e.status !== 'active')
+  const active = entitlements.filter((e) => e.status === 'active' && (!e.expires_at || new Date(e.expires_at).getTime() > Date.now()))
+  const revoked = entitlements.filter((e) => e.status !== 'active' || (!!e.expires_at && new Date(e.expires_at).getTime() <= Date.now()))
 
   return (
     <section className="rounded-xl border border-amf-border bg-white overflow-hidden">
@@ -81,13 +86,27 @@ export default function CourseAdminAccessPanel({
           <div>
             <h3 className="font-semibold text-amf-ink-900">Acesso ao curso</h3>
             <p className="text-xs text-amf-muted-600">
-              {active.length} {active.length === 1 ? 'usuário com' : 'usuários com'} acesso ativo
+              {allStudents ? 'Todos os alunos cadastrados têm acesso após a publicação' : `${active.length} acesso(s) individual(is) ativo(s)`}
             </p>
           </div>
         </div>
       </div>
 
       <div className="p-6 space-y-6">
+        <label className="flex items-start gap-3 text-sm">
+          <input type="checkbox" checked={allStudents} disabled={isPending} onChange={e => {
+            const enabled = e.target.checked
+            startTransition(async () => {
+              try {
+                const result = await setCourseAllStudents(courseId, enabled)
+                if (!result.success) { showMessage('error', result.error); return }
+                setAllStudents(enabled)
+                showMessage('success', enabled ? 'Curso liberado para todos os alunos cadastrados, inclusive novos alunos.' : 'Liberação geral desativada. Os acessos individuais foram preservados.')
+              } catch { showMessage('error', 'Não foi possível alterar a liberação.') }
+            })
+          }} />
+          <span><strong>Liberar para todos os alunos</strong><span className="block text-xs mt-1">Inclui novos cadastros. O curso precisa estar publicado; o acesso exige login. Ao desativar, os acessos por e-mail continuam válidos.</span></span>
+        </label>
         {/* Grant Access Form */}
         <div className="space-y-3">
           <p className="text-sm font-medium text-amf-ink-700">Conceder acesso por e-mail</p>
@@ -119,7 +138,7 @@ export default function CourseAdminAccessPanel({
             </button>
           </div>
           <p className="text-xs text-amf-muted-600">
-            Data de expiração opcional. Se não informada, o acesso é vitalício.
+            Use o e-mail de uma conta já cadastrada. Data de expiração opcional. Se não informada, o acesso é vitalício.
           </p>
         </div>
 
@@ -183,7 +202,7 @@ export default function CourseAdminAccessPanel({
               <svg className="w-3.5 h-3.5 transition-transform group-open:rotate-90" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M6 4l4 4-4 4V4z" />
               </svg>
-              {revoked.length} acesso{revoked.length !== 1 ? 's' : ''} revogado{revoked.length !== 1 ? 's' : ''}
+              {revoked.length} acesso(s) revogado(s) ou expirado(s)
             </summary>
             <div className="mt-2 rounded-lg border border-amf-border overflow-hidden">
               {revoked.map((e, idx) => {

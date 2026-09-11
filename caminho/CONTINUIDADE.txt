@@ -1,0 +1,37 @@
+CONTINUIDADE AMF — 11/09/2026
+Repositorio: C:\Users\Administrador\Desktop\AMF\AMF
+GitHub: 4Servic3/AMF; branch de producao: master; site: https://amf-eight.vercel.app
+Nao registrar senhas, tokens, URLs assinadas ou conteudo do .env. O remoto Git contem credencial: nunca imprimir sua URL integral.
+
+OBJETIVO ATUAL
+Finalizar Stories dos casos: imagem/video, camera, titulo/legenda, selecionar/criar caso, publicacao e visualizacao pelos membros. Finalizar acesso aos cursos por email e para todos os alunos. Manter este arquivo atualizado.
+
+PRODUCAO CONHECIDA
+Ultimo commit confirmado publicado: 26767b41e3f70de82fd52b74d8dff6319ee8e294. Inclui capas sincronizadas, envio direto Mux, anexos de aulas, publicacao/agendamento. As alteracoes abaixo ainda NAO foram publicadas.
+
+IMPLEMENTADO LOCALMENTE, PENDENTE DE VALIDACAO FINAL
+- src/app/admin/actions/courses.ts e CourseAdminAccessPanel: corrige concessao por email usando auth.users e campos reais de entitlements; opcao all_students. Catalogo/home respeitam acesso geral.
+- Stories: src/app/admin/actions/case-stories.ts; src/lib/case-stories.ts; src/lib/mux/case-stories.ts; src/components/admin/cases/CaseStoryStudio.tsx; rotas admin cases/stories/casos; webhook Mux.
+- Membros: src/app/app/casos/page.tsx e actions.ts; src/components/casos/PublishedCaseStories.tsx. Midias privadas, videos assinados, imagens com URL temporaria e avanco apos 8 segundos.
+- @mux/upchunk adicionado como dependencia direta. DEPLOYMENT.md atualizado.
+
+BANCO SUPABASE cxxlzdzzzkuhpypnqzzx
+Aplicadas e testadas com rollback dos dados de teste:
+20260911000000_course_access.sql: all_students, has_course_access e RPC administrativa; testes email repetido/revogacao/todos/rascunho/anonimo/permissoes passaram.
+20260910000002_case_story_videos.sql: cases, case_story_videos e publicacao atomica; testes publicacao/idempotencia/permissoes passaram.
+20260911000002_case_story_images.sql: submetida no editor SQL na etapa anterior, resultado final AINDA PRECISA SER CONFIRMADO.
+20260911000001_enable_cases.sql: AINDA NAO APLICADA. Aplicar somente apos deploy do codigo novo, para nao ativar pagina antiga com mocks.
+
+PROXIMOS PASSOS
+1. Rodar testes completos e build; revisar alteracoes restantes.
+2. Confirmar migracao imagens aplicada; corrigir se necessario.
+3. Commit/push master, verificar Vercel Ready e hash exato do commit.
+4. Aplicar enable_cases; verificar admin e membros, upload real de imagem/video e acesso por email.
+5. Camera fisica ainda nao testada; nao declarar validacao em celular sem evidencia. Entrega real de webhook Mux ainda nao confirmada; conciliacao pelo painel implementada.
+
+RETOMADA ATUAL
+- Inspecionado AGENTS.md e estado Git; preservadas alteracoes existentes.
+- Confirmado no codigo: imagens avancam em 8 segundos; testes de Stories cobrem validacao, permissao de playback assinado, processamento e verificacao da imagem no banco.
+- Criado este registro, sem credenciais. Atualizar a cada etapa relevante.
+
+VALIDACAO: 112 testes passaram. Supabase editor SQL confirmou Success para migracao de imagens. Ajustado envio para manter o caso selecionado apos publicar; bloqueada publicacao enquanto camera abre. Build inicial compilou e passou TypeScript; validar novamente apos esses dois ajustes.
