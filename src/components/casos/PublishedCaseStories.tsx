@@ -9,6 +9,14 @@ const MuxPlayer = dynamic(() => import('@mux/mux-player-react/lazy'),{ssr:false}
 type Item = {id:string;caption:string}
 export type PublishedCase = {id:string;title:string;items:Item[]}
 
+function CaseCover({storyId,title}:{storyId:string;title:string}) {
+  const [failed,setFailed] = useState(false)
+  return <span aria-hidden className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-amf-petrol-700 bg-amf-petrol-700/10">
+    {failed ? <span className="text-xl font-semibold text-amf-petrol-700">{title.trim().slice(0,2).toUpperCase()}</span> :
+      <img src={'/api/case-stories/' + encodeURIComponent(storyId) + '/thumbnail'} alt="" loading="lazy" decoding="async" width={64} height={64} className="h-full w-full object-cover" onError={()=>setFailed(true)} />}
+  </span>
+}
+
 function StoryImage({url,title,onEnded,onError}:{url:string;title:string;onEnded:()=>void;onError:()=>void}) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const next = useRef(onEnded)
@@ -48,7 +56,7 @@ export default function PublishedCaseStories({cases, compact = false}: {cases:Pu
   return <section aria-label={compact ? "Stories dos casos" : "Casos clínicos"} className={compact ? "w-full min-w-0 px-5 pt-4 pb-2" : "mx-auto max-w-5xl space-y-6 px-5 py-8"}>
     {compact ? <h2 className="mb-3 text-sm font-semibold">Stories dos casos</h2> : <div><h1 className="font-editorial text-3xl">Casos clínicos</h1><p className="mt-2 text-amf-muted">Acompanhe os vídeos e as atualizações de cada caso.</p></div>}
     {!cases.length && <p className="rounded-2xl border p-6">Ainda não há casos publicados. Os novos stories aparecerão aqui.</p>}
-    <div className={compact ? "flex gap-4 overflow-x-auto pb-2" : "grid gap-4 sm:grid-cols-2"}>{cases.map(item => <button key={item.id} onClick={() => {setIndex(0);setActive(item)}} className={compact ? "flex w-24 shrink-0 flex-col items-center gap-2 rounded-xl p-1 text-center focus-visible:outline-2 focus-visible:outline-amf-petrol-700" : "flex items-center gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm"}><span aria-hidden className="grid h-16 w-16 shrink-0 place-items-center rounded-full border-4 border-amf-petrol-700 text-2xl">▶</span><span><strong className="block line-clamp-2 text-sm">{item.title}</strong><span className="text-sm text-amf-muted">{item.items.length} {item.items.length === 1 ? 'story' : 'stories'} · Assistir</span></span></button>)}</div>
+    <div className={compact ? "flex gap-4 overflow-x-auto pb-2" : "grid gap-4 sm:grid-cols-2"}>{cases.map(item => <button key={item.id} onClick={() => {setIndex(0);setActive(item)}} className={compact ? "flex w-24 shrink-0 flex-col items-center gap-2 rounded-xl p-1 text-center focus-visible:outline-2 focus-visible:outline-amf-petrol-700" : "flex items-center gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm"}><CaseCover key={item.items[0].id} storyId={item.items[0].id} title={item.title} /><span><strong className="block line-clamp-2 text-sm">{item.title}</strong><span className="text-sm text-amf-muted">{item.items.length} {item.items.length === 1 ? 'story' : 'stories'} · Assistir</span></span></button>)}</div>
     {active && createPortal(<div role="dialog" aria-modal="true" aria-label={active.title} className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95">
       <div className="flex h-[100dvh] w-full max-w-lg flex-col bg-black text-white">
         <div className="flex gap-1 px-4 pt-3">{active.items.map((item,i)=><div key={item.id} className={`h-1 flex-1 rounded ${i<=index ? 'bg-white' : 'bg-white/30'}`} />)}</div>
