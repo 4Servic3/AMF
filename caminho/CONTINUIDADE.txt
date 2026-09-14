@@ -49,3 +49,7 @@ PUBLICADO 14/09/2026: usuario autorizou publicacao. Commit 07c8909055f814f5dbe6f
 
 CAPAS STORIES 14/09: usuario confirmou logica funcionando. Capa circular agora usa foto ou thumbnail assinada do primeiro video, correspondente ao inicio da reproducao. Endpoint privado reutiliza acesso do player, sem cache de redirecionamento; imagem carregada sob demanda. Falha de imagem mostra iniciais e preserva abertura do story. Stories permanecem publicados sem expiracao de 24h, ate remocao administrativa. Validacao e publicacao pendentes.
 VALIDACAO CAPAS: 121 testes passaram; build e TypeScript sem erros. Cinco testes novos cobrem foto assinada, thumbnail de video, acesso negado, ausencia de assinatura e falha de servico. Publicando continuidade da alteracao autorizada.
+CAPAS PUBLICADAS: commit eea0f517dca354e1bdd5074f5bb0a3bb444f73ab em master; Vercel SUCCESS, deployment GM9ThYahQzECkGRtY1GQUM23WDFq. Validacao visual autenticada no telefone pendente; nenhuma expiracao automatica adicionada.
+
+VISUAL HOME STORIES: removidos titulo visivel Stories dos casos e contador/Assistir somente na home. Capa ampliada de 64 para 96px, item 112px, espacamento superior reduzido de 16 para 4px. Mantidos nome do caso, navegacao e rotulo acessivel da secao. Validacao/publicacao pendentes.
+VALIDACAO VISUAL HOME: build completo e TypeScript passaram; diff-check sem erros. Alteracao apenas de apresentacao.
