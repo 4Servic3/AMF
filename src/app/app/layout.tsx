@@ -1,4 +1,5 @@
 import React from 'react';
+import './member-ui.css';
 import { GlobalHeader } from '@/components/layout/global-header';
 import { MainContentWrapper } from '@/components/layout/main-content-wrapper';
 import { Navigation } from '@/components/layout/navigation';
@@ -7,7 +8,7 @@ import { StoryViewerProvider } from '@/components/ui/stories/story-viewer-provid
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <StoryViewerProvider>
-      <div className="flex min-h-[100dvh] bg-[#FAF7F1]">
+      <div className="amf-member-ui flex min-h-[100dvh] bg-[#FAF7F1]">
         <Navigation />
 
         {/* Main Content Area */}

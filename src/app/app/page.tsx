@@ -172,7 +172,7 @@ export default async function AppHome() {
 
         </div>
 
-        <div className="mt-8 w-full min-w-0 max-w-full lg:max-w-[768px] mx-auto pb-8">
+        <div className="amf-home-academy mt-8 w-full min-w-0 max-w-full lg:max-w-[768px] mx-auto pb-8">
           <SuaAcademia courses={courses} materialsCount={materialsCount} />
         </div>
       </div>

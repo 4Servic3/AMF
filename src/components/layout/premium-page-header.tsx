@@ -9,7 +9,7 @@ type PremiumPageHeaderProps = {
 export function PremiumPageHeader({ title, rightSlot, children }: PremiumPageHeaderProps) {
   return (
     <div 
-      className="relative w-full text-white pb-[24px]"
+      className="amf-member-header amf-compact-header relative w-full text-white pb-[24px]"
       style={{ 
         background: 'linear-gradient(135deg, #1C0D29 0%, #160B24 52%, #081E27 85%)',
         minHeight: 'auto',
@@ -23,7 +23,7 @@ export function PremiumPageHeader({ title, rightSlot, children }: PremiumPageHea
           width: '100%',
           maxWidth: '520px',
           height: '100%',
-          opacity: 0.08,
+          opacity: 0.04,
           backgroundColor: '#D4AD62',
           maskImage: 'url("/assets/amf-home/header-feline-lineart.svg")',
           WebkitMaskImage: 'url("/assets/amf-home/header-feline-lineart.svg")',
@@ -48,7 +48,7 @@ export function PremiumPageHeader({ title, rightSlot, children }: PremiumPageHea
         </div>
         
         {/* 2. Texto centralizado */}
-        <div className="font-sans font-semibold text-[19px] text-[#F9F5EE] leading-none flex justify-center whitespace-nowrap">
+        <div className="amf-header-title font-sans font-semibold text-[19px] text-[#F9F5EE] leading-none flex justify-center whitespace-nowrap">
           {title}
         </div>
         

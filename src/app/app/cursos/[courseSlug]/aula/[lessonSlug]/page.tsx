@@ -112,25 +112,25 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   }
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 mx-auto -mt-6 -mx-6 h-[calc(100vh-64px)] overflow-hidden bg-[#FAF7F1]">
+    <div className="amf-lesson-shell flex flex-col xl:flex-row gap-6 mx-auto bg-[#FAF7F1]">
       
       {/* Coluna Esquerda: Conteúdo */}
-      <div className="flex-1 flex flex-col h-full overflow-y-auto pb-24 xl:pb-0 relative">
+      <div className="amf-lesson-main flex-1 min-w-0 flex flex-col relative">
         
         {/* Top Bar Navigation */}
-        <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center gap-4 shrink-0">
-          <Link href={`/app/cursos/${courseSlug}`} className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 flex-shrink-0 transition-colors">
+        <div className="amf-list-row bg-white px-6 py-4 border-b border-gray-200 flex items-center gap-4 shrink-0">
+          <Link href={`/app/cursos/${courseSlug}`} aria-label="Voltar ao curso" className="amf-icon-action w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 flex-shrink-0 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </Link>
           <div className="flex-1 min-w-0">
             <div className="text-[11px] font-bold text-[#D4AD62] uppercase tracking-wider truncate">{course.title}</div>
-            <h1 className="text-lg font-bold text-[#160820] truncate">{currentLesson.title}</h1>
+            <h1 className="amf-page-heading text-lg font-bold text-[#160820] truncate">{currentLesson.title}</h1>
           </div>
         </div>
 
         {/* Dynamic Content Area */}
         {currentLesson.type === 'video' ? (
-          <div className="w-full bg-[#160820] flex items-center justify-center p-0 md:p-6 lg:p-8 shrink-0">
+          <div className="amf-player-stage w-full bg-[#160820] flex items-center justify-center p-0 md:p-6 lg:p-8 shrink-0">
             <div className="w-full max-w-5xl">
               <SecureLessonPlayer 
                 lessonId={currentLesson.id} 
@@ -142,11 +142,11 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
           </div>
         ) : currentLesson.type === 'external_link' ? (
           <div className="flex-1 flex items-center justify-center p-6 bg-[#FAF7F1]">
-            <div className="bg-white max-w-lg w-full p-8 md:p-12 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center">
+            <div className="amf-widget bg-white max-w-lg w-full p-8 md:p-12 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#0F6466]/10 rounded-full flex items-center justify-center text-[#0F6466] mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
               </div>
-              <h2 className="text-2xl font-bold font-editorial text-[#160820] mb-3">Grupo de network</h2>
+              <h2 className="amf-section-heading text-2xl font-bold font-editorial text-[#160820] mb-3">Grupo de network</h2>
               <p className="text-gray-600 mb-8 leading-relaxed">
                 Acesse o grupo exclusivo para networking entre os participantes e médicos-veterinários da Imersão Clínica de Felinos.
               </p>
@@ -186,8 +186,8 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
                 />
              ) : (
                <div className="flex-1 flex flex-col items-center justify-center p-6 w-full mt-24">
-                 <div className="bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
-                  <h2 className="text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
+                 <div className="amf-widget bg-white max-w-lg w-full p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
+                  <h2 className="amf-section-heading text-2xl font-bold text-[#160820] mb-3">{currentLesson.title}</h2>
                   <p className="text-gray-600 mb-6">Baixe os arquivos disponíveis abaixo para acompanhar esta aula.</p>
                  </div>
                </div>
@@ -196,9 +196,9 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
         )}
 
         {/* Lower Controls */}
-        <div className="px-6 py-8 flex flex-col gap-8 max-w-4xl mx-auto w-full shrink-0">
-          {materials.length > 0 && <section aria-label="Materiais da aula" className="space-y-3"><h2 className="font-semibold">Materiais da aula</h2>{materials.map(material => <a key={material.id} className="block rounded-lg border p-3 text-sm underline" href={`/api/courses/${courseSlug}/material/${material.id}/download`}>Baixar {material.name || material.title}</a>)}</section>}
-          <div className="flex items-center justify-between">
+        <div className="amf-lesson-content px-6 py-8 flex flex-col gap-8 max-w-4xl mx-auto w-full shrink-0">
+          {materials.length > 0 && <section aria-label="Materiais da aula" className="space-y-3"><h2 className="amf-section-heading font-semibold">Materiais da aula</h2>{materials.map(material => <a key={material.id} className="block rounded-lg border p-3 text-sm underline" href={`/api/courses/${courseSlug}/material/${material.id}/download`}>Baixar {material.name || material.title}</a>)}</section>}
+          <div className="flex flex-wrap items-center justify-between gap-4">
             {prevLesson ? (
               <Link href={`/app/cursos/${courseSlug}/aula/${prevLesson.id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#160820] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -222,9 +222,9 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
       </div>
 
       {/* Coluna Direita: Grade Curricular (Sidebar Desktop) */}
-      <div className="hidden xl:flex w-[320px] bg-white border-l border-gray-200 flex-col h-full overflow-y-auto shadow-[-4px_0_15px_rgba(0,0,0,0.02)] z-10 shrink-0">
+      <div className="amf-lesson-sidebar hidden xl:flex w-[320px] bg-white border-l border-gray-200 flex-col h-full overflow-y-auto shadow-[-4px_0_15px_rgba(0,0,0,0.02)] z-10 shrink-0">
         <div className="p-5 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-[#160820]">Conteúdo do Curso</h2>
+          <h2 className="amf-section-heading font-bold text-[#160820]">Conteúdo do Curso</h2>
         </div>
         <div className="flex flex-col">
           {modules.map(mod => (

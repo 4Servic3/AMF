@@ -79,7 +79,7 @@ export function EditProfileForm({ initialData }: EditProfileFormProps) {
             value={formData.displayName}
             onChange={handleChange}
             required
-            className="w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
+            className="amf-field w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
           />
         </div>
 
@@ -91,7 +91,7 @@ export function EditProfileForm({ initialData }: EditProfileFormProps) {
             name="profession"
             value={formData.profession}
             onChange={handleChange}
-            className="w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
+            className="amf-field w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
           />
         </div>
 
@@ -103,7 +103,7 @@ export function EditProfileForm({ initialData }: EditProfileFormProps) {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
+            className="amf-field w-full h-[48px] px-4 rounded-[12px] border border-[#DED5C8] bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#003D3F] focus:border-transparent transition-shadow"
           />
         </div>
       </div>

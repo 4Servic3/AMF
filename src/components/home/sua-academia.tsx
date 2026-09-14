@@ -23,10 +23,10 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
   if (courses.length === 0) {
     return (
       <div className="flex flex-col mb-8">
-        <h2 className="font-editorial text-2xl text-[#16051F] mb-1">Sua Academia</h2>
-        <div className="w-10 h-[2px] bg-[#0E5B5C] mb-6 rounded-full" />
-        
-        <div className="bg-white rounded-[20px] p-6 border border-[#DED5C9] shadow-sm flex flex-col items-center justify-center text-center">
+        <h2 className="amf-section-heading font-editorial text-2xl text-[#16051F] mb-5">Sua Academia</h2>
+
+
+        <div className="amf-widget bg-white rounded-[20px] p-6 border border-[#DED5C9] shadow-sm flex flex-col items-center justify-center text-center">
           <div className="w-12 h-12 rounded-full bg-[#FAF7F1] flex items-center justify-center mb-4">
             <GraduationCap className="w-6 h-6 text-[#78664E]" />
           </div>
@@ -38,7 +38,7 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
           </p>
           <Link
             href="/app/cursos"
-            className="bg-[#0E5B5C] text-white font-sans font-semibold text-sm px-6 py-3 rounded-full hover:bg-[#004F4D] transition-colors"
+            className="amf-action bg-[#0E5B5C] text-white font-sans font-semibold text-sm px-6 py-3 rounded-full hover:bg-[#004F4D] transition-colors"
           >
             Explorar cursos
           </Link>
@@ -51,12 +51,12 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
 
   return (
     <div className="flex flex-col mb-8">
-      <h2 className="font-editorial text-2xl text-[#16051F] mb-1">Sua Academia</h2>
-      <div className="w-10 h-[2px] bg-[#0E5B5C] mb-6 rounded-full" />
-      
-      <div className="flex flex-col gap-4">
+      <h2 className="amf-section-heading font-editorial text-2xl text-[#16051F] mb-5">Sua Academia</h2>
+
+
+      <div className="amf-academy-widgets flex flex-col gap-4">
         {/* Card Principal */}
-        <div className="bg-white rounded-[20px] p-5 border border-[#DED5C9] shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col relative overflow-hidden">
+        <div className="amf-widget bg-white rounded-[20px] p-5 border border-[#DED5C9] shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col relative overflow-hidden">
           {primaryCourse.coverUrl && <img src={primaryCourse.coverUrl} alt={primaryCourse.courseTitle} className="w-[calc(100%+2.5rem)] max-w-none -mx-5 -mt-5 mb-5 aspect-video object-cover" />}
           <div className="flex items-start justify-between mb-4 relative z-10">
             <div className="flex items-center gap-3">
@@ -77,12 +77,12 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
                       ? 'Continuar curso' 
                       : 'Começar curso'}
                 </span>
-                <h3 className="font-sans font-semibold text-[#16051F] text-base leading-tight mt-0.5 line-clamp-1">
+                <h3 className="font-sans font-semibold text-[#16051F] text-base leading-snug mt-0.5 line-clamp-2">
                   {primaryCourse.courseTitle}
                 </h3>
               </div>
             </div>
-            
+
             <Link 
               href={`/app/cursos/${primaryCourse.courseSlug}${primaryCourse.lastLessonSlug ? `/aula/${primaryCourse.lastLessonSlug}` : ''}`}
               className="bg-[#FAF7F1] text-[#0E5B5C] p-2.5 rounded-full hover:bg-[#E8E1D3] transition-colors"
@@ -113,7 +113,7 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
         {/* Card Materiais */}
         <Link 
           href="/app/perfil/materiais"
-          className="bg-[#FAF7F1] rounded-[16px] p-4 flex items-center justify-between border border-[#DED5C9] hover:bg-[#F5F0E7] transition-colors"
+          className="amf-widget amf-material-widget bg-[#FAF7F1] rounded-[16px] p-4 flex items-center justify-between border border-[#DED5C9] hover:bg-[#F5F0E7] transition-colors"
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 border border-[#DED5C9]">
@@ -130,7 +130,7 @@ export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
           </div>
           <ChevronRight className="w-4 h-4 text-[#78664E]" />
         </Link>
-        
+
         {/* Outros cursos */}
         {courses.length > 1 && (
           <Link 

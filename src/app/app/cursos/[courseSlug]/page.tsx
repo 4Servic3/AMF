@@ -126,7 +126,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
   return (
     <div className="flex flex-col w-full max-w-5xl mx-auto px-4 md:px-0 pt-8 pb-32">
       {/* Header do Curso */}
-      <div className="flex flex-col md:flex-row gap-6 bg-white p-6 md:p-8 rounded-2xl border border-[rgba(224,193,126,0.4)] shadow-sm mb-8">
+      <div className="amf-widget flex flex-col md:flex-row gap-6 bg-white p-6 md:p-8 rounded-2xl border border-[rgba(224,193,126,0.4)] shadow-sm mb-8">
         <div className="w-full md:w-1/3 aspect-[4/3] md:h-auto bg-gray-100 rounded-xl relative overflow-hidden flex-shrink-0">
           <img src={coverUrl} alt={course.title} className="w-full h-full object-cover" />
         </div>
@@ -135,7 +135,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           <Link href="/app/cursos" className="text-[11px] font-bold uppercase tracking-wider text-[#D4AD62] mb-3 hover:underline">
             ← Voltar para Cursos
           </Link>
-          <h1 className="text-3xl md:text-4xl font-editorial font-bold text-[#160820] mb-3">{course.title}</h1>
+          <h1 className="amf-page-heading text-3xl md:text-4xl font-editorial font-bold text-[#160820] mb-3">{course.title}</h1>
           <p className="text-gray-600 mb-5 line-clamp-3 text-sm leading-relaxed">{course.short_description}</p>
           
           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-medium mb-6">
@@ -155,11 +155,11 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
           </div>
 
           {hasAccess && (
-            <div className="flex items-center gap-6 mt-auto">
+            <div className="flex flex-wrap items-center gap-6 mt-auto">
               {nextLesson && (
                 <Link 
                   href={`/app/cursos/${courseSlug}/aula/${nextLesson.slug}`}
-                  className="bg-[#160820] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-[#2c1040] transition-colors shadow-md"
+                  className="amf-action bg-[#160820] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-[#2c1040] transition-colors shadow-md"
                 >
                   {completedCount > 0 ? 'Continuar Curso' : 'Começar Agora'}
                 </Link>
@@ -192,9 +192,9 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Grade Curricular */}
           <div className="flex-1 flex flex-col gap-5">
-            <h2 className="text-xl font-bold text-[#0F6466] mb-1">Grade Curricular</h2>
+            <h2 className="amf-section-heading text-xl font-bold text-[#0F6466] mb-1">Grade Curricular</h2>
             {modules.map((mod, i) => (
-              <details key={mod.id} className="group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm" open={i === 0}>
+              <details key={mod.id} className="amf-widget group bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm" open={i === 0}>
                 <summary className="flex items-center justify-between p-5 cursor-pointer select-none font-bold text-[#160820] hover:bg-[#FAF7F1] transition-colors">
                   <div>
                     {mod.title}
@@ -246,7 +246,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
 
                     if (isComingSoon) {
                       return (
-                        <div key={lesson.id} className="flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 bg-gray-50/50 cursor-not-allowed">
+                        <div key={lesson.id} className="amf-list-row flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 bg-gray-50/50 cursor-not-allowed">
                           {innerContent}
                         </div>
                       );
@@ -256,7 +256,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                       <Link 
                         key={lesson.id} 
                         href={`/app/cursos/${courseSlug}/aula/${lesson.slug}`}
-                        className="group/link flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors cursor-pointer"
+                        className="amf-list-row group/link flex items-center gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors cursor-pointer"
                       >
                         {innerContent}
                       </Link>
@@ -278,7 +278,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                     Emitir Certificado
                   </Link>
                 ) : (
-                  <button disabled className="w-full bg-white/5 text-white/40 cursor-not-allowed py-3 rounded-full font-bold text-sm relative z-10 border border-white/10">
+                  <button disabled className="amf-action w-full bg-white/5 text-white/40 cursor-not-allowed py-3 rounded-full font-bold text-sm relative z-10 border border-white/10">
                     Atingir Progresso
                   </button>
                 )}
@@ -286,7 +286,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
             )}
 
             {materialsData && materialsData.length > 0 && (
-              <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+              <div className="amf-widget bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
                 <h3 className="font-bold text-[#0F6466] mb-4">Materiais</h3>
                 <ul className="space-y-4">
                   {materialsData.map(mat => (

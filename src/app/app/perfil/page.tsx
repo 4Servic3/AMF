@@ -56,15 +56,15 @@ export default async function Perfil() {
     .order('issued_at', { ascending: false });
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0 pb-20">
+    <div className="amf-profile flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0 pb-20">
       
       {/* HEADER AMF COMPACTO */}
-      <header className="w-full bg-[#160820] text-white pt-10 sm:pt-14 pb-8 relative shrink-0 shadow-md">
+      <header className="amf-member-header w-full bg-[#160820] text-white pt-10 sm:pt-14 pb-8 relative shrink-0 shadow-md">
         <div className="w-full max-w-2xl mx-auto px-6 relative z-10">
           
           <div className="flex items-center justify-between mb-8">
             <div className="font-editorial text-2xl font-bold text-[#E7B64F] tracking-widest leading-none">AMF</div>
-            <h1 className="text-sm font-bold tracking-widest uppercase text-white/50">Perfil</h1>
+            <h1 className="amf-header-title text-sm font-semibold text-white/90">Perfil</h1>
             <button className="text-white hover:text-[#D4AD62] transition-colors focus:outline-none" aria-label="Notificações">
               <Bell size={24} strokeWidth={1.5} />
             </button>
@@ -80,7 +80,7 @@ export default async function Perfil() {
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="font-editorial text-2xl font-bold text-white truncate leading-tight">
+                <h2 className="amf-profile-name font-editorial text-2xl font-bold text-white truncate leading-tight">
                   {name}
                 </h2>
                 {profile?.role === 'admin' && (
@@ -89,7 +89,7 @@ export default async function Perfil() {
               </div>
               <p className="text-sm text-white/70 mb-3">{roleTitle}</p>
               <div>
-                <Link href="/app/perfil/editar" className="inline-block bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-1.5 px-4 rounded-full transition-colors border border-white/10">
+                <Link href="/app/perfil/editar" className="amf-action inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-1.5 px-4 rounded-full transition-colors border border-white/10">
                   Editar dados
                 </Link>
               </div>
@@ -103,7 +103,7 @@ export default async function Perfil() {
         
         {/* Acessos */}
         <section>
-          <div className="bg-white rounded-2xl border border-[#E8E1D3] p-5 shadow-sm flex items-center justify-between">
+          <div className="amf-widget bg-white rounded-2xl border border-[#E8E1D3] p-5 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-[#FAF7F1] flex items-center justify-center text-[#0E5B5C]">
                 <GraduationCap size={24} />
@@ -113,7 +113,7 @@ export default async function Perfil() {
                 <p className="text-sm text-gray-500">{courseCount} {courseCount === 1 ? 'curso liberado' : 'cursos liberados'}</p>
               </div>
             </div>
-            <Link href="/app/cursos" className="text-[#0E5B5C] bg-[#0E5B5C]/10 p-2.5 rounded-full hover:bg-[#0E5B5C]/20 transition-colors">
+            <Link href="/app/cursos" aria-label="Ver meus cursos" className="text-[#0E5B5C] bg-[#0E5B5C]/10 p-2.5 rounded-full hover:bg-[#0E5B5C]/20 transition-colors">
               <ChevronRight size={20} />
             </Link>
           </div>
@@ -121,8 +121,8 @@ export default async function Perfil() {
 
         {/* Assinatura */}
         <section>
-          <h2 className="text-lg font-editorial text-[#160820] font-bold mb-3">Plano e Assinatura</h2>
-          <div className="bg-white rounded-2xl border border-[#E8E1D3] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h2 className="amf-section-heading text-lg font-editorial text-[#160820] font-bold mb-3">Plano e Assinatura</h2>
+          <div className="amf-widget bg-white rounded-2xl border border-[#E8E1D3] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-[#160820] text-[15px]">
@@ -152,8 +152,8 @@ export default async function Perfil() {
 
         {/* Certificados */}
         <section>
-          <h2 className="text-lg font-editorial text-[#160820] font-bold mb-3">Certificados</h2>
-          <div className="bg-white rounded-2xl border border-[#E8E1D3] overflow-hidden shadow-sm">
+          <h2 className="amf-section-heading text-lg font-editorial text-[#160820] font-bold mb-3">Certificados</h2>
+          <div className="amf-widget bg-white rounded-2xl border border-[#E8E1D3] overflow-hidden shadow-sm">
             {(!certificates || certificates.length === 0) ? (
               <div className="p-8 text-center flex flex-col items-center">
                 <Award size={32} className="text-[#D4AD62] mb-3" />
@@ -162,7 +162,7 @@ export default async function Perfil() {
             ) : (
               <div className="flex flex-col">
                 {certificates.map((cert) => (
-                  <div key={cert.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#E8E1D3] last:border-0 gap-4">
+                  <div key={cert.id} className="amf-list-row flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#E8E1D3] last:border-0 gap-4">
                     <div className="flex items-start gap-3">
                       <div className="mt-1 w-8 h-8 rounded-full bg-[#FAF7F1] flex items-center justify-center text-[#D4AD62] shrink-0">
                         <FileText size={16} />
@@ -188,9 +188,9 @@ export default async function Perfil() {
 
         {/* Conta e Segurança */}
         <section>
-          <h2 className="text-lg font-editorial text-[#160820] font-bold mb-3">Conta e Segurança</h2>
-          <div className="bg-white rounded-2xl border border-[#E8E1D3] overflow-hidden shadow-sm flex flex-col">
-            <Link href="/app/perfil/editar" className="flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
+          <h2 className="amf-section-heading text-lg font-editorial text-[#160820] font-bold mb-3">Conta e Segurança</h2>
+          <div className="amf-widget bg-white rounded-2xl border border-[#E8E1D3] overflow-hidden shadow-sm flex flex-col">
+            <Link href="/app/perfil/editar" className="amf-list-row flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
               <div className="flex items-center gap-3">
                 <User size={18} className="text-[#0E5B5C]" />
                 <span className="font-bold text-sm text-[#160820]">Dados Pessoais</span>
@@ -198,7 +198,7 @@ export default async function Perfil() {
               <ChevronRight size={18} className="text-gray-400" />
             </Link>
             
-            <Link href="/app/perfil/seguranca" className="flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
+            <Link href="/app/perfil/seguranca" className="amf-list-row flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
               <div className="flex items-center gap-3">
                 <Shield size={18} className="text-[#0E5B5C]" />
                 <span className="font-bold text-sm text-[#160820]">Segurança e Privacidade</span>
@@ -206,7 +206,7 @@ export default async function Perfil() {
               <ChevronRight size={18} className="text-gray-400" />
             </Link>
 
-            <Link href="/app/perfil/notificacoes" className="flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
+            <Link href="/app/perfil/notificacoes" className="amf-list-row flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
               <div className="flex items-center gap-3">
                 <BellRing size={18} className="text-[#0E5B5C]" />
                 <span className="font-bold text-sm text-[#160820]">Notificações</span>
@@ -214,7 +214,7 @@ export default async function Perfil() {
               <ChevronRight size={18} className="text-gray-400" />
             </Link>
 
-            <Link href="/app/perfil/suporte" className="flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
+            <Link href="/app/perfil/suporte" className="amf-list-row flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
               <div className="flex items-center gap-3">
                 <HelpCircle size={18} className="text-[#0E5B5C]" />
                 <span className="font-bold text-sm text-[#160820]">Ajuda e Suporte</span>

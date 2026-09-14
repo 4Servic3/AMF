@@ -90,8 +90,8 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0" data-page="courses-library" data-layout-revision="courses-premium-shell-v2">
       {/* HEADER PREMIUM FULL-BLEED */}
-      <header className="w-full bg-[#160820] text-white pt-10 sm:pt-14 pb-12 relative overflow-hidden shrink-0" data-premium-header>
-        <div className="absolute right-0 top-0 h-full w-2/3 pointer-events-none opacity-30">
+      <header className="amf-member-header w-full bg-[#160820] text-white pt-10 sm:pt-14 pb-12 relative overflow-hidden shrink-0" data-premium-header>
+        <div className="absolute right-0 top-0 h-full w-2/3 pointer-events-none opacity-10">
           <Image src="/assets/amf-home/header-feline-lineart.svg" alt="" fill className="object-cover object-right-top" priority sizes="(max-width: 768px) 100vw, 66vw" />
         </div>
         
@@ -109,15 +109,16 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
             </div>
           </div>
           
-          <h1 className="font-editorial text-white leading-tight mb-2" style={{ fontSize: 'clamp(28px, 6vw, 36px)' }}>Biblioteca clínica</h1>
+          <h1 className="amf-page-heading font-editorial text-white leading-tight mb-2" style={{ fontSize: 'clamp(28px, 6vw, 36px)' }}>Biblioteca clínica</h1>
           <p className="text-white/70 text-[15px] font-sans font-light mb-6">Encontre a formação certa para sua rotina</p>
           
           <div className="w-full h-[48px] bg-white rounded-xl flex items-center px-4 gap-3 text-gray-400 mb-8 focus-within:ring-2 focus-within:ring-[#0E5B5C] transition-all" data-courses-search>
             <Search size={20} className="shrink-0" />
             <input 
               ref={searchInputRef}
+              aria-label="Buscar cursos"
               type="text" 
-              className="flex-1 bg-transparent text-[#151329] text-[15px] outline-none placeholder-gray-400 w-full min-w-0"
+              className="amf-field flex-1 bg-transparent text-[#151329] text-[15px] outline-none placeholder-gray-400 w-full min-w-0"
               placeholder="Buscar por curso, tema ou especialidade"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,7 +135,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
             )}
           </div>
           
-          <div className="flex w-full divide-x divide-[#E7B64F]/20">
+          <div className="amf-header-metrics flex w-full divide-x divide-[#E7B64F]/20">
             <div className="flex-1 flex flex-col items-center min-w-0">
               <span className="text-xl font-bold leading-none mb-1">{countCourses}</span>
               <span className="text-xs text-white/60 truncate w-full text-center">curso{countCourses !== 1 ? 's' : ''}</span>
@@ -198,12 +199,12 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
         {activeTab === 'Explorar' && !searchQuery && inProgressProducts.length > 0 && (
           <section className="mb-8 flex-col flex min-w-0" data-in-progress-section>
             <div className="mb-4">
-              <h2 className="text-[18px] font-editorial text-[#160820] font-bold inline-block relative">
+              <h2 className="amf-section-heading text-[18px] font-editorial text-[#160820] font-bold inline-block relative">
                 Em andamento
-                <div className="absolute -bottom-1 left-0 w-2/3 h-0.5 bg-[#0E5B5C] rounded-full"></div>
+                <div className="hidden"></div>
               </h2>
             </div>
-            <div className="flex flex-col gap-4 min-w-0">
+            <div className="amf-course-grid flex flex-col gap-4 min-w-0">
               {inProgressProducts.map(p => (
                 <Link key={p.id} href={p.destinationUrl} className="group outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-[20px] min-w-0 block">
                   <div className="w-full bg-white rounded-[20px] border border-[#DED5C8] p-3 shadow-sm hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-1 gap-4 min-w-0">
@@ -212,7 +213,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                     </div>
                     <div className="flex flex-col min-w-0 py-0.5 justify-between">
                       <div className="min-w-0">
-                        <h3 className="text-[15px] font-bold text-[#160820] truncate mb-1" title={p.title}>{p.title}</h3>
+                        <h3 className="text-[15px] font-bold text-[#160820] line-clamp-2 mb-1" title={p.title}>{p.title}</h3>
                         <div className="text-[12px] text-[#657080] truncate font-medium">
                           {p.moduleCount ? `${p.moduleCount} módulos • ` : ''}{p.progressPercent}% concluído
                         </div>
@@ -250,7 +251,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 mb-4 shadow-sm border border-[#DED5C8]">
               <Search size={28} />
             </div>
-            <h2 className="text-xl font-editorial font-bold text-[#160820] mb-2">Nenhuma formação encontrada</h2>
+            <h2 className="amf-section-heading text-xl font-editorial font-bold text-[#160820] mb-2">Nenhuma formação encontrada</h2>
             <p className="text-sm text-[#657080] font-sans mb-6 max-w-sm">
               Tente ajustar sua busca ou remover alguns filtros para encontrar o que procura.
             </p>
@@ -264,13 +265,13 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
         ) : (
           <section className="flex-col flex min-w-0" data-course-catalog>
             <div className="flex items-baseline gap-3 mb-4">
-              <h2 className="text-[18px] font-editorial text-[#160820] font-bold">
+              <h2 className="amf-section-heading text-[18px] font-editorial text-[#160820] font-bold">
                 {activeTab === 'Meus cursos' ? 'Meus acessos' : activeTab === 'Assinaturas' ? 'Planos de assinatura' : 'Todos os cursos'}
               </h2>
               <span className="text-[12px] text-[#657080] font-sans">{sortedProducts.length} formação{sortedProducts.length !== 1 ? 'ões' : ''}</span>
             </div>
             
-            <div className="flex flex-col gap-3 min-w-0">
+            <div className="amf-course-grid flex flex-col gap-3 min-w-0">
               {sortedProducts.map(p => {
                 
                 // Configuração Visual do Tipo de Produto (Curso, Pacote, Assinatura)
@@ -326,7 +327,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                         <div className={`text-[10px] font-bold uppercase tracking-widest ${typeColor} mb-0.5 truncate`}>
                           {typeLabel}
                         </div>
-                        <h3 className="text-[14px] font-bold text-[#160820] truncate mb-0.5 leading-tight" title={p.title}>
+                        <h3 className="text-[14px] font-bold text-[#160820] line-clamp-2 mb-0.5 leading-snug" title={p.title}>
                           {p.title}
                         </h3>
                         <div className="text-[12px] text-[#657080] font-medium truncate">
@@ -353,7 +354,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
       {isFilterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#160820]/40 backdrop-blur-sm">
           <div className="w-full sm:w-[400px] bg-white rounded-t-[24px] sm:rounded-[24px] overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-5 border-b border-[#DED5C8]">
+            <div className="amf-list-row flex justify-between items-center p-5 border-b border-[#DED5C8]">
               <h3 className="font-editorial text-lg font-bold text-[#160820]">Filtrar e Ordenar</h3>
               <button 
                 onClick={() => setIsFilterModalOpen(false)}
@@ -368,7 +369,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                 <div className="flex flex-col gap-2">
                   {['Relevância', 'Mais recentes', 'A-Z', 'Em andamento primeiro'].map(opt => (
                     <label key={opt} className="flex items-center gap-3">
-                      <input type="radio" name="sort" className="w-4 h-4 text-[#0E5B5C] focus:ring-[#0E5B5C] border-gray-300" defaultChecked={opt === 'Em andamento primeiro'} />
+                      <input type="radio" name="sort" className="amf-field w-4 h-4 text-[#0E5B5C] focus:ring-[#0E5B5C] border-gray-300" defaultChecked={opt === 'Em andamento primeiro'} />
                       <span className="text-[15px] text-gray-700">{opt}</span>
                     </label>
                   ))}
@@ -378,7 +379,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
             <div className="p-4 border-t border-[#DED5C8] bg-gray-50 flex gap-3">
               <button 
                 onClick={() => setIsFilterModalOpen(false)}
-                className="flex-1 py-3 rounded-xl border border-[#DED5C8] text-[#151329] font-bold text-[15px] bg-white"
+                className="amf-widget flex-1 py-3 rounded-xl border border-[#DED5C8] text-[#151329] font-bold text-[15px] bg-white"
               >
                 Limpar
               </button>

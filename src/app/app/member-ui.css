@@ -1,0 +1,78 @@
+/* AMF member design system. Existing brand colors; no admin or business rules. */
+.amf-member-ui {
+  --member-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --member-gap: 24px;
+  --member-radius: 24px;
+  --member-stroke: color-mix(in srgb, var(--color-amf-border) 55%, transparent);
+  --member-shadow: 0 2px 4px rgb(28 13 41 / 2%), 0 12px 32px rgb(28 13 41 / 4%);
+  font-family: var(--member-font);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -.012em;
+}
+.amf-member-ui .font-sans { font-family: var(--member-font); }
+.amf-member-ui :is(h1,h2,h3,h4,.amf-profile-name) { font-family: var(--member-font); letter-spacing: -.025em; }
+.amf-member-ui .amf-page-heading { font-size: clamp(28px, 4vw, 38px); font-weight: 650; line-height: 1.18; text-wrap: balance; }
+.amf-member-ui .amf-section-heading { font-size: 22px; font-weight: 650; line-height: 1.25; margin-bottom: 20px; }
+.amf-member-ui .amf-widget,
+.amf-member-ui .amf-module { border-radius: var(--member-radius); border-color: var(--member-stroke); box-shadow: var(--member-shadow); }
+.amf-member-ui .amf-widget { background-color: var(--color-amf-white); }
+.amf-member-ui .amf-widget h3 { font-weight: 600; line-height: 1.4; }
+.amf-member-ui .amf-list-row { min-height: 64px; padding: 18px 20px; border-bottom-color: var(--member-stroke); }
+.amf-member-ui .amf-list-row:last-child { border-bottom: 0; }
+.amf-member-ui .amf-list-row .font-bold { font-weight: 600; }
+.amf-member-ui .amf-module summary { min-height: 76px; gap: 16px; padding: 22px; font-weight: 600; }
+.amf-member-ui .amf-module summary > div { min-width: 0; overflow-wrap: anywhere; }
+.amf-member-ui .amf-member-header { padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: 40px; box-shadow: none; }
+.amf-member-ui .amf-compact-header { padding-top: 0; padding-bottom: 18px; }
+.amf-member-ui .amf-header-title { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+.amf-member-ui .amf-member-header button { min-width: 44px; min-height: 44px; }
+.amf-member-ui .amf-header-metrics { gap: 8px; border-radius: 18px; padding: 16px 8px; background: rgb(255 255 255 / 5%); }
+.amf-member-ui .amf-header-metrics > div { border: 0; }
+.amf-member-ui .amf-home-banner { border-radius: var(--member-radius); box-shadow: var(--member-shadow); margin-bottom: 8px; }
+.amf-member-ui .home-content-container { padding-inline: clamp(20px, 3vw, 32px); }
+.amf-member-ui .amf-home-academy { max-width: 960px; margin-top: 28px; }
+.amf-member-ui .amf-material-widget { padding: 20px; }
+.amf-member-ui [data-courses-tabs] { border-radius: 16px; background: var(--color-amf-ivory-200); padding: 4px; }
+.amf-member-ui [data-courses-tabs] button { min-height: 44px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.amf-member-ui [data-courses-tabs] [aria-selected="true"] { background: var(--color-amf-petrol-700); }
+.amf-member-ui [data-courses-search] { border-radius: 16px; min-height: 52px; }
+.amf-member-ui .amf-field { font-family: var(--member-font); font-size: 16px; min-height: 44px; }
+.amf-member-ui :is(.amf-action,.amf-icon-action) { min-height: 44px; border-radius: 16px; }
+.amf-member-ui .amf-icon-action { min-width: 44px; }
+.amf-member-ui :is(button,a,input,textarea,select,summary):focus-visible { outline: 2px solid var(--color-amf-petrol-700); outline-offset: 4px; }
+.amf-member-ui .amf-member-header :is(button,a):focus-visible { outline-color: var(--color-amf-gold-500); }
+.amf-member-ui .amf-course-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 20px; }
+.amf-member-ui .amf-course-grid > a { height: 100%; }
+.amf-member-ui .amf-course-grid .amf-widget { height: 100%; padding: 14px; }
+.amf-member-ui .amf-profile > main { padding-inline: 20px; gap: 28px; }
+.amf-member-ui .amf-profile-name { font-size: 28px; font-weight: 650; }
+.amf-member-ui .amf-lesson-shell { width: 100%; max-width: 1440px; padding: 20px; min-height: 70dvh; }
+.amf-member-ui .amf-lesson-main { border-radius: 24px; background: var(--color-amf-white); box-shadow: var(--member-shadow); }
+.amf-member-ui .amf-lesson-main > .amf-list-row { border-radius: 24px 24px 0 0; }
+.amf-member-ui .amf-lesson-main h1 { white-space: normal; overflow-wrap: anywhere; font-size: 21px; }
+.amf-member-ui .amf-player-stage { padding: 12px; }
+.amf-member-ui .amf-lesson-sidebar { border: 1px solid var(--member-stroke); border-radius: 24px; box-shadow: none; height: auto; align-self: flex-start; max-height: 85dvh; position: sticky; top: 20px; }
+.amf-member-ui [data-bottom-navigation] { box-shadow: 0 -4px 24px rgb(28 13 41 / 4%); }
+@media (min-width: 768px) {
+  .amf-member-ui .amf-course-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .amf-member-ui .amf-member-header { padding-top: 32px; }
+  .amf-member-ui .amf-compact-header { padding-top: 0; }
+  .amf-member-ui .amf-academy-widgets { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); align-items: start; gap: 20px; }
+  .amf-member-ui .amf-academy-widgets > :first-child { grid-row: span 2; }
+  .amf-member-ui .amf-player-stage { padding: 24px; }
+}
+@media (max-width: 479px) {
+  .amf-member-ui .amf-lesson-shell { padding: 12px; }
+  .amf-member-ui .amf-lesson-content { padding: 20px 16px; gap: 24px; }
+  .amf-member-ui .amf-member-header .grid { gap: 6px; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .amf-member-ui a .amf-widget { transition: box-shadow 180ms ease, transform 180ms ease; }
+  .amf-member-ui a:hover .amf-widget { box-shadow: 0 6px 28px rgb(28 13 41 / 8%); transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amf-member-ui *, .amf-member-ui *::before, .amf-member-ui *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+
+.amf-member-ui [data-courses-main] > .overflow-x-auto button { min-height: 44px; }
