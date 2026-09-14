@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import { verifyWebhookSignature, recordWebhookMetric } from '@/lib/mux';
 import { syncVideo } from '@/lib/mux/sync';
@@ -32,6 +33,9 @@ export async function POST(req: Request) {
     if (typeof data.passthrough === 'string' && /^case-story:[0-9a-f-]{36}$/i.test(data.passthrough)
       && ['video.asset.ready','video.asset.errored'].includes(event.type)) {
       await syncCaseStory(data.passthrough.slice('case-story:'.length));
+      revalidatePath('/app');
+      revalidatePath('/app/casos');
+      revalidatePath('/admin/cases');
     }
     if (byUpload || ['video.asset.ready','video.asset.errored','video.asset.deleted'].includes(event.type)) {
       const lookup = db.from('video_assets').select('id,status');

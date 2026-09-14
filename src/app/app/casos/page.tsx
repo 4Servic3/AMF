@@ -1,8 +1,8 @@
 import React from 'react';
 import { getFeatureFlags } from '@/lib/services/flags';
-import PublishedCaseStories, { type PublishedCase } from '@/components/casos/PublishedCaseStories';
+import PublishedCaseStories from '@/components/casos/PublishedCaseStories';
 import { createClient } from '@/lib/supabase/server';
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { getPublishedCaseStories } from '@/lib/published-case-stories';
 import { redirect } from 'next/navigation';
 import { Lock } from 'lucide-react';
 
@@ -28,11 +28,6 @@ export default async function CasosPage() {
     );
   }
 
-  const {data,error} = await createServiceRoleClient().from('cases')
-    .select('id,title,case_story_videos!inner(id,caption,created_at,status)')
-    .eq('status','published').in('visibility',['free','authenticated'])
-    .eq('case_story_videos.status','published').order('published_at',{ascending:false});
-  if (error) throw new Error('Não foi possível carregar os casos.');
-  const cases:PublishedCase[] = (data || []).map((item:any) => ({id:item.id,title:item.title,items:item.case_story_videos.sort((a:any,b:any)=>a.created_at.localeCompare(b.created_at)).map((story:any)=>({id:story.id,caption:story.caption}))}));
+  const cases = await getPublishedCaseStories();
   return <PublishedCaseStories cases={cases} />;
 }

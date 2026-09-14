@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import HomeCaseStories from '@/components/home/home-case-stories';
 import { trackEvent } from '@/lib/services/analytics';
 import { createClient } from '@/lib/supabase/server';
 import { PremiumHomeHeader } from '@/components/home/premium-home-header';
@@ -155,6 +156,7 @@ export default async function AppHome() {
       </PremiumHomeHeader>
 
       <div className="home-content-container max-w-[1240px] mx-auto w-full flex-1 flex flex-col pt-0">
+        <Suspense fallback={null}><HomeCaseStories /></Suspense>
         <div className="flex flex-col relative z-10 w-full min-w-0 max-w-full mt-3 sm:mt-4">
           
           {banners && banners.length > 0 ? (
