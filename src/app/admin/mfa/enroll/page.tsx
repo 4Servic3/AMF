@@ -1,70 +1,100 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { setupMFA } from '../../actions/mfa'
-
-export default function EnrollPage() {
-  const [mfaData, setMfaData] = useState<{ id: string, totp: string } | null>(null)
-  const [isResetting, setIsResetting] = useState(false)
-
-  async function loadMfa() {
-    const data = await setupMFA()
-    if (!data.error) setMfaData(data as any)
-    else setMfaData({ id: 'error', totp: 'Failed to generate TOTP: ' + data.error })
-  }
-
-  useEffect(() => {
-    loadMfa()
-  }, [])
-
-  async function handleReset() {
-    setIsResetting(true)
-    const { forceResetMFA } = await import('../../actions/mfa')
-    await forceResetMFA()
-    await loadMfa()
-    setIsResetting(false)
-  }
-
-  if (!mfaData) return <div className="text-center p-4">Loading MFA details...</div>
-
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { setupMFA, verifyMFA } from "../../actions/mfa";
+export default function Enroll() {
+  const [data, setData] = useState<{
+      id: string;
+      totp: { qr_code: string; secret: string };
+    } | null>(null),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [code, setCode] = useState("");
+  const router = useRouter();
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium">Setup MFA</h3>
-      
-      {mfaData.id === 'error' ? (
-        <div className="space-y-4">
-          <div className="bg-red-50 p-4 rounded text-red-800 text-sm border border-red-200">
-            {mfaData.totp}
-          </div>
-          <button 
-            onClick={handleReset} 
-            disabled={isResetting}
-            className="flex w-full justify-center rounded-md bg-red-600 py-2 px-4 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {isResetting ? 'Resetando...' : 'Resetar MFA Antigo e Criar Novo'}
-          </button>
-        </div>
+    <div className="space-y-5">
+      <h1 className="text-2xl">Proteger sua conta</h1>
+      <p>
+        Configure a verificação em duas etapas com seu aplicativo autenticador.
+      </p>
+      {!data ? (
+        <button
+          className="amf-primary"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            try {
+              const result = await setupMFA();
+              if (!result.id || !result.totp)
+                throw new Error(result.error || "Não foi possível configurar.");
+              setData({ id: result.id, totp: result.totp });
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Falha ao configurar.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Preparando…" : "Configurar autenticador"}
+        </button>
       ) : (
-        <>
-          <p className="text-sm text-gray-600">Scan this code with your authenticator app:</p>
-          <div className="flex flex-col items-center gap-4">
-            <div 
-              className="bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
-              dangerouslySetInnerHTML={{ __html: (mfaData.totp as any).qr_code }} 
+        <form
+          className="space-y-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (busy) return;
+            setBusy(true);
+            setError("");
+            try {
+              const result = await verifyMFA(data.id, code);
+              if (result.error) throw new Error(result.error);
+              router.replace("/admin");
+              router.refresh();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Código inválido.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <p>Leia o QR code ou copie a chave no autenticador:</p>
+          <img
+            alt="QR code para configurar autenticação"
+            className="mx-auto h-48 w-48"
+            src={
+              data.totp.qr_code.startsWith("data:")
+                ? data.totp.qr_code
+                : "data:image/svg+xml;charset=utf-8," +
+                  encodeURIComponent(data.totp.qr_code)
+            }
+          />
+          <code className="block break-all rounded-xl bg-white p-3">
+            {data.totp.secret}
+          </code>
+          <label className="block">
+            Código de 6 dígitos
+            <input
+              className="mt-2 w-full"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
             />
-            <div className="text-center">
-              <p className="text-xs text-gray-500 mb-1">Or enter this secret manually:</p>
-              <div className="bg-gray-100 px-3 py-2 rounded text-center font-mono text-sm border border-gray-300 break-all">
-                {(mfaData.totp as any).secret}
-              </div>
-            </div>
-          </div>
-        </>
+          </label>
+          <button className="amf-primary" disabled={busy}>
+            {busy ? "Verificando…" : "Confirmar e entrar"}
+          </button>
+        </form>
       )}
-
-      <a href="/admin/mfa/challenge" className="flex w-full justify-center rounded-md bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700">
-        Continue to Challenge
-      </a>
+      {error && (
+        <p role="alert" className="text-red-700">
+          {error}
+        </p>
+      )}
     </div>
-  )
+  );
 }

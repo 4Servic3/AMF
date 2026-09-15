@@ -1,27 +1,37 @@
 "use client";
-
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
+export default function AdminLayout({
+  children,
+  name,
+  allowedKeys,
+}: {
+  children: React.ReactNode;
+  name: string;
+  allowedKeys: string[];
+}) {
+  const [open, setOpen] = useState(false),
+    [collapsed, setCollapsed] = useState(false);
   return (
-    <div className="flex h-screen w-full bg-amf-creme text-amf-foreground overflow-hidden">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen}
-        isCollapsed={isSidebarCollapsed}
-        setIsCollapsed={setIsSidebarCollapsed}
+    <div className="amf-admin-ui flex h-dvh w-full overflow-hidden">
+      <Sidebar
+        isOpen={open}
+        setIsOpen={setOpen}
+        isCollapsed={collapsed}
+        setIsCollapsed={setCollapsed}
+        name={name}
+        allowedKeys={allowedKeys}
       />
-      
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Header 
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header
+          toggleSidebar={() => setOpen(!open)}
+          allowedKeys={allowedKeys}
         />
-        <main className="flex-1 overflow-auto p-4 lg:p-8">
+        <main
+          id="admin-content"
+          className="amf-admin-main flex-1 overflow-auto"
+        >
           {children}
         </main>
       </div>

@@ -1,238 +1,268 @@
-'use client'
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  addInternalNote,
   grantManualAccess,
   revokeAccess,
   suspendUser,
-  addInternalNote,
+  restoreUser,
   handleDataRequest,
-} from '../../../actions/users'
-
-export default function UserCrmClient({ user, entitlements, notes }: { user: any, entitlements: any[], notes: any[] }) {
-  const [activeTab, setActiveTab] = useState('visao-geral')
-  const [noteText, setNoteText] = useState('')
-  const [productId, setProductId] = useState('')
-  const [reason, setReason] = useState('')
-  const router = useRouter()
-
-  const tabs = [
-    { id: 'visao-geral', label: 'Visão Geral' },
-    { id: 'acessos', label: 'Acessos' },
-    { id: 'aprendizado', label: 'Aprendizado' },
-    { id: 'suporte', label: 'Suporte' },
-    { id: 'privacidade', label: 'Privacidade' },
-  ]
-
-  async function handleAddNote(e: React.FormEvent) {
-    e.preventDefault()
-    if (!noteText.trim()) return
-    await addInternalNote(user.id, noteText)
-    setNoteText('')
-  }
-
-  async function handleGrantAccess(e: React.FormEvent) {
-    e.preventDefault()
-    if (!productId || !reason) return
-    await grantManualAccess(user.id, productId, reason)
-    setProductId('')
-    setReason('')
-  }
-
-  async function handleRevoke(prodId: string) {
-    if (!confirm('Revogar acesso?')) return
-    await revokeAccess(user.id, prodId, 'Revogado pelo suporte')
-  }
-
-  async function handleSuspend() {
-    if (!confirm('Suspender usuário?')) return
-    await suspendUser(user.id, 'Suspensão manual')
-  }
-
-  async function handleData(actionType: 'export' | 'anonymize') {
-    if (actionType === 'anonymize' && !confirm('Tem certeza? A anonimização é irreversível.')) return
-    await handleDataRequest(user.id, actionType)
-    if (actionType === 'anonymize') {
-      router.push('/admin/users')
+} from "@/app/admin/actions/users";
+import { accessStatus } from "@/lib/admin-values";
+import ActionForm from "@/components/admin/ui/ActionForm";
+import DataTable from "@/components/admin/ui/DataTable";
+export default function UserCrmClient({
+  user,
+  entitlements,
+  notes,
+  progress,
+  courses,
+}: {
+  user: any;
+  entitlements: any[];
+  notes: any[];
+  progress: any[];
+  courses: any[];
+}) {
+  const [tab, setTab] = useState("Perfil"),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState("");
+  const router = useRouter();
+  async function run(action: () => Promise<unknown>) {
+    if (busy) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await action();
+      router.refresh();
+      setMessage("Operação concluída.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha na operação.");
+    } finally {
+      setBusy(false);
     }
   }
-
   return (
-    <div className="bg-white rounded-lg shadow">
-      {/* Header */}
-      <div className="p-6 border-b">
-        <h1 className="text-2xl font-bold">{user?.first_name} {user?.last_name}</h1>
-        <p className="text-gray-500">{user?.email}</p>
-        <div className="mt-4 flex gap-2">
-          <span className={`px-3 py-1 rounded-full text-sm ${user?.status === 'suspended' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-            {user?.status === 'suspended' ? 'Suspenso' : 'Ativo'}
-          </span>
-          <button onClick={handleSuspend} className="px-3 py-1 bg-red-50 text-red-600 rounded text-sm hover:bg-red-100">
-            Suspender Conta
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs Nav */}
-      <div className="flex border-b px-6 pt-4 gap-6">
-        {tabs.map((t) => (
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-3xl">{user.full_name}</h1>
+        <p className="mt-2">
+          {user.email} · {user.suspended ? "Suspenso" : "Ativo"}
+        </p>
+      </header>
+      <nav className="flex gap-2 overflow-x-auto" aria-label="Seções do aluno">
+        {[
+          "Perfil",
+          "Acessos",
+          "Aprendizado",
+          "Notas internas",
+          "Privacidade",
+        ].map((name) => (
           <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === t.id
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={tab === name ? "amf-primary" : "amf-secondary"}
+            key={name}
+            onClick={() => setTab(name)}
+            aria-pressed={tab === name}
           >
-            {t.label}
+            {name}
           </button>
         ))}
-      </div>
-
-      {/* Tab Content */}
-      <div className="p-6">
-        {activeTab === 'visao-geral' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Detalhes do Usuário</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">ID</p>
-                <p className="font-mono text-sm">{user?.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Criado em</p>
-                <p>{new Date(user?.created_at).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <p>{user?.status}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'acessos' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Entitlements (Acessos)</h2>
-            </div>
-            
-            <div className="border rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produto</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concedido Por</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {entitlements.map((e) => (
-                    <tr key={e.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{e.product?.name || e.product_id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${e.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {e.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{e.granted_by}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(e.created_at).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {e.status === 'active' && (
-                          <button onClick={() => handleRevoke(e.product_id)} className="text-red-600 hover:text-red-900">Revogar</button>
-                        )}
-                      </td>
-                    </tr>
+      </nav>
+      {message && (
+        <p role="status" className="amf-feedback">
+          {message}
+        </p>
+      )}
+      {tab === "Perfil" && (
+        <section className="amf-panel space-y-4">
+          <h2 className="text-xl">Dados da conta</h2>
+          <p>
+            Cadastrado em{" "}
+            {new Date(user.created_at).toLocaleDateString("pt-BR")}
+          </p>
+          <p className="break-all text-sm">ID: {user.id}</p>
+          <button
+            disabled={busy}
+            className="amf-secondary"
+            onClick={() => {
+              if (
+                confirm(
+                  user.suspended
+                    ? "Reativar esta conta?"
+                    : "Suspender o acesso desta conta?",
+                )
+              )
+                void run(() =>
+                  user.suspended
+                    ? restoreUser(user.id)
+                    : suspendUser(
+                        user.id,
+                        "Suspensão manual pelo administrador",
+                      ),
+                );
+            }}
+          >
+            {user.suspended ? "Reativar conta" : "Suspender conta"}
+          </button>
+        </section>
+      )}
+      {tab === "Acessos" && (
+        <>
+          <DataTable
+            data={entitlements}
+            columns={[
+              {
+                header: "Conteúdo",
+                cell: (e) =>
+                  courses.find((c) => c.id === e.resource_id)?.title ||
+                  e.resource_type + " · " + e.resource_id,
+              },
+              { header: "Situação", cell: (e) => accessStatus(e) },
+              {
+                header: "Ação",
+                cell: (e) =>
+                  e.status === "active" ? (
+                    <button
+                      disabled={busy}
+                      className="text-red-700"
+                      onClick={() => {
+                        if (confirm("Revogar este acesso?"))
+                          void run(() =>
+                            revokeAccess(user.id, e.id, "Revogação manual"),
+                          );
+                      }}
+                    >
+                      Revogar
+                    </button>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]}
+          />
+          <section className="amf-panel">
+            <h2 className="mb-4 text-xl">Conceder acesso a curso</h2>
+            <ActionForm
+              action={async (form) => {
+                await grantManualAccess(
+                  user.id,
+                  String(form.get("course")),
+                  String(form.get("reason")),
+                );
+              }}
+              label="Conceder acesso"
+            >
+              <label className="block">
+                Curso
+                <select className="mt-2 w-full" name="course" required>
+                  <option value="">Selecione</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
                   ))}
-                  {entitlements.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">Nenhum acesso encontrado.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <form onSubmit={handleGrantAccess} className="bg-gray-50 p-4 rounded-lg border flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID do Produto</label>
-                <input required type="text" value={productId} onChange={e => setProductId(e.target.value)} className="w-full border p-2 rounded" placeholder="Ex: prod_123" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
-                <input required type="text" value={reason} onChange={e => setReason(e.target.value)} className="w-full border p-2 rounded" placeholder="Motivo da concessão" />
-              </div>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Conceder Acesso</button>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'aprendizado' && (
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Progresso de Aprendizado</h2>
-            <p className="text-gray-500">Nenhum dado de progresso disponível no momento.</p>
-          </div>
-        )}
-
-        {activeTab === 'suporte' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Notas Internas de Suporte</h2>
-            
-            <form onSubmit={handleAddNote} className="space-y-3">
+                </select>
+              </label>
+              <label className="block">
+                Motivo
+                <input
+                  className="mt-2 w-full"
+                  name="reason"
+                  minLength={3}
+                  required
+                />
+              </label>
+            </ActionForm>
+          </section>
+        </>
+      )}
+      {tab === "Aprendizado" && (
+        <DataTable
+          data={progress}
+          columns={[
+            {
+              header: "Aula",
+              cell: (p) => p.lesson?.title || "Aula indisponível",
+            },
+            {
+              header: "Progresso",
+              cell: (p) =>
+                p.is_completed ? "Concluída" : (p.progress_percent || 0) + "%",
+            },
+          ]}
+        />
+      )}{" "}
+      {tab === "Notas internas" && (
+        <section className="amf-panel space-y-6">
+          <ActionForm
+            action={async (form) => {
+              await addInternalNote(user.id, String(form.get("note")));
+            }}
+            label="Salvar nota"
+          >
+            <label className="block">
+              Nota interna
               <textarea
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                className="w-full border rounded-lg p-3 min-h-[100px]"
-                placeholder="Adicione uma nota sobre o atendimento a este usuário..."
+                className="mt-2 w-full"
+                name="note"
                 required
+                maxLength={5000}
               />
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Salvar Nota
-              </button>
-            </form>
-
-            <div className="space-y-4 mt-6">
-              {notes.map((n) => (
-                <div key={n.id} className="bg-gray-50 p-4 rounded-lg border">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium text-sm text-gray-700">
-                      Adicionado por: Admin ID {n.admin_id}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(n.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-800 whitespace-pre-wrap">{n.note}</p>
-                </div>
-              ))}
-              {notes.length === 0 && (
-                <p className="text-gray-500">Nenhuma nota interna registrada.</p>
-              )}
-            </div>
+            </label>
+          </ActionForm>
+          {notes.map((n) => (
+            <article key={n.id} className="border-t py-4">
+              <p className="text-xs">
+                {new Date(n.created_at).toLocaleString("pt-BR")}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap">{n.content}</p>
+            </article>
+          ))}
+        </section>
+      )}
+      {tab === "Privacidade" && (
+        <section className="amf-panel space-y-4">
+          <h2 className="text-xl">Dados do aluno</h2>
+          <p>
+            A exportação contém perfil, acessos e progresso. Solicitações de
+            exclusão ficam registradas para tratamento completo da conta.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              disabled={busy}
+              className="amf-secondary"
+              onClick={() =>
+                void run(async () => {
+                  const data = await handleDataRequest(user.id, "export");
+                  const url = URL.createObjectURL(
+                    new Blob([JSON.stringify(data, null, 2)], {
+                      type: "application/json",
+                    }),
+                  );
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "dados-aluno-" + user.id + ".json";
+                  link.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                })
+              }
+            >
+              Exportar dados
+            </button>
+            <button
+              disabled={busy}
+              className="amf-secondary"
+              onClick={() => {
+                if (confirm("Registrar solicitação de exclusão desta conta?"))
+                  void run(() => handleDataRequest(user.id, "anonymize"));
+              }}
+            >
+              Solicitar exclusão
+            </button>
           </div>
-        )}
-
-        {activeTab === 'privacidade' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-red-600">Requisições de Privacidade de Dados</h2>
-            <p className="text-sm text-gray-600">
-              Ações relacionadas à LGPD/GDPR. Estas ações são auditadas e irreversíveis em alguns casos.
-            </p>
-            <div className="flex gap-4">
-              <button onClick={() => handleData('export')} className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">
-                Exportar Dados do Usuário
-              </button>
-              <button onClick={() => handleData('anonymize')} className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100">
-                Anonimizar Usuário (Soft Delete)
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+        </section>
+      )}
     </div>
-  )
+  );
 }

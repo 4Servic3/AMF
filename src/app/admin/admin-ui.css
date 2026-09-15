@@ -1,0 +1,161 @@
+/* Shared AMF admin language: native typography, ivory canvas, plum chrome. */
+.amf-admin-ui {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  background: #faf7f0;
+  color: #172b35;
+  -webkit-font-smoothing: antialiased;
+}
+.amf-admin-ui h1,
+.amf-admin-ui h2,
+.amf-admin-ui h3,
+.amf-admin-ui h4 {
+  font-family: inherit;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+.amf-admin-ui h1 {
+  line-height: 1.15;
+}
+.amf-admin-ui p {
+  line-height: 1.6;
+}
+.amf-admin-main {
+  padding: clamp(16px, 3vw, 36px);
+  scrollbar-gutter: stable;
+}
+.amf-admin-main > div {
+  max-width: 1440px;
+  margin-inline: auto;
+  min-width: 0;
+}
+.amf-admin-ui .amf-admin-main :is(div, section, form)[class~="bg-white"],
+.amf-admin-ui .amf-admin-main :is(div, section)[class~="bg-amf-surface"] {
+  border-radius: 24px;
+  border-color: #e7e1d8;
+  box-shadow: 0 3px 14px #25152e04;
+}
+.amf-admin-ui .amf-admin-main :is(div, section):has(> table) {
+  overflow-x: auto;
+}
+.amf-admin-ui table {
+  border-collapse: collapse;
+}
+.amf-admin-ui th {
+  font-size: 12px;
+  color: #716b64;
+  white-space: nowrap;
+}
+.amf-admin-ui td {
+  vertical-align: middle;
+}
+.amf-admin-ui
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.amf-admin-ui select,
+.amf-admin-ui textarea {
+  border: 1px solid #ded8cf;
+  border-radius: 14px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+  max-width: 100%;
+}
+.amf-admin-ui button,
+.amf-admin-ui a {
+  touch-action: manipulation;
+}
+.amf-admin-ui button {
+  min-height: 44px;
+  cursor: pointer;
+}
+.amf-admin-ui button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.amf-admin-ui :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #bda66a;
+  outline-offset: 3px;
+}
+.amf-admin-ui .amf-panel {
+  background: white;
+  border: 1px solid #e7e1d8;
+  border-radius: 24px;
+  padding: 24px;
+}
+.amf-admin-ui .amf-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  background: #0f615f;
+  color: white;
+  padding: 10px 18px;
+  font-weight: 600;
+  min-height: 44px;
+}
+.amf-admin-ui .amf-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #ded8cf;
+  border-radius: 14px;
+  padding: 10px 16px;
+  min-height: 44px;
+}
+.amf-admin-ui .amf-feedback {
+  padding: 12px 16px;
+  background: #f3eee5;
+  border-radius: 14px;
+  font-size: 14px;
+}
+.amf-admin-ui .amf-admin-sidebar nav a {
+  min-height: 44px;
+  border-radius: 13px;
+}
+.amf-admin-ui .amf-admin-sidebar {
+  background: #1a1024;
+}
+@media (max-width: 640px) {
+  .amf-admin-main {
+    padding: 16px;
+  }
+  .amf-admin-main > div[class~="p-6"],
+  .amf-admin-main > div[class~="p-8"] {
+    padding: 0;
+  }
+  .amf-admin-ui .amf-panel {
+    padding: 18px;
+  }
+  .amf-admin-ui .amf-admin-main td {
+    padding: 12px;
+  }
+  .amf-admin-ui .amf-admin-main .min-w-\[300px\] {
+    min-width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amf-admin-ui * {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Compatibility for legacy admin utilities that had no theme token. */
+.amf-admin-ui .bg-amf-teal-600 {
+  background: #0f615f;
+}
+.amf-admin-ui .hover\:bg-amf-teal-700:hover {
+  background: #124b49;
+}
+.amf-admin-ui .text-amf-teal-600,
+.amf-admin-ui .text-amf-teal-700 {
+  color: #0f615f;
+}
+.amf-admin-ui .text-amf-ink-400,
+.amf-admin-ui .text-amf-ink-500,
+.amf-admin-ui .text-amf-ink-600 {
+  color: #746e65;
+}

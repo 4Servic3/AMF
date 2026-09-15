@@ -8,11 +8,21 @@ interface PageHeaderProps {
   className?: string;
 }
 
-export default function PageHeader({ title, description, actions, className }: PageHeaderProps) {
+export default function PageHeader({
+  title,
+  description,
+  actions,
+  className,
+}: PageHeaderProps) {
   return (
-    <div className={twMerge("flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8", className)}>
+    <div
+      className={twMerge(
+        "flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8",
+        className,
+      )}
+    >
       <div>
-        <h1 className="text-2xl lg:text-3xl font-editorial font-bold text-amf-ink-900">
+        <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-amf-ink-900">
           {title}
         </h1>
         {description && (
@@ -20,9 +30,7 @@ export default function PageHeader({ title, description, actions, className }: P
         )}
       </div>
       {actions && (
-        <div className="flex items-center gap-3">
-          {actions}
-        </div>
+        <div className="flex flex-wrap items-center gap-3">{actions}</div>
       )}
     </div>
   );

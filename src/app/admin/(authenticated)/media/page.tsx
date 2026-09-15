@@ -1,38 +1,55 @@
-import { requireAal2, requirePermission } from '@/lib/auth/dal'
-import MediaUploader from '@/components/admin/media/MediaUploader'
-import MediaPicker from '@/components/admin/media/MediaPicker'
-
-export default async function MediaPage() {
-  await requireAal2()
-  await requirePermission('media.manage')
-
+import { adminDb, queryError } from "@/lib/admin-data";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import MediaUploader from "@/components/admin/media/MediaUploader";
+export default async function Media() {
+  const db = await adminDb("media.manage");
+  const { data, error } = await db
+    .from("media_assets")
+    .select("id,file_name,content_type,size_bytes,bucket")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  queryError(error);
   return (
-    <div className="p-6 md:p-8 space-y-8 bg-amf-creme min-h-full">
-      <header>
-        <h1 className="text-2xl font-editorial text-amf-plum mb-2">Media Library</h1>
-        <p className="text-amf-muted text-sm">Manage all images, videos, and documents used across the app.</p>
-      </header>
-      
-      <section className="bg-amf-surface p-6 rounded-xl border border-amf-border">
-        <h2 className="text-lg font-semibold text-amf-plum mb-4">Upload New Media</h2>
+    <div className="space-y-6">
+      <PageHeader
+        title="Biblioteca de mídias"
+        description="Imagens e documentos. Envie vídeos pelas áreas de cursos ou stories."
+      />
+      <section className="amf-panel">
         <MediaUploader />
       </section>
-      
-      <section className="bg-amf-surface p-6 rounded-xl border border-amf-border">
-        <h2 className="text-lg font-semibold text-amf-plum mb-4">Media Library</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="aspect-square bg-amf-ivory-100 rounded-lg flex items-center justify-center border border-amf-border text-amf-teal-400">
-              Placeholder
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-amf-surface p-6 rounded-xl border border-amf-border">
-         <h2 className="text-lg font-semibold text-amf-plum mb-4">Media Picker Component Demo</h2>
-         <MediaPicker />
-      </section>
+      <p className="text-sm">
+        100 arquivos mais recentes. Arquivos antigos sem localização compatível
+        aparecem apenas como registro.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {data.map((m: any) => (
+          <article className="amf-panel min-w-0" key={m.id}>
+            {m.bucket && m.content_type.startsWith("image/") && (
+              <img
+                src={"/api/media/" + m.id}
+                alt=""
+                className="mb-4 aspect-video w-full rounded-xl object-cover"
+              />
+            )}
+            <h2 className="break-words text-sm">{m.file_name}</h2>
+            <p className="my-2 text-xs">
+              {(m.size_bytes / 1024 / 1024).toFixed(1)} MB
+            </p>
+            {m.bucket && (
+              <a
+                className="amf-secondary text-sm"
+                href={"/api/media/" + m.id}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir arquivo
+              </a>
+            )}
+          </article>
+        ))}
+      </div>
+      {!data.length && <p className="amf-panel">Nenhum arquivo enviado.</p>}
     </div>
-  )
+  );
 }

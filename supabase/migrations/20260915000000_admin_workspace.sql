@@ -1,0 +1,26 @@
+-- Additive repair for the production schema inspected on 2026-09-15.
+-- Private administrative tables. Server actions enforce AAL2 and permissions.
+BEGIN;
+CREATE TABLE IF NOT EXISTS public.home_sections(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),key text UNIQUE NOT NULL,title text NOT NULL,position integer NOT NULL DEFAULT 0,status text NOT NULL DEFAULT 'draft',version integer NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS public.home_banners(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),section_id uuid NOT NULL REFERENCES public.home_sections(id),media_asset_id uuid REFERENCES public.media_assets(id),title text NOT NULL DEFAULT '',subtitle text,cta_target_type text,cta_target_id text,position integer NOT NULL DEFAULT 0,status text NOT NULL DEFAULT 'draft',version integer NOT NULL DEFAULT 1,created_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE public.media_assets ADD COLUMN IF NOT EXISTS bucket text;
+ALTER TABLE public.media_assets ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'admin';
+ALTER TABLE public.media_assets ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+CREATE TABLE IF NOT EXISTS public.user_internal_notes(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),target_profile_id uuid NOT NULL REFERENCES public.profiles(id),author_id uuid NOT NULL REFERENCES auth.users(id),content text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.user_data_requests(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),requester_profile_id uuid NOT NULL REFERENCES public.profiles(id),type text NOT NULL,status text NOT NULL DEFAULT 'open',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.support_tickets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),profile_id uuid NOT NULL REFERENCES public.profiles(id),subject text NOT NULL,category text NOT NULL DEFAULT 'general',status text NOT NULL DEFAULT 'open',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.support_messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),ticket_id uuid NOT NULL REFERENCES public.support_tickets(id),sender_id uuid REFERENCES auth.users(id),content text NOT NULL,is_internal boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.notification_templates(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),key text UNIQUE NOT NULL,channel text NOT NULL DEFAULT 'in_app',subject text,body text NOT NULL,status text NOT NULL DEFAULT 'draft',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.notification_campaigns(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name text NOT NULL,template_id uuid NOT NULL REFERENCES public.notification_templates(id),channels text[] NOT NULL DEFAULT '{in_app}',audience_definition jsonb NOT NULL,status text NOT NULL DEFAULT 'draft',created_by uuid REFERENCES auth.users(id),created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.academy_paths(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),slug text UNIQUE NOT NULL,title text NOT NULL,description text,status text NOT NULL DEFAULT 'draft',estimated_weeks integer NOT NULL DEFAULT 4,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS public.academy_phases(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),path_id uuid NOT NULL REFERENCES public.academy_paths(id),title text NOT NULL,position integer NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS public.academy_steps(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),phase_id uuid NOT NULL REFERENCES public.academy_phases(id),position integer NOT NULL DEFAULT 0,step_type text NOT NULL,target_id uuid NOT NULL,title_override text,status text NOT NULL DEFAULT 'published');
+CREATE TABLE IF NOT EXISTS public.academy_prerequisites(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),step_id uuid NOT NULL REFERENCES public.academy_steps(id),prerequisite_step_id uuid NOT NULL REFERENCES public.academy_steps(id),CHECK(step_id<>prerequisite_step_id),UNIQUE(step_id,prerequisite_step_id));
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['home_sections','home_banners','user_internal_notes','user_data_requests','support_tickets','support_messages','notification_templates','notification_campaigns','academy_paths','academy_phases','academy_steps','academy_prerequisites'] LOOP EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);EXECUTE format('REVOKE ALL ON public.%I FROM anon,authenticated',t);EXECUTE format('GRANT ALL ON public.%I TO service_role',t);END LOOP;END $$;
+CREATE INDEX IF NOT EXISTS amf_support_messages_ticket ON public.support_messages(ticket_id,created_at);
+CREATE INDEX IF NOT EXISTS amf_notes_profile ON public.user_internal_notes(target_profile_id,created_at);
+CREATE INDEX IF NOT EXISTS amf_academy_phases_path ON public.academy_phases(path_id,position);
+CREATE INDEX IF NOT EXISTS amf_academy_steps_phase ON public.academy_steps(phase_id,position);
+INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES('amf_admin_library','amf_admin_library',false,10485760,ARRAY['image/jpeg','image/png','image/webp','application/pdf']) ON CONFLICT(id) DO NOTHING;
+NOTIFY pgrst,'reload schema';
+COMMIT;

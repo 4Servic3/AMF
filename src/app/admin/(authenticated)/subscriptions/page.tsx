@@ -1,51 +1,48 @@
-﻿import { requireAal2, requirePermission } from '@/lib/auth/dal'
-import { createClient } from '@/lib/supabase/server'
-import PageHeader from '@/components/admin/ui/PageHeader'
-
-export const metadata = { title: 'Assinaturas | AMF Admin' }
-
-export default async function SubscriptionsPage() {
-  await requireAal2()
-  await requirePermission('users.manage')
-  const supabase = await createClient()
-
-  const { data: grants } = await supabase
-    .from('access_grants')
-    .select('id, user_id, granted_by, reason, expires_at, revoked_at, created_at')
-    .is('revoked_at', null)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
+import { adminDb, queryError } from "@/lib/admin-data";
+import Link from "next/link";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import DataTable from "@/components/admin/ui/DataTable";
+export default async function Subscriptions() {
+  const db = await adminDb("users.manage");
+  const { data, error } = await db
+    .from("subscriptions")
+    .select("*,profile:profiles!profile_id(full_name),product:products(name)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  queryError(error);
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <PageHeader title="Assinaturas" description="Acessos ativos e historico de assinaturas." />
-      <div className="bg-white rounded-xl border border-amf-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-gray-50 text-left">
-              <th className="p-3 font-medium">Usuario</th>
-              <th className="p-3 font-medium">Concedido em</th>
-              <th className="p-3 font-medium">Expiracao</th>
-              <th className="p-3 font-medium">Motivo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grants?.map((g: any) => (
-              <tr key={g.id} className="border-b last:border-0 hover:bg-gray-50">
-                <td className="p-3 font-mono text-xs">{g.user_id?.slice(0, 16)}</td>
-                <td className="p-3 text-xs text-amf-ink-400">{new Date(g.created_at).toLocaleDateString('pt-BR')}</td>
-                <td className="p-3 text-xs">
-                  {g.expires_at ? new Date(g.expires_at).toLocaleDateString('pt-BR') : <span className="text-green-600">Vitalicio</span>}
-                </td>
-                <td className="p-3 text-sm text-amf-ink-500">{g.reason || '—'}</td>
-              </tr>
-            ))}
-            {!grants?.length && (
-              <tr><td colSpan={4} className="p-8 text-center text-amf-ink-400">Nenhuma assinatura ativa.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Assinaturas"
+        description="100 assinaturas mais recentes registradas pelo sistema de pagamentos. Acessos manuais ficam em Acessos."
+      />
+      <DataTable
+        data={data || []}
+        columns={[
+          {
+            header: "Aluno",
+            cell: (r) => (
+              <Link className="underline" href={"/admin/users/" + r.profile_id}>
+                {r.profile?.full_name || r.profile_id}
+              </Link>
+            ),
+          },
+          { header: "Produto", cell: (r) => r.product?.name || "—" },
+          { header: "Status", accessorKey: "status" },
+          {
+            header: "Fim do período",
+            cell: (r) =>
+              new Date(r.current_period_end).toLocaleDateString("pt-BR"),
+          },
+          {
+            header: "Renovação",
+            cell: (r) =>
+              r.cancel_at_period_end
+                ? "Cancelamento ao fim do período"
+                : "Conforme provedor",
+          },
+        ]}
+      />
     </div>
-  )
+  );
 }

@@ -1,37 +1,30 @@
-"use client";
-
-import React, { useState } from "react";
-import Sidebar from "@/components/admin/layout/Sidebar";
-import Header from "@/components/admin/layout/Header";
-
-export default function AuthenticatedLayout({
+import { getAdminContext, hasPermission } from "@/lib/auth/dal";
+import { adminNavigationRegistry } from "@/config/admin-navigation";
+import AdminLayout from "@/components/admin/layout/AdminLayout";
+import { redirect } from "next/navigation";
+import "../admin-ui.css";
+export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
+  const { user } = await getAdminContext();
+  const checks = await Promise.all(
+    adminNavigationRegistry.map(async (item) => ({
+      key: item.key,
+      allowed: await hasPermission(
+        item.permission === "AAL2" ? "dashboard.read" : item.permission,
+      ),
+    })),
+  );
+  const allowedKeys = checks
+    .filter((item) => item.allowed)
+    .map((item) => item.key);
+  if (!allowedKeys.length) redirect("/admin/unauthorized");
+  const name = user.user_metadata?.full_name || user.email || "Administrador";
   return (
-    <div className="flex h-screen w-full bg-cream-50 text-ink overflow-hidden">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen}
-        isCollapsed={isSidebarCollapsed}
-        setIsCollapsed={setIsSidebarCollapsed}
-      />
-      
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Header 
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
-        />
-        <main className="flex-1 overflow-auto">
-          {/* Main content wrapper */}
-          <div className="w-full h-full">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminLayout name={name} allowedKeys={allowedKeys}>
+      {children}
+    </AdminLayout>
   );
 }

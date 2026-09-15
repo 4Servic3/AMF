@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface WelcomeBannerProps {
   imageUrl: string;
@@ -10,7 +10,11 @@ interface WelcomeBannerProps {
   alt?: string;
 }
 
-export function WelcomeBanner({ imageUrl, href, alt = 'Boas-vindas à área de membros' }: WelcomeBannerProps) {
+export function WelcomeBanner({
+  imageUrl,
+  href,
+  alt = "Boas-vindas à área de membros",
+}: WelcomeBannerProps) {
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
@@ -22,9 +26,13 @@ export function WelcomeBanner({ imageUrl, href, alt = 'Boas-vindas à área de m
   }
 
   const content = (
-    <div className="amf-home-banner relative w-full rounded-[18px] sm:rounded-[20px] overflow-hidden bg-[#160B24] border border-[rgba(224,193,126,0.15)] shadow-[0_8px_24px_rgba(17,15,24,0.3)] mt-0 mb-6 sm:mb-7 mx-auto max-w-[1240px]" style={{ aspectRatio: '2/1', width: '100%' }}>
+    <div
+      className="amf-home-banner relative w-full rounded-[18px] sm:rounded-[20px] overflow-hidden bg-[#160B24] border border-[rgba(224,193,126,0.15)] shadow-[0_8px_24px_rgba(17,15,24,0.3)] mt-0 mb-6 sm:mb-7 mx-auto max-w-[1240px]"
+      style={{ aspectRatio: "2/1", width: "100%" }}
+    >
       <Image
         src={imageUrl}
+        unoptimized={imageUrl.startsWith("/api/")}
         alt={alt}
         fill
         sizes="(max-width: 493px) calc(100vw - 32px), (max-width: 768px) calc(100vw - 32px), 1240px"
@@ -35,9 +43,12 @@ export function WelcomeBanner({ imageUrl, href, alt = 'Boas-vindas à área de m
     </div>
   );
 
-  if (href && href !== '#') {
+  if (href && href !== "#") {
     return (
-      <Link href={href} className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AD62] rounded-[18px] sm:rounded-[20px] transition-transform hover:opacity-95">
+      <Link
+        href={href}
+        className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AD62] rounded-[18px] sm:rounded-[20px] transition-transform hover:opacity-95"
+      >
         {content}
       </Link>
     );

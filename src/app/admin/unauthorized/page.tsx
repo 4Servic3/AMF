@@ -1,11 +1,15 @@
-export default function UnauthorizedPage() {
+import { logout } from "@/app/admin/actions/auth";
+export default function Unauthorized() {
   return (
-    <div className="text-center space-y-4">
-      <h3 className="text-lg font-medium text-red-600">Access Denied</h3>
-      <p className="text-sm text-gray-600">You do not have permission to view this page.</p>
-      <a href="/admin/login" className="inline-block rounded-md bg-indigo-600 py-2 px-4 text-sm font-medium text-white">
-        Return to Login
+    <main className="mx-auto max-w-lg space-y-5 px-6 py-20">
+      <h1 className="text-3xl">Acesso restrito</h1>
+      <p>Sua conta não possui permissão para esta área administrativa.</p>
+      <a className="amf-secondary" href="/app">
+        Voltar ao aplicativo
       </a>
-    </div>
-  )
+      <form action={logout}>
+        <button className="amf-primary">Sair e usar outra conta</button>
+      </form>
+    </main>
+  );
 }
