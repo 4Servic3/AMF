@@ -94,3 +94,5 @@ CHECKPOINT GITHUB15/09: usuário pediu subir ao GitHub antes do limite. Preparad
 
 BRANCH CODEX ENVIADA AO GITHUB: branch codex/admin-premium-audit-20260915 com commit 2e789b57c581bf27fe68f015a62ebb69e8bed954 enviada com sucesso para origin/codex/admin-premium-audit-20260915. Suíte completa com 136 testes aprovados, TypeScript sem erros e build 50 páginas aprovado. Próxima etapa obrigatória: execução da migração 20260915000000_admin_workspace.sql no SQL Editor do Supabase antes do merge em master.
 
+MIGRACAO SUPABASE APLICADA E VERIFICADA 15/09: migração 20260915000000_admin_workspace.sql executada no banco remoto cxxlzdzzzkuhpypnqzzx pelo usuário com Success. Script de verificação automatizada confirmou a existência de todas as 12 tabelas (home_sections, home_banners, user_internal_notes, user_data_requests, support_tickets, support_messages, notification_templates, notification_campaigns, academy_paths, academy_phases, academy_steps, academy_prerequisites) e do bucket privado de storage amf_admin_library com RLS ativo. Procedendo com o merge na branch master para publicação em produção.
+
