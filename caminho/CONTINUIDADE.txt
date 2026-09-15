@@ -7,7 +7,7 @@ OBJETIVO ATUAL
 Finalizar Stories dos casos: imagem/video, camera, titulo/legenda, selecionar/criar caso, publicacao e visualizacao pelos membros. Finalizar acesso aos cursos por email e para todos os alunos. Manter este arquivo atualizado.
 
 PRODUCAO CONHECIDA
-Ultimo commit confirmado publicado: 26767b41e3f70de82fd52b74d8dff6319ee8e294. Inclui capas sincronizadas, envio direto Mux, anexos de aulas, publicacao/agendamento. As alteracoes abaixo ainda NAO foram publicadas.
+Ultimo commit confirmado publicado: 33ac2f9269dbd037c8bcae82652fae9370ab84d4. Inclui refatoração completa do painel administrativo, novo shell Apple/AMF, RBAC real, migração 20260915000000_admin_workspace aplicada no Supabase, Stories 9:16 com feed 48h, capas sincronizadas e Vercel SUCCESS.
 
 IMPLEMENTADO LOCALMENTE, PENDENTE DE VALIDACAO FINAL
 - src/app/admin/actions/courses.ts e CourseAdminAccessPanel: corrige concessao por email usando auth.users e campos reais de entitlements; opcao all_students. Catalogo/home respeitam acesso geral.
@@ -95,4 +95,7 @@ CHECKPOINT GITHUB15/09: usuário pediu subir ao GitHub antes do limite. Preparad
 BRANCH CODEX ENVIADA AO GITHUB: branch codex/admin-premium-audit-20260915 com commit 2e789b57c581bf27fe68f015a62ebb69e8bed954 enviada com sucesso para origin/codex/admin-premium-audit-20260915. Suíte completa com 136 testes aprovados, TypeScript sem erros e build 50 páginas aprovado. Próxima etapa obrigatória: execução da migração 20260915000000_admin_workspace.sql no SQL Editor do Supabase antes do merge em master.
 
 MIGRACAO SUPABASE APLICADA E VERIFICADA 15/09: migração 20260915000000_admin_workspace.sql executada no banco remoto cxxlzdzzzkuhpypnqzzx pelo usuário com Success. Script de verificação automatizada confirmou a existência de todas as 12 tabelas (home_sections, home_banners, user_internal_notes, user_data_requests, support_tickets, support_messages, notification_templates, notification_campaigns, academy_paths, academy_phases, academy_steps, academy_prerequisites) e do bucket privado de storage amf_admin_library com RLS ativo. Procedendo com o merge na branch master para publicação em produção.
+
+PUBLICACAO EM PRODUCAO 15/09: usuário autorizou continuidade após confirmação da migração. Efetuado merge da branch codex/admin-premium-audit-20260915 em master. Commit 33ac2f9269dbd037c8bcae82652fae9370ab84d4 enviado para origin/master. Vercel deployment 6465612911 concluído com SUCCESS. Site https://amf-eight.vercel.app atualizado com a auditoria administrativa completa: novo shell Apple/AMF, RBAC com permissões reais, sem contadores ou dados fictícios, mídias privadas, Banners, CRM/Alunos, Academia, Suporte, Biblioteca, Certificados e MFA corrigidos. 136 testes Vitest aprovados, TypeScript sem erros, build Next 50 páginas. Atalho do usuário preservado.
+
 
