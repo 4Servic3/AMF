@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       await syncCaseStory(data.passthrough.slice('case-story:'.length));
       revalidatePath('/app');
       revalidatePath('/app/casos');
-      revalidatePath('/admin/cases');
+      revalidatePath('/admin/stories'); revalidatePath('/admin/cases');
     }
     if (byUpload || ['video.asset.ready','video.asset.errored','video.asset.deleted'].includes(event.type)) {
       const lookup = db.from('video_assets').select('id,status');

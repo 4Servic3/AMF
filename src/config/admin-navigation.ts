@@ -35,7 +35,7 @@ export const adminNavigationRegistry: NavItem[] = [
   
   // Conteúdo
   { key: 'home_banners', label: 'Home e banners', route: '/admin/home', icon: ImageIcon, permission: 'content.manage', group: 'Conteúdo' },
-  { key: 'stories', label: 'Stories', route: '/admin/stories', icon: Clapperboard, permission: 'content.manage', group: 'Conteúdo' },
+  { key: 'stories', label: 'Stories', route: '/admin/stories', icon: Clapperboard, permission: 'cases.manage', group: 'Conteúdo' },
   { key: 'cases', label: 'Casos clínicos', route: '/admin/cases', icon: Stethoscope, permission: 'cases.manage', group: 'Conteúdo' },
   { key: 'courses', label: 'Cursos', route: '/admin/courses', icon: BookOpen, permission: 'courses.manage', group: 'Conteúdo' },
   { key: 'academy', label: 'Academia', route: '/admin/academy', icon: GraduationCap, permission: 'academy.manage', group: 'Conteúdo' },

@@ -34,6 +34,20 @@ describe('published stories for all signed-in users', () => {
     expect(mocks.in).toHaveBeenCalledWith('visibility', ['free', 'authenticated'])
     expect(mocks.from).toHaveBeenCalledTimes(1)
   })
+  it('home excludes expired stories while the archive preserves them', async () => {
+    const published_at = new Date(Date.now()-49*3600000).toISOString()
+    const recent = new Date(Date.now()-3600000).toISOString()
+    mocks.order.mockResolvedValue({ data: [{ id: 'case', title: 'Caso', case_story_videos: [
+      {id:'old',caption:'Antigo',created_at:published_at,published_at,status:'published'},
+      {id:'new',caption:'Novo',created_at:recent,published_at:recent,status:'published'}
+    ]}],error:null })
+    expect((await getPublishedCaseStories(true))[0].items.map(s=>s.id)).toEqual(['new'])
+    expect((await getPublishedCaseStories())[0].items.map(s=>s.id)).toEqual(['old','new'])
+  })
+  it('removes cases with only expired stories from home', async () => {
+    mocks.order.mockResolvedValue({data:[{id:'case',title:'Caso',case_story_videos:[{id:'old',caption:'',created_at:'2020-01-01',published_at:'2020-01-01',status:'published'}]}],error:null})
+    expect(await getPublishedCaseStories(true)).toEqual([])
+  })
   it('surfaces database failures instead of treating them as an empty feed', async () => {
     mocks.order.mockResolvedValue({ error: { message: 'offline' }, data: null })
     await expect(getPublishedCaseStories()).rejects.toThrow('Não foi possível carregar os casos.')

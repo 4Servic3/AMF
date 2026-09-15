@@ -13,7 +13,7 @@ export function Navigation() {
   const navItems = [
     { label: 'Início', href: '/app', icon: Home, exact: true, locked: false },
     { label: 'Cursos', href: '/app/cursos', icon: Library, exact: false, locked: false },
-    { label: 'Casos', href: '/app/casos', icon: Search, exact: false, locked: true },
+    { label: 'Casos', href: '/app/casos', icon: Search, exact: false, locked: false },
     { label: 'Perfil', href: '/app/perfil', icon: UserRound, exact: false, locked: false },
   ];
 

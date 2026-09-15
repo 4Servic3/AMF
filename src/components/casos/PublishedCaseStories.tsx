@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { createPortal } from 'react-dom'
+import { storyIsRecent, STORY_HOME_LIFETIME_MS } from '@/lib/story-lifecycle'
 import { getCaseStoryPlayback } from '@/app/app/casos/actions'
 
 const MuxPlayer = dynamic(() => import('@mux/mux-player-react/lazy'),{ssr:false})
-type Item = {id:string;caption:string}
+type Item = {id:string;caption:string;publishedAt?:string}
 export type PublishedCase = {id:string;title:string;items:Item[]}
 
 function CaseCover({storyId,title,large=false}:{storyId:string;title:string;large?:boolean}) {
@@ -25,7 +26,7 @@ function StoryImage({url,title,onEnded,onError}:{url:string;title:string;onEnded
   return <img src={url} alt={title} className="h-full w-full object-contain" onLoad={()=>{if(timer.current) clearTimeout(timer.current);timer.current=setTimeout(()=>next.current(),8000)}} onError={()=>{if(timer.current) clearTimeout(timer.current);onError()}} />
 }
 
-function StoryPlayer({story,onEnded}: {story:Item;onEnded:()=>void}) {
+export function StoryPlayer({story,onEnded}: {story:Item;onEnded:()=>void}) {
   const [playback,setPlayback] = useState<Awaited<ReturnType<typeof getCaseStoryPlayback>> | null>(null)
   const [attempt,setAttempt] = useState(0)
   useEffect(() => {
@@ -36,10 +37,20 @@ function StoryPlayer({story,onEnded}: {story:Item;onEnded:()=>void}) {
   if (!playback) return <p role="status" className="p-8 text-white">Carregando story…</p>
   if (playback.imageUrl) return <StoryImage url={playback.imageUrl} title={story.caption || 'Imagem do caso'} onEnded={onEnded} onError={()=>setPlayback({error:'Não foi possível carregar a imagem.'})} />
   if (playback.error || !playback.playbackId) return <div className="p-8 text-white"><p role="alert">{playback.error}</p><button onClick={() => {setPlayback(null);setAttempt(a=>a+1)}} className="mt-4 underline">Tentar novamente</button></div>
-  return <MuxPlayer playbackId={playback.playbackId} tokens={playback.tokens} streamType="on-demand" autoPlay="any" playsInline onEnded={onEnded} onError={() => setPlayback({error:'A reprodução foi interrompida. Tente novamente.'})} style={{height:'100%',width:'100%'}} />
+  return <MuxPlayer playbackId={playback.playbackId} tokens={playback.tokens} streamType="on-demand" playbackRates={[1, 1.5, 2]} autoPlay="any" playsInline onEnded={onEnded} onError={() => setPlayback({error:'A reprodução foi interrompida. Tente novamente.'})} style={{height:'100%',width:'100%'}} />
 }
 
 export default function PublishedCaseStories({cases, compact = false}: {cases:PublishedCase[]; compact?:boolean}) {
+  const [now,setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!compact) return
+    const update = () => setNow(Date.now())
+    const dates = cases.flatMap(c => c.items.map(s => Date.parse(s.publishedAt || '') + STORY_HOME_LIFETIME_MS)).filter(t => t > now)
+    const timeout = dates.length ? setTimeout(update, Math.min(Math.max(0,Math.min(...dates)-Date.now())+20,2147483647)) : undefined
+    document.addEventListener('visibilitychange',update)
+    return () => { clearTimeout(timeout); document.removeEventListener('visibilitychange',update) }
+  },[cases,compact,now])
+  const visibleCases = compact ? cases.map(c => ({...c,items:c.items.filter(s=>storyIsRecent(s.publishedAt,now))})).filter(c=>c.items.length) : cases
   const [active,setActive] = useState<PublishedCase | null>(null)
   const [index,setIndex] = useState(0)
   const close = useRef<HTMLButtonElement>(null)
@@ -55,14 +66,14 @@ export default function PublishedCaseStories({cases, compact = false}: {cases:Pu
   const next = () => {if (active && index+1<active.items.length) setIndex(i=>i+1); else setActive(null)}
   return <section aria-label={compact ? "Stories dos casos" : "Casos clínicos"} className={compact ? "w-full min-w-0 px-5 pt-1 pb-0" : "mx-auto max-w-5xl space-y-6 px-5 py-8"}>
     {compact ? null : <div><h1 className="font-editorial text-3xl">Casos clínicos</h1><p className="mt-2 text-amf-muted">Acompanhe os vídeos e as atualizações de cada caso.</p></div>}
-    {!cases.length && <p className="rounded-2xl border p-6">Ainda não há casos publicados. Os novos stories aparecerão aqui.</p>}
-    <div className={compact ? "flex gap-4 overflow-x-auto pb-2" : "grid gap-4 sm:grid-cols-2"}>{cases.map(item => <button key={item.id} onClick={() => {setIndex(0);setActive(item)}} className={compact ? "flex w-28 shrink-0 flex-col items-center gap-2 rounded-xl p-1 text-center focus-visible:outline-2 focus-visible:outline-amf-petrol-700" : "flex items-center gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm"}><CaseCover key={item.items[0].id} storyId={item.items[0].id} title={item.title} large={compact} /><span><strong className="block line-clamp-2 text-sm">{item.title}</strong>{!compact && <span className="text-sm text-amf-muted">{item.items.length} {item.items.length === 1 ? 'story' : 'stories'} · Assistir</span>}</span></button>)}</div>
+    {!compact && !cases.length && <p className="rounded-2xl border p-6">Ainda não há casos publicados. Os novos stories aparecerão aqui.</p>}
+    <div className={compact ? "flex gap-4 overflow-x-auto pb-2" : "grid gap-4 sm:grid-cols-2"}>{visibleCases.map(item => <button key={item.id} onClick={() => {setIndex(0);setActive(item)}} className={compact ? "flex w-28 shrink-0 flex-col items-center gap-2 rounded-xl p-1 text-center focus-visible:outline-2 focus-visible:outline-amf-petrol-700" : "flex items-center gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm"}><CaseCover key={item.items[0].id} storyId={item.items[0].id} title={item.title} large={compact} /><span><strong className="block line-clamp-2 text-sm">{item.title}</strong>{!compact && <span className="text-sm text-amf-muted">{item.items.length} {item.items.length === 1 ? 'story' : 'stories'} · Assistir</span>}</span></button>)}</div>
     {active && createPortal(<div role="dialog" aria-modal="true" aria-label={active.title} className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95">
       <div className="flex h-[100dvh] w-full max-w-lg flex-col bg-black text-white">
         <div className="flex gap-1 px-4 pt-3">{active.items.map((item,i)=><div key={item.id} className={`h-1 flex-1 rounded ${i<=index ? 'bg-white' : 'bg-white/30'}`} />)}</div>
         <div className="flex items-center justify-between gap-4 p-4"><span>{active.title} · {index+1}/{active.items.length}</span><button ref={close} aria-label="Fechar stories" onClick={()=>setActive(null)} className="p-2 text-xl">✕</button></div>
-        <div className="min-h-0 flex-1"><StoryPlayer key={active.items[index].id} story={active.items[index]} onEnded={next} /></div>
-        {active.items[index].caption && <p className="px-4 pt-3 text-sm">{active.items[index].caption}</p>}
+        <div className="min-h-0 flex-1 flex items-center justify-center"><div className="relative aspect-[9/16] max-h-full max-w-full bg-black" style={{width:'min(100%, calc((100dvh - 220px) * 9 / 16))'}}><StoryPlayer key={active.items[index].id} story={active.items[index]} onEnded={next} /></div></div>
+        {active.items[index].caption && <p className="line-clamp-2 px-4 pt-3 text-sm">{active.items[index].caption}</p>}
         <div className="flex justify-between p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"><button disabled={index===0} onClick={()=>setIndex(i=>i-1)} className="rounded-full border px-4 py-2 disabled:opacity-30">Anterior</button><button onClick={next} className="rounded-full border px-4 py-2">{index+1<active.items.length?'Próximo':'Concluir'}</button></div>
       </div>
     </div>, document.body)}

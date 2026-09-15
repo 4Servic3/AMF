@@ -12,7 +12,7 @@ type FeatureFlags = {
 
 const defaultFlags: FeatureFlags = {
   member_courses_enabled: true,
-  member_cases_enabled: false,
+  member_cases_enabled: true,
   member_stories_enabled: false,
   member_close_friends_enabled: false,
   member_home_news_enabled: false,

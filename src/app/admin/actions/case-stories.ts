@@ -40,7 +40,7 @@ export async function startCaseStory(input: unknown) {
     uploadId = upload.uploadId
     const saved = await db.from('case_story_videos').insert({ id, case_id: caseId, caption: data.caption, mux_upload_id: uploadId, created_by: session.user.id })
     if (saved.error) throw new Error('save_failed')
-    revalidatePath('/admin/cases')
+    revalidatePath('/admin/stories'); revalidatePath('/admin/cases')
     return { id, caseId, uploadUrl: upload.uploadUrl }
   } catch {
     if (uploadId) await getMuxClient().video.uploads.cancel(uploadId).catch(() => undefined)
@@ -54,7 +54,7 @@ export async function finishCaseStory(id: string) {
   try {
     const status = await syncCaseStory(id)
     revalidatePath('/app'); revalidatePath('/app/casos')
-    revalidatePath('/admin/cases')
+    revalidatePath('/admin/stories'); revalidatePath('/admin/cases')
     return { status }
   } catch { return { error: 'Não foi possível verificar o vídeo. Tente novamente.' } }
 }
@@ -64,6 +64,6 @@ export async function archiveCaseStory(id: string) {
   if (!z.string().uuid().safeParse(id).success) return {error:'Story inválido.'}
   const result = await createServiceRoleClient().from('case_story_videos').update({status:'archived'}).eq('id',id)
   if (result.error) return {error:'Não foi possível remover o story.'}
-  revalidatePath('/admin/cases'); revalidatePath('/app'); revalidatePath('/app/casos')
+  revalidatePath('/admin/stories'); revalidatePath('/admin/cases'); revalidatePath('/app'); revalidatePath('/app/casos')
   return {success:true}
 }

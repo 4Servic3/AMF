@@ -1,2 +1,2 @@
 import { redirect } from 'next/navigation'
-export default function NewCasePage() { redirect('/admin/cases/editor/new') }
+export default function NewCasePage() { redirect('/admin/stories') }

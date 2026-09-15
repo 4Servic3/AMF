@@ -28,7 +28,6 @@ export default function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed
 
   // Function to render mock badges
   const renderBadge = (key: string) => {
-    if (key === 'stories') return <span className="ml-auto bg-teal-800 text-teal-100 text-[10px] font-bold px-1.5 py-0.5 rounded-full">4</span>;
     if (key === 'support') return <span className="ml-auto bg-teal-800 text-teal-100 text-[10px] font-bold px-1.5 py-0.5 rounded-full">7</span>;
     return null;
   }

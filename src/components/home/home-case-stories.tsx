@@ -3,7 +3,7 @@ import { getPublishedCaseStories } from '@/lib/published-case-stories'
 
 export default async function HomeCaseStories() {
   try {
-    const cases = await getPublishedCaseStories()
+    const cases = await getPublishedCaseStories(true)
     if (!cases.length) return null
     return <PublishedCaseStories cases={cases} compact />
   } catch {
