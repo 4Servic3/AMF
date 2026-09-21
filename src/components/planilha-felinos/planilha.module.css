@@ -1,0 +1,37 @@
+.root {
+  --font-display: Georgia, serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-mono: "Courier New", monospace;
+  --color-paper: #FBF6EC;
+  --color-paper-dark: #F3EBD8;
+  --color-pine: #1F5F54;
+  --color-pine-dark: #174A41;
+  --color-pine-light: #E8F2F0;
+  --color-coral: #DD7A4E;
+  --color-coral-light: #FBE9E0;
+  --color-alert: #C0392B;
+  --color-alert-light: #FDECEA;
+  --color-text: #2C2C2C;
+  --color-text-muted: #6B6B6B;
+  --color-border: #DDD5C4;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-paper);
+  min-width: 0;
+  border-radius: 1rem;
+  isolation: isolate;
+}
+.root * { -webkit-tap-highlight-color: transparent; }
+.root :focus-visible { outline: 2px solid var(--color-pine); outline-offset: 2px; }
+.root :global(.chips-scroll) { scrollbar-width: none; -ms-overflow-style: none; }
+.root :global(.chips-scroll)::-webkit-scrollbar { display: none; }
+.root :global(.dose-mono) { font-family: var(--font-mono); }
+.root :global(.banner-enter) { animation: reveal 0.25s ease-out; }
+.root :global(.expand-enter) { animation: reveal 0.2s ease-out; overflow-wrap: anywhere; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root :global(.banner-enter), .root :global(.expand-enter) { animation: none; }
+}

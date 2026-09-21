@@ -5,11 +5,19 @@ import HomeCaseStories from "@/components/home/home-case-stories";
 import { trackEvent } from "@/lib/services/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { PremiumHomeHeader } from "@/components/home/premium-home-header";
-import { WelcomeBanner } from "@/components/home/welcome-banner";
+import { HomeBannerCarousel, type HomeBannerSlide } from "@/components/home/home-banner-carousel";
 import {
   SuaAcademia,
   type UserCourseProgress,
 } from "@/components/home/sua-academia";
+
+type PublishedHomeBanner = {
+  id: string;
+  media_asset_id: string | null;
+  cta_target_type: string | null;
+  cta_target_id: string | null;
+  title: string | null;
+};
 
 export default async function AppHome() {
   const supabase = await createClient();
@@ -31,9 +39,29 @@ export default async function AppHome() {
         .select("*")
         .eq("status", "published")
         .order("position", { ascending: true })
-        .limit(1)
     : { data: null };
 
+  const homeBanners: HomeBannerSlide[] = banners?.length
+    ? banners.map((banner: PublishedHomeBanner) => ({
+        id: banner.id,
+        imageUrl: banner.media_asset_id
+          ? `/api/media/${banner.media_asset_id}`
+          : "/assets/amf-home/banner-imersao-felinos.png",
+        href: bannerHref(banner.cta_target_type, banner.cta_target_id),
+        alt: banner.title || "Boas-vindas à área de membros",
+      }))
+    : [{
+        id: "welcome",
+        imageUrl: "/assets/amf-home/banner-imersao-felinos.png",
+        alt: "Boas-vindas à área de membros",
+      }];
+  homeBanners.push({
+    id: "planilha-doses-seguras-felinos",
+    imageUrl: "/assets/amf-home/banner-planilha-felinos.jpeg",
+    href: "/app/produtos/planilha-doses-seguras-felinos",
+    alt: "Planilha de doses seguras para felinos — Dra. Polyana",
+    contain: true,
+  });
   // 2. Fetch User Courses with REAL Progress
   let courses: UserCourseProgress[] = [];
   let materialsCount = 0;
@@ -210,22 +238,7 @@ export default async function AppHome() {
           <HomeCaseStories />
         </Suspense>
         <div className="flex flex-col relative z-10 w-full min-w-0 max-w-full mt-3 sm:mt-4">
-          {banners && banners.length > 0 ? (
-            <WelcomeBanner
-              imageUrl={
-                banners[0].media_asset_id
-                  ? `/api/media/${banners[0].media_asset_id}`
-                  : "/assets/amf-home/banner-imersao-felinos.png"
-              }
-              href={bannerHref(
-                banners[0].cta_target_type,
-                banners[0].cta_target_id,
-              )}
-              alt={banners[0].title || undefined}
-            />
-          ) : (
-            <WelcomeBanner imageUrl="/assets/amf-home/banner-imersao-felinos.png" />
-          )}
+          <HomeBannerCarousel slides={homeBanners} />
         </div>
 
         <div className="amf-home-academy mt-8 w-full min-w-0 max-w-full lg:max-w-[768px] mx-auto pb-8">
