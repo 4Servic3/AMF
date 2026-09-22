@@ -1,31 +1,101 @@
-import { redirect } from 'next/navigation';
-import { CoursesLibraryClient } from './courses-library-client';
-import { loadMemberCourses } from '@/lib/member-courses';
+import React from 'react';
+import { trackEvent } from '@/lib/services/analytics';
 import type { CourseLibraryItem } from '@/lib/models/courses';
+import { CoursesLibraryClient } from './courses-library-client';
+import { createClient } from '@/lib/supabase/server';
 import { getPlanilhaAccess, PLANILHA_PRODUCT_ID } from '@/lib/products/planilha-access';
 
 export default async function Catalog() {
-  const [{ userId, catalog, summaries }, planilhaAccess] = await Promise.all([
-    loadMemberCourses(),
+  const supabase = await createClient();
+  const [{ data: { user } }, planilhaAccess] = await Promise.all([
+    supabase.auth.getUser(),
     getPlanilhaAccess(),
   ]);
+  const userId = user?.id || 'anonymous';
 
-  if (!userId) redirect('/entrar');
+  trackEvent('catalog_viewed', { userId });
 
-  const progress = new Map(summaries.map(c => [c.courseId, c]));
+  // 1. Fetch ALL published courses
+  const { data: courses, error } = await supabase
+    .from('courses')
+    .select(`
+      id,
+      slug,
+      title,
+      short_description,
+      status,
+      workload,
+      all_students,
+      thumbnail_url,
+      media_assets!cover_asset_id(file_path)
+    `)
+    .eq('status', 'published');
 
-  const products: CourseLibraryItem[] = catalog.map(course => {
-    const summary = progress.get(course.id);
+  if (error) {
+    console.error('Error fetching courses:', error);
+  }
+
+  // 2. Fetch User Entitlements and Progress if logged in
+  let entitlements: any[] = [];
+  let progresses: any[] = [];
+
+  if (user) {
+    const [{ data: ent }, { data: prog }] = await Promise.all([
+      supabase
+        .from('entitlements')
+        .select('resource_id,starts_at,expires_at')
+        .eq('profile_id', user.id)
+        .eq('status', 'active'),
+      supabase
+        .from('lesson_progress')
+        .select('course_id, progress_percent, status')
+        .eq('profile_id', user.id),
+    ]);
+
+    entitlements = (ent || []).filter(
+      e =>
+        (!e.starts_at || new Date(e.starts_at).getTime() <= Date.now()) &&
+        (!e.expires_at || new Date(e.expires_at).getTime() > Date.now())
+    );
+    progresses = prog || [];
+  }
+
+  const entitlementSet = new Set(entitlements.map(e => e.resource_id));
+
+  const products: CourseLibraryItem[] = (courses || []).map(course => {
+    const courseProgress = progresses.find(p => p.course_id === course.id);
+    let accessState: 'locked' | 'unlocked' | 'in_progress' | 'active_subscription' = 'locked';
+
+    if ((user && course.all_students) || entitlementSet.has(course.id)) {
+      accessState = 'unlocked';
+      if (courseProgress && courseProgress.status === 'in_progress') {
+        accessState = 'in_progress';
+      }
+    }
+
+    const coverPath =
+      course.thumbnail_url ||
+      (Array.isArray(course.media_assets)
+        ? course.media_assets[0]?.file_path
+        : (course.media_assets as any)?.file_path) ||
+      '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+    const coverUrl =
+      coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
+        ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl
+        : coverPath;
+
     return {
       id: course.id,
       slug: course.slug,
       title: course.title,
       description: course.short_description || '',
       productType: 'course',
-      coverUrl: course.thumbnail_url || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp',
-      accessState: !summary ? 'locked' : summary.status === 'in_progress' ? 'in_progress' : 'unlocked',
-      progressPercent: summary?.progressPercent || 0,
-      destinationUrl: '/app/cursos/' + encodeURIComponent(course.slug),
+      level: 'Todos',
+      moduleCount: 0,
+      coverUrl,
+      accessState,
+      progressPercent: courseProgress?.progress_percent || 0,
+      destinationUrl: `/app/cursos/${course.slug}`,
       isPublished: true,
     };
   });
