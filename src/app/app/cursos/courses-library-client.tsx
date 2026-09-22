@@ -279,7 +279,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                 let typeColor = '';
                 if (p.productType === 'course') { typeLabel = 'CURSO'; typeColor = 'text-[#160820]'; }
                 else if (p.productType === 'subscription') { typeLabel = 'ASSINATURA'; typeColor = 'text-[#0E5B5C]'; }
-                else if (p.productType === 'bundle') { typeLabel = 'PACOTE'; typeColor = 'text-[#B8860B]'; }
+                else if (p.productType === 'bundle') { typeLabel = 'FERRAMENTA'; typeColor = 'text-[#0E5B5C]'; }
 
                 // Configuração Visual do Estado de Acesso
                 let accessNode = null;

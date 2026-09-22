@@ -1,95 +1,53 @@
-import React from 'react';
-import { trackEvent } from '@/lib/services/analytics';
-import { CourseLibraryItem } from '@/lib/models/courses';
+import { redirect } from 'next/navigation';
 import { CoursesLibraryClient } from './courses-library-client';
-import { createClient } from '@/lib/supabase/server';
+import { loadMemberCourses } from '@/lib/member-courses';
+import type { CourseLibraryItem } from '@/lib/models/courses';
+import { getPlanilhaAccess, PLANILHA_PRODUCT_ID } from '@/lib/products/planilha-access';
 
 export default async function Catalog() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const userId = user?.id || 'anonymous';
-  
-  // Track catalog viewed (only runs on server in some setups, but usually trackEvent should be client-side if it interacts with browser, 
-  // but if it's a server action, it's fine. We leave it as is).
-  trackEvent('catalog_viewed', { userId });
+  const [{ userId, catalog, summaries }, planilhaAccess] = await Promise.all([
+    loadMemberCourses(),
+    getPlanilhaAccess(),
+  ]);
 
-  // 1. Fetch ALL published courses
-  const { data: courses, error } = await supabase
-    .from('courses')
-    .select(`
-      id,
-      slug,
-      title,
-      short_description,
-      status,
-      workload,
-      all_students,
-      thumbnail_url,
-      media_assets!cover_asset_id(file_path)
-    `)
-    .eq('status', 'published');
+  if (!userId) redirect('/entrar');
 
-  if (error) {
-    console.error('Error fetching courses:', error);
-  }
+  const progress = new Map(summaries.map(c => [c.courseId, c]));
 
-  // 2. Fetch User Entitlements and Progress if logged in
-  let entitlements: any[] = [];
-  let progresses: any[] = [];
-  
-  if (user) {
-    const { data: ent } = await supabase
-      .from('entitlements')
-      .select('resource_id,starts_at,expires_at')
-      .eq('profile_id', user.id)
-      .eq('status', 'active');
-      // ideally check expires_at, etc.
-    entitlements = (ent || []).filter(e => (!e.starts_at || new Date(e.starts_at).getTime() <= Date.now()) && (!e.expires_at || new Date(e.expires_at).getTime() > Date.now()));
-
-    const { data: prog } = await supabase
-      .from('lesson_progress')
-      .select('course_id, progress_percent, status')
-      .eq('profile_id', user.id);
-    progresses = prog || [];
-  }
-
-  const entitlementSet = new Set(entitlements.map(e => e.resource_id));
-
-  const products: CourseLibraryItem[] = (courses || []).map(course => {
-    // Find progress if any
-    const courseProgress = progresses.find(p => p.course_id === course.id);
-    let accessState: 'locked' | 'unlocked' | 'in_progress' | 'active_subscription' = 'locked';
-    
-    if ((user && course.all_students) || entitlementSet.has(course.id)) {
-      accessState = 'unlocked';
-      if (courseProgress && courseProgress.status === 'in_progress') {
-        accessState = 'in_progress';
-      }
-    }
-
-    // Default covers or specific if media_asset exists
-    // The query above aliases media_assets to 'media_assets' or it might be an array.
-    const coverPath = course.thumbnail_url || (Array.isArray(course.media_assets)
-      ? course.media_assets[0]?.file_path 
-      : (course.media_assets as any)?.file_path) || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
-    const coverUrl = coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
-      ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl : coverPath;
-
+  const products: CourseLibraryItem[] = catalog.map(course => {
+    const summary = progress.get(course.id);
     return {
       id: course.id,
       slug: course.slug,
       title: course.title,
       description: course.short_description || '',
       productType: 'course',
-      level: 'Todos', // Placeholder
-      moduleCount: 0, // Placeholder
-      coverUrl,
-      accessState,
-      progressPercent: courseProgress?.progress_percent || 0,
-      destinationUrl: `/app/cursos/${course.slug}`,
-      isPublished: true
+      coverUrl: course.thumbnail_url || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp',
+      accessState: !summary ? 'locked' : summary.status === 'in_progress' ? 'in_progress' : 'unlocked',
+      progressPercent: summary?.progressPercent || 0,
+      destinationUrl: '/app/cursos/' + encodeURIComponent(course.slug),
+      isPublished: true,
     };
   });
+
+  const isPlanilhaUnlocked = planilhaAccess.state === 'available';
+
+  const planilhaItem: CourseLibraryItem = {
+    id: PLANILHA_PRODUCT_ID,
+    slug: 'planilha-doses-seguras-felinos',
+    title: 'Calculadora de Doses Seguras para Felinos',
+    description: 'Calculadora clínica interativa e planilha Excel — Dra. Polyana',
+    productType: 'bundle',
+    specialty: 'Terapêutica',
+    coverUrl: '/assets/amf-home/banner-planilha-felinos.jpeg',
+    accessState: isPlanilhaUnlocked ? 'unlocked' : 'locked',
+    destinationUrl: isPlanilhaUnlocked
+      ? '/app/produtos/planilha-doses-seguras-felinos/calculadora'
+      : '/app/produtos/planilha-doses-seguras-felinos',
+    isPublished: true,
+  };
+
+  products.push(planilhaItem);
 
   return <CoursesLibraryClient products={products} />;
 }
