@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string, materialId: string }> }) {
   try {
     const { slug, materialId } = await params;
@@ -49,9 +51,28 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return NextResponse.json({ error: 'Failed to generate access URL' }, { status: 500 });
     }
 
-    const res = NextResponse.redirect(data.signedUrl, 302);
-    res.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
-    return res;
+    // Proxy the signed object through this authenticated same-origin route. PDF.js
+    // can issue byte-range requests without depending on Storage CORS configuration.
+    const range = req.headers.get('range');
+    const upstream = await fetch(data.signedUrl, {
+      cache: 'no-store',
+      ...(range ? { headers: { Range: range } } : {}),
+    });
+    if (!upstream.ok && upstream.status !== 206) {
+      return NextResponse.json({ error: 'PDF indisponível no momento.' }, { status: 502 });
+    }
+
+    const headers = new Headers({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="material.pdf"',
+      'Cache-Control': 'private, no-store, max-age=0, must-revalidate',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    for (const name of ['accept-ranges', 'content-length', 'content-range']) {
+      const value = upstream.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+    return new Response(upstream.body, { status: upstream.status, headers });
 
   } catch (err) {
     console.error('Material view error:', err);

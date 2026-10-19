@@ -1,9 +1,12 @@
+import { createClient } from '@/lib/supabase/server';
 import { describe, it, expect, vi } from 'vitest';
 import { getProgress, saveProgress, markAsCompleted, updateSecureProgress } from '../src/lib/services/progress';
 
 // Mock Supabase server client
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => ({
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user123' } }, error: null }) },
+    rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
     from: vi.fn((table: string) => {
       if (table === 'lesson_progress') {
         return {
@@ -69,8 +72,8 @@ describe('Progress Service', () => {
     await expect(saveProgress('user123', 'lesson123', 100, 10)).resolves.not.toThrow();
   });
 
-  it('markAsCompleted should not throw error', async () => {
-    await expect(markAsCompleted('user123', 'lesson123', true)).resolves.not.toThrow();
+  it('markAsCompleted rejects completion without saved progress', async () => {
+    await expect(markAsCompleted('user123', 'lesson123', true)).rejects.toThrow('Conclua');
   });
 
   it('updateSecureProgress should calculate progress and return proper structure', async () => {
@@ -86,5 +89,28 @@ describe('Progress Service', () => {
     expect(res.success).toBe(true);
     expect(res.is_completed).toBe(true);
     expect(res.progress_percent).toBe(100);
+  });
+});
+
+describe('Progress identity validation', () => {
+  it('rejects another profile before reading or writing progress', async () => {
+    await expect(updateSecureProgress('other-user', 'lesson123', 150)).rejects.toThrow('Autenticação');
+    await expect(getProgress('other-user', 'lesson123')).rejects.toThrow('Autenticação');
+    await expect(markAsCompleted('other-user', 'lesson123')).rejects.toThrow('Autenticação');
+  });
+  it.each([-1, Infinity, NaN])('rejects invalid position %s', async position => {
+    await expect(updateSecureProgress('user123', 'lesson123', position)).rejects.toThrow('Posição');
+  });
+});
+
+describe('Progress entitlement boundary', () => {
+  it('rejects a denied course before writing even for the correct user', async () => {
+    const client = await createClient();
+    vi.mocked(client.rpc).mockResolvedValue({ data: false, error: null } as never);
+    vi.mocked(createClient).mockResolvedValueOnce(client);
+    await expect(updateSecureProgress('user123', 'lesson123', 300)).rejects.toThrow('Acesso');
+  });
+  it('keeps a genuine previously completed lesson idempotently completable', async () => {
+    await expect(markAsCompleted('user123', 'lllllll1-0000-0000-0000-000000000000')).resolves.toBeUndefined();
   });
 });

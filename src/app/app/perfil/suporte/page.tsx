@@ -1,33 +1,30 @@
-import React from 'react';
 import Link from 'next/link';
-import { ChevronLeft, HelpCircle } from 'lucide-react';
+import { listOwnTickets } from '@/lib/member-support';
+import { ticketStatuses } from '@/lib/member-account-schema';
+import { SupportForm } from './support-form';
+import { SupportShell } from './support-shell';
+export const metadata = { title: 'Ajuda e suporte | AMF' };
 
-export const metadata = {
-  title: 'Ajuda e Suporte | AMF',
-};
-
-export default function SuportePage() {
-  return (
-    <div className="flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0">
-      <header className="amf-member-header w-full bg-[#160820] text-white pt-10 sm:pt-14 pb-8 shrink-0">
-        <div className="w-full max-w-4xl mx-auto px-6 relative z-10">
-          <div className="flex items-center gap-4 mb-2">
-            <Link href="/app/perfil" className="w-[40px] h-[40px] rounded-full border border-white/20 flex items-center justify-center text-white/90 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E7B64F]" aria-label="Voltar para Perfil">
-              <ChevronLeft size={20} strokeWidth={1.5} />
-            </Link>
-            <h1 className="amf-page-heading text-[20px] font-bold text-white">Ajuda e suporte</h1>
-          </div>
-        </div>
-      </header>
-      <div className="w-full flex-1 bg-[#FAF7F1] rounded-t-[28px] -mt-6 relative z-20 flex flex-col min-w-0">
-        <main className="w-full max-w-4xl mx-auto px-6 pt-16 pb-20 min-w-0 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-[#003D3F] mb-6">
-            <HelpCircle size={40} strokeWidth={1.5} />
-          </div>
-          <h2 className="amf-section-heading text-[20px] font-editorial text-[#14172A] font-bold mb-2">Central de Atendimento</h2>
-          <p className="text-[14px] text-[#657080] text-center max-w-[300px]">Área para FAQ, contatos e chamados de suporte técnico.</p>
-        </main>
-      </div>
-    </div>
-  );
+export default async function SuportePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const { page } = await searchParams;
+  const result = await listOwnTickets(page);
+  return <SupportShell>
+    <section className="mb-10 rounded-2xl border border-[#DED5C8] bg-white p-5 sm:p-7">
+      <h2 className="mb-5 text-xl font-bold text-[#14172A]">Novo chamado</h2>
+      <SupportForm />
+    </section>
+    <section>
+      <h2 className="mb-5 text-xl font-bold text-[#14172A]">Meus chamados</h2>
+      {result.tickets.length ? <ul className="space-y-3">{result.tickets.map((ticket) => <li key={ticket.id}>
+        <Link href={`/app/perfil/suporte/${ticket.id}`} className="block rounded-xl border border-[#DED5C8] bg-white p-4 hover:border-[#003D3F]">
+          <span className="block break-words font-semibold text-[#14172A]">{ticket.subject}</span>
+          <span className="mt-2 block text-sm text-[#657080]">{ticketStatuses[ticket.status]} · {new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
+        </Link>
+      </li>)}</ul> : <p className="text-[#657080]">Nenhum chamado nesta página.</p>}
+      <nav aria-label="Páginas de chamados" className="mt-5 flex gap-6 text-sm font-semibold">
+        {result.page > 1 && <Link href={`?page=${result.page - 1}`}>Página anterior</Link>}
+        {result.hasMore && <Link href={`?page=${result.page + 1}`}>Próxima página</Link>}
+      </nav>
+    </section>
+  </SupportShell>;
 }

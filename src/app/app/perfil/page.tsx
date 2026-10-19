@@ -51,9 +51,9 @@ export default async function Perfil() {
   // 4. Fetch Certificados
   const { data: certificates } = await supabase
     .from('certificates')
-    .select('id, issued_at, courses(title)')
+    .select('id, issue_date, courses(title)')
     .eq('profile_id', user.id)
-    .order('issued_at', { ascending: false });
+    .order('issue_date', { ascending: false });
 
   return (
     <div className="amf-profile flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0 pb-20">
@@ -171,7 +171,7 @@ export default async function Perfil() {
                         <h4 className="font-bold text-[#160820] text-sm leading-tight mb-1">
                           {(cert.courses as any)?.title || 'Curso Concluído'}
                         </h4>
-                        <p className="text-xs text-gray-500">Emitido em {new Date(cert.issued_at).toLocaleDateString('pt-BR')}</p>
+                        <p className="text-xs text-gray-500">Emitido em {new Date(cert.issue_date).toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-auto pl-11 sm:pl-0">
@@ -211,6 +211,11 @@ export default async function Perfil() {
                 <BellRing size={18} className="text-[#0E5B5C]" />
                 <span className="font-bold text-sm text-[#160820]">Notificações</span>
               </div>
+              <ChevronRight size={18} className="text-gray-400" />
+            </Link>
+
+            <Link href="/app/perfil/acessibilidade" className="amf-list-row flex items-center justify-between p-4 border-b border-[#E8E1D3] hover:bg-[#FAF7F1] transition-colors">
+              <span className="font-bold text-sm text-[#160820]">Acessibilidade</span>
               <ChevronRight size={18} className="text-gray-400" />
             </Link>
 

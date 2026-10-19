@@ -1,4 +1,5 @@
 import React from 'react';
+import MemberPreferencesStyle from '@/components/auth/member-preferences-style';
 import './member-ui.css';
 import { GlobalHeader } from '@/components/layout/global-header';
 import { MainContentWrapper } from '@/components/layout/main-content-wrapper';
@@ -8,6 +9,7 @@ import { StoryViewerProvider } from '@/components/ui/stories/story-viewer-provid
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <StoryViewerProvider>
+      <React.Suspense fallback={null}><MemberPreferencesStyle /></React.Suspense>
       <div className="amf-member-ui flex min-h-[100dvh] bg-[#FAF7F1]">
         <Navigation />
 
@@ -26,3 +28,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </StoryViewerProvider>
   );
 }
+

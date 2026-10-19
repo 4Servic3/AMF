@@ -15,8 +15,7 @@ describe('Access Authorization Engine', () => {
 
   it('deve retornar available para curso vitalício sem data de expiração', () => {
     const entitlements: Entitlement[] = [{
-      product_id: 'prod-1',
-      source_type: 'purchase',
+      profile_id: 'user-1', resource_id: 'prod-1', resource_type: 'product', starts_at: '2020-01-01T00:00:00Z',
       expires_at: null,
       status: 'active'
     }];
@@ -29,9 +28,8 @@ describe('Access Authorization Engine', () => {
     pastDate.setDate(pastDate.getDate() - 1); // Yesterday
 
     const entitlements: Entitlement[] = [{
-      product_id: 'prod-2',
-      source_type: 'subscription',
-      expires_at: pastDate,
+      profile_id: 'user-1', resource_id: 'prod-2', resource_type: 'product', starts_at: '2020-01-01T00:00:00Z',
+      expires_at: pastDate.toISOString(),
       status: 'expired'
     }];
     

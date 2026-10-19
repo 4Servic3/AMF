@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Paywall } from '@/components/ui/paywall';
@@ -57,12 +58,6 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     .eq('course_id', course.id)
     .eq('status', 'published')
     .order('order_index', { ascending: true });
-
-  const { data: materialsData } = await supabaseAdmin
-    .from('lesson_materials')
-    .select('id, name, mime_type, size_bytes')
-    .eq('course_id', course.id)
-    .eq('status', 'published');
 
   // Filtragem estrita de segurança e modelagem
   const modules = (modulesData || []).map(mod => ({
@@ -128,7 +123,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       {/* Header do Curso */}
       <div className="amf-widget flex flex-col md:flex-row gap-6 bg-white p-6 md:p-8 rounded-2xl border border-[rgba(224,193,126,0.4)] shadow-sm mb-8">
         <div className="w-full md:w-1/3 aspect-[4/3] md:h-auto bg-gray-100 rounded-xl relative overflow-hidden flex-shrink-0">
-          <img src={coverUrl} alt={course.title} className="w-full h-full object-cover" />
+          <Image src={coverUrl} alt={course.title} width={800} height={600} unoptimized className="w-full h-full object-cover" />
         </div>
         
         <div className="flex-1 flex flex-col justify-center">
@@ -285,24 +280,6 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
               </div>
             )}
 
-            {materialsData && materialsData.length > 0 && (
-              <div className="amf-widget bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
-                <h3 className="font-bold text-[#0F6466] mb-4">Materiais</h3>
-                <ul className="space-y-4">
-                  {materialsData.map(mat => (
-                    <li key={mat.id} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#FAF7F1] flex items-center justify-center flex-shrink-0 text-[#160820]">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-[#160820] truncate">{mat.name}</div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">{mat.mime_type?.includes('pdf') ? 'PDF' : 'Arquivo'} • {mat.size_bytes ? Math.round(mat.size_bytes / 1024 / 1024) : 0} MB</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getOwnProfile } from '@/lib/member-account';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { EditProfileForm } from './edit-profile-form';
@@ -8,13 +9,7 @@ export const metadata = {
 };
 
 export default async function EditProfilePage() {
-  // Simulando fetching de dados atuais para pré-preencher o formulário
-  const currentProfile = {
-    displayName: 'Dra. Polyana',
-    profession: 'Médica-veterinária',
-    phone: '(11) 99999-9999',
-    initials: 'DR'
-  };
+  const currentProfile = await getOwnProfile();
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0">

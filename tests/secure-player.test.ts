@@ -100,6 +100,8 @@ vi.mock('@/lib/supabase/server', () => ({
 describe('Secure Player & Progress API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null });
+    mockRpc.mockResolvedValue({ data: true, error: null });
   });
 
   it('rejects unauthenticated requests to /api/courses/lessons/[lessonId]/progress', async () => {
@@ -288,3 +290,4 @@ describe('Secure Player & Progress API', () => {
     expect(result.is_completed).toBe(false);
   });
 });
+

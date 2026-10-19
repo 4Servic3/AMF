@@ -1,3 +1,4 @@
+import { SiteInformationSettings } from "@/components/admin/site-information-settings";
 ﻿import { requireAal2, requirePermission } from "@/lib/auth/dal";
 import { logout } from "../../actions/auth";
 import { getFeatureFlags } from "@/lib/services/flags";
@@ -63,6 +64,7 @@ export default async function SettingsPage() {
           ))}
         </div>
       </div>
+      <SiteInformationSettings />
       <div className="bg-red-50 p-6 rounded-xl border border-red-200">
         <h2 className="text-lg font-semibold text-red-700 mb-2">
           Sessão administrativa

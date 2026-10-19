@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { CourseLibraryItem } from '@/lib/models/courses';
-import { Search, Bell, SlidersHorizontal, X, ChevronRight, Lock, Play } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronRight, Lock } from 'lucide-react';
+import { MemberHeaderActions } from '@/app/app/member-header-actions';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -13,7 +14,7 @@ const normalize = (value: string) =>
     .toLocaleLowerCase('pt-BR')
     .trim();
 
-type TabType = 'Explorar' | 'Meus cursos' | 'Assinaturas';
+type TabType = 'Explorar' | 'Meus cursos' | 'Assinaturas' | 'Em andamento';
 
 interface CoursesLibraryClientProps {
   products: CourseLibraryItem[];
@@ -46,7 +47,9 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
       if (activeTab === 'Meus cursos') {
         if (!['unlocked', 'in_progress', 'active_subscription'].includes(p.accessState)) return false;
       } else if (activeTab === 'Assinaturas') {
-        if (p.productType !== 'subscription') return false;
+        if (p.productType !== 'subscription' || !p.isActiveSubscription) return false;
+      } else if (activeTab === 'Em andamento') {
+        if (p.accessState === 'locked' || (p.progressPercent || 0) <= 0 || (p.progressPercent || 0) >= 100) return false;
       }
       if (activeSpecialty !== 'Todos' && p.specialty !== activeSpecialty) return false;
       if (searchQuery) {
@@ -73,12 +76,8 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
 
   // 4. Dynamic Counters
   const countCourses = products.filter(p => p.productType === 'course' && p.isPublished).length;
-  const countSubscriptions = products.filter(p => p.productType === 'subscription' && p.accessState === 'active_subscription' && p.isPublished).length;
-  const countInProgress = products.filter(p => p.accessState === 'in_progress' && p.isPublished).length;
-
-  const inProgressProducts = useMemo(() => {
-    return products.filter(p => p.isPublished && p.accessState === 'in_progress' && (p.progressPercent || 0) > 0 && (p.progressPercent || 0) < 100);
-  }, [products]);
+  const countSubscriptions = products.filter(p => p.productType === 'subscription' && p.isActiveSubscription && p.isPublished).length;
+  const countInProgress = products.filter(p => p.accessState !== 'locked' && p.isPublished && (p.progressPercent || 0) > 0 && (p.progressPercent || 0) < 100).length;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
@@ -99,14 +98,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
           <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-8">
             <div className="font-editorial text-2xl font-bold text-[#E7B64F] tracking-widest leading-none justify-self-start">AMF</div>
             <div className="font-sans font-medium text-white/90 text-[15px] justify-self-center">Cursos</div>
-            <div className="flex items-center gap-3 justify-self-end">
-              <button className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full border border-white/20 flex items-center justify-center text-[#E7B64F] active:scale-95 transition-transform" aria-label="Notificações">
-                <Bell size={18} strokeWidth={1.5} />
-              </button>
-              <button className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#0E5B5C] flex items-center justify-center font-bold text-sm active:scale-95 transition-transform" aria-label="Perfil">
-                DR
-              </button>
-            </div>
+            <div className="justify-self-end"><MemberHeaderActions compact /></div>
           </div>
           
           <h1 className="amf-page-heading font-editorial text-white leading-tight mb-2" style={{ fontSize: 'clamp(28px, 6vw, 36px)' }}>Biblioteca clínica</h1>
@@ -156,8 +148,8 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
       <div className="w-full flex-1 bg-[#FAF7F1] rounded-t-[28px] -mt-6 relative z-20 flex flex-col min-w-0">
         <main className="w-full max-w-4xl mx-auto px-6 pt-6 flex-1 flex flex-col min-w-0 pb-16" data-courses-main>
         
-        <div className="flex bg-[#F1E8D9] rounded-[20px] p-1 mb-5 shrink-0" role="tablist" data-courses-tabs>
-          {(['Explorar', 'Meus cursos', 'Assinaturas'] as TabType[]).map(tab => {
+        <div className="mb-5 flex shrink-0 gap-1 overflow-x-auto rounded-[20px] bg-[#F1E8D9] p-1 scrollbar-hide" role="tablist" aria-label="Seções da biblioteca" data-courses-tabs>
+          {(['Explorar', 'Meus cursos', 'Assinaturas', 'Em andamento'] as TabType[]).map(tab => {
             const isActive = activeTab === tab;
             return (
               <button 
@@ -165,7 +157,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2.5 rounded-[16px] text-[14px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003D3F] min-w-0 truncate ${isActive ? 'bg-[#003D3F] text-white font-bold shadow-sm' : 'text-[#151329] font-medium hover:bg-black/5'}`}
+                className={`min-h-11 min-w-max flex-1 px-3 py-2.5 rounded-[16px] text-[14px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003D3F] truncate ${isActive ? 'bg-[#003D3F] text-white font-bold shadow-sm' : 'text-[#151329] font-medium hover:bg-black/5'}`}
               >
                 {tab}
               </button>
@@ -195,63 +187,13 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
           </button>
         </div>
         
-        {/* Em Andamento */}
-        {activeTab === 'Explorar' && !searchQuery && inProgressProducts.length > 0 && (
-          <section className="mb-8 flex-col flex min-w-0" data-in-progress-section>
-            <div className="mb-4">
-              <h2 className="amf-section-heading text-[18px] font-editorial text-[#160820] font-bold inline-block relative">
-                Em andamento
-                <div className="hidden"></div>
-              </h2>
-            </div>
-            <div className="amf-course-grid flex flex-col gap-4 min-w-0">
-              {inProgressProducts.map(p => (
-                <Link key={p.id} href={p.destinationUrl} className="group outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-[20px] min-w-0 block">
-                  <div className="w-full bg-white rounded-[20px] border border-[#DED5C8] p-3 shadow-sm hover:border-[#0E5B5C]/30 transition-colors grid grid-cols-1 gap-4 min-w-0">
-                    <div className="aspect-video bg-gray-200 rounded-[12px] relative overflow-hidden shrink-0">
-                      {p.coverUrl && <Image src={p.coverUrl} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 700px" />}
-                    </div>
-                    <div className="flex flex-col min-w-0 py-0.5 justify-between">
-                      <div className="min-w-0">
-                        <h3 className="text-[15px] font-bold text-[#160820] line-clamp-2 mb-1" title={p.title}>{p.title}</h3>
-                        <div className="text-[12px] text-[#657080] truncate font-medium">
-                          {p.moduleCount ? `${p.moduleCount} módulos • ` : ''}{p.progressPercent}% concluído
-                        </div>
-                      </div>
-                      
-                      <div className="mt-2 min-w-0">
-                        <div className="w-full h-1.5 bg-[#F1E8D9] rounded-full overflow-hidden mb-2">
-                          <div 
-                            className="h-full bg-[#0E5B5C] rounded-full transition-all duration-500"
-                            style={{ width: `${Math.max(0, Math.min(100, p.progressPercent || 0))}%` }}
-                            role="progressbar"
-                            aria-valuenow={p.progressPercent || 0}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-[28px] h-[28px] rounded-full bg-[#0E5B5C] flex items-center justify-center text-white shrink-0">
-                            <Play size={12} fill="currentColor" className="ml-0.5" />
-                          </div>
-                          <span className="text-[13px] font-bold text-[#0E5B5C]">Continuar</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Catálogo Completo */}
         {sortedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-gray-400 mb-4 shadow-sm border border-[#DED5C8]">
               <Search size={28} />
             </div>
-            <h2 className="amf-section-heading text-xl font-editorial font-bold text-[#160820] mb-2">Nenhuma formação encontrada</h2>
+                <h2 className="amf-section-heading text-xl font-editorial font-bold text-[#160820] mb-2">{activeTab === 'Em andamento' ? 'Nenhum curso em andamento' : activeTab === 'Assinaturas' ? 'Nenhuma assinatura ativa' : 'Nenhuma formação encontrada'}</h2>
             <p className="text-sm text-[#657080] font-sans mb-6 max-w-sm">
               Tente ajustar sua busca ou remover alguns filtros para encontrar o que procura.
             </p>
@@ -278,7 +220,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
                 let typeLabel = '';
                 let typeColor = '';
                 if (p.productType === 'course') { typeLabel = 'CURSO'; typeColor = 'text-[#160820]'; }
-                else if (p.productType === 'subscription') { typeLabel = 'ASSINATURA'; typeColor = 'text-[#0E5B5C]'; }
+                else if (p.productType === 'subscription') { typeLabel = p.billingInterval === 'month' ? 'ASSINATURA MENSAL' : 'ASSINATURA'; typeColor = 'text-[#0E5B5C]'; }
                 else if (p.productType === 'bundle') { typeLabel = 'FERRAMENTA'; typeColor = 'text-[#0E5B5C]'; }
 
                 // Configuração Visual do Estado de Acesso

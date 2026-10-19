@@ -45,7 +45,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return new NextResponse('Link disabled', { status: 400 });
     }
     const destination = new URL(extRes.private_destination_url);
-    if (destination.protocol !== 'https:' || !['chat.whatsapp.com','wa.me','api.whatsapp.com'].includes(destination.hostname)) {
+    if (destination.protocol !== 'https:' || destination.username || destination.password || destination.port || !['chat.whatsapp.com','wa.me','api.whatsapp.com'].includes(destination.hostname)) {
       return new NextResponse('Destino não autorizado', {status:403});
     }
 

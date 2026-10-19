@@ -4,98 +4,68 @@ import type { CourseLibraryItem } from '@/lib/models/courses';
 import { CoursesLibraryClient } from './courses-library-client';
 import { createClient } from '@/lib/supabase/server';
 import { getPlanilhaAccess, PLANILHA_PRODUCT_ID } from '@/lib/products/planilha-access';
+import { loadMemberCourses } from '@/lib/member-courses';
 
 export default async function Catalog() {
   const supabase = await createClient();
-  const [{ data: { user } }, planilhaAccess] = await Promise.all([
-    supabase.auth.getUser(),
+  const [memberCatalog, planilhaAccess] = await Promise.all([
+    loadMemberCourses(),
     getPlanilhaAccess(),
   ]);
-  const userId = user?.id || 'anonymous';
+  const userId = memberCatalog.userId || 'anonymous';
 
   trackEvent('catalog_viewed', { userId });
-
-  // 1. Fetch ALL published courses
-  const { data: courses, error } = await supabase
-    .from('courses')
-    .select(`
-      id,
-      slug,
-      title,
-      short_description,
-      status,
-      workload,
-      all_students,
-      thumbnail_url,
-      media_assets!cover_asset_id(file_path)
-    `)
-    .eq('status', 'published');
-
-  if (error) {
-    console.error('Error fetching courses:', error);
+  const courses = memberCatalog.catalog;
+  const courseProductIds = [...new Set(courses.map(course => course.product_id).filter((id): id is string => Boolean(id)))];
+  const [productResult, priceResult, subscriptionResult] = await Promise.all([
+    courseProductIds.length ? supabase.from('products').select('id,type').in('id', courseProductIds) : Promise.resolve({ data: [] }),
+    courseProductIds.length ? supabase.from('product_prices').select('product_id,interval').eq('active', true).in('product_id', courseProductIds) : Promise.resolve({ data: [] }),
+    memberCatalog.userId ? supabase.from('subscriptions').select('product_id,status,current_period_end').eq('profile_id', memberCatalog.userId).in('status', ['active', 'trialing']) : Promise.resolve({ data: [] }),
+  ]);
+  const productById = new Map((productResult.data || []).map(product => [product.id, product]));
+  const intervalByProduct = new Map<string, string | null>();
+  for (const price of priceResult.data || []) {
+    const prior = intervalByProduct.get(price.product_id);
+    if (!intervalByProduct.has(price.product_id) || (price.interval === 'month' && prior !== 'month')) intervalByProduct.set(price.product_id, price.interval);
   }
-
-  // 2. Fetch User Entitlements and Progress if logged in
-  let entitlements: any[] = [];
-  let progresses: any[] = [];
-
-  if (user) {
-    const [{ data: ent }, { data: prog }] = await Promise.all([
-      supabase
-        .from('entitlements')
-        .select('resource_id,starts_at,expires_at')
-        .eq('profile_id', user.id)
-        .eq('status', 'active'),
-      supabase
-        .from('lesson_progress')
-        .select('course_id, progress_percent, status')
-        .eq('profile_id', user.id),
-    ]);
-
-    entitlements = (ent || []).filter(
-      e =>
-        (!e.starts_at || new Date(e.starts_at).getTime() <= Date.now()) &&
-        (!e.expires_at || new Date(e.expires_at).getTime() > Date.now())
-    );
-    progresses = prog || [];
-  }
-
-  const entitlementSet = new Set(entitlements.map(e => e.resource_id));
-
-  const products: CourseLibraryItem[] = (courses || []).map(course => {
-    const courseProgress = progresses.find(p => p.course_id === course.id);
-    let accessState: 'locked' | 'unlocked' | 'in_progress' | 'active_subscription' = 'locked';
-
-    if ((user && course.all_students) || entitlementSet.has(course.id)) {
-      accessState = 'unlocked';
-      if (courseProgress && courseProgress.status === 'in_progress') {
-        accessState = 'in_progress';
-      }
-    }
-
-    const coverPath =
-      course.thumbnail_url ||
-      (Array.isArray(course.media_assets)
-        ? course.media_assets[0]?.file_path
-        : (course.media_assets as any)?.file_path) ||
-      '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
-    const coverUrl =
-      coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
-        ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl
-        : coverPath;
-
+  // The catalog is request-time authenticated data; expiration must use the current server clock.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const activeSubscriptionProductIds = new Set((subscriptionResult.data || [])
+    .filter(subscription => ['active', 'trialing'].includes(subscription.status) && Date.parse(subscription.current_period_end) > now)
+    .filter(subscription => intervalByProduct.get(subscription.product_id) != null)
+    .map(subscription => subscription.product_id));
+  const summariesByCourse = new Map(memberCatalog.summaries.map(summary => [summary.courseId, summary]));
+  const products: CourseLibraryItem[] = courses.map(course => {
+    const summary = summariesByCourse.get(course.id);
+    const activeSubscription = Boolean(course.product_id && activeSubscriptionProductIds.has(course.product_id));
+    const product = course.product_id ? productById.get(course.product_id) : undefined;
+    const billingInterval = course.product_id ? intervalByProduct.get(course.product_id) : undefined;
+    const productType = product?.type === 'subscription' ? 'subscription' : 'course';
+    const hasAccess = Boolean(memberCatalog.userId && (course.all_students || summary));
+    const progressPercent = summary?.progressPercent || 0;
+    const accessState: CourseLibraryItem['accessState'] = !hasAccess ? 'locked'
+      : summary?.status === 'in_progress' && progressPercent > 0 && progressPercent < 100 ? 'in_progress'
+        : activeSubscription ? 'active_subscription' : 'unlocked';
+    const coverAsset = Array.isArray(course.media_assets) ? course.media_assets[0] : course.media_assets;
+    const coverPath = course.thumbnail_url || coverAsset?.file_path || '/assets/amf-casos/hero/hero-obstrucao-uretral.webp';
+    const coverUrl = coverPath && !coverPath.startsWith('/') && !coverPath.startsWith('https://')
+      ? supabase.storage.from('public_media').getPublicUrl(coverPath).data.publicUrl
+      : coverPath;
     return {
       id: course.id,
       slug: course.slug,
       title: course.title,
       description: course.short_description || '',
-      productType: 'course',
+      productType,
       level: 'Todos',
       moduleCount: 0,
       coverUrl,
       accessState,
-      progressPercent: courseProgress?.progress_percent || 0,
-      destinationUrl: `/app/cursos/${course.slug}`,
+      progressPercent,
+      isActiveSubscription: activeSubscription && productType === 'subscription',
+      billingInterval: billingInterval || null,
+      destinationUrl: `/app/cursos/${encodeURIComponent(course.slug)}`,
       isPublished: true,
     };
   });
@@ -111,6 +81,8 @@ export default async function Catalog() {
     specialty: 'Terapêutica',
     coverUrl: '/assets/amf-home/banner-planilha-felinos.jpeg',
     accessState: isPlanilhaUnlocked ? 'unlocked' : 'locked',
+    isActiveSubscription: false,
+    billingInterval: null,
     destinationUrl: isPlanilhaUnlocked
       ? '/app/produtos/planilha-doses-seguras-felinos/calculadora'
       : '/app/produtos/planilha-doses-seguras-felinos',

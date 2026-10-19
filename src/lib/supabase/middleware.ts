@@ -38,6 +38,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/entrar" ||
     request.nextUrl.pathname === "/cadastro" ||
     request.nextUrl.pathname === "/recuperar-senha" ||
+    request.nextUrl.pathname === "/redefinir-senha" ||
+    request.nextUrl.pathname === "/auth/callback" ||
     request.nextUrl.pathname === "/termos" ||
     request.nextUrl.pathname === "/privacidade" ||
     request.nextUrl.pathname === "/admin/login" ||
@@ -78,3 +80,4 @@ export async function updateSession(request: NextRequest) {
 
   return supabaseResponse;
 }
+

@@ -51,6 +51,7 @@ export default function Entrar() {
             {pending ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+        <Link href="/recuperar-senha" className="mt-4 block text-center text-sm text-(--color-amf-teal) hover:underline">Esqueci minha senha</Link>
         
         <p className="mt-6 text-center text-sm text-(--color-amf-muted)">
           Ainda não tem conta?{' '}
@@ -62,3 +63,4 @@ export default function Entrar() {
     </div>
   );
 }
+

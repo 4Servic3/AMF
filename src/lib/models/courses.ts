@@ -22,5 +22,7 @@ export interface CourseLibraryItem {
   lastLessonId?: string;
   destinationUrl: string;
   isPublished: boolean;
+  isActiveSubscription?: boolean;
+  billingInterval?: string | null;
   sortOrder?: number;
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { PlayCircle, BookOpen, ChevronRight, GraduationCap, Award } from 'lucide-react';
+import Image from 'next/image';
+import { Award, BookOpen, ChevronRight, GraduationCap, PlayCircle } from 'lucide-react';
 
 export type UserCourseProgress = {
   courseId: string;
@@ -11,137 +12,65 @@ export type UserCourseProgress = {
   lastLessonSlug?: string;
   progressPercent: number;
   status: 'not_started' | 'in_progress' | 'completed';
-  isEligibleForCertificate?: boolean;
 };
 
-interface SuaAcademiaProps {
-  courses: UserCourseProgress[];
-  materialsCount: number;
-}
-
-export function SuaAcademia({ courses, materialsCount }: SuaAcademiaProps) {
-  if (courses.length === 0) {
-    return (
-      <div className="flex flex-col mb-8">
-        <h2 className="amf-section-heading font-editorial text-2xl text-[#16051F] mb-5">Sua Academia</h2>
-
-
-        <div className="amf-widget bg-white rounded-[20px] p-6 border border-[#DED5C9] shadow-sm flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full bg-[#FAF7F1] flex items-center justify-center mb-4">
-            <GraduationCap className="w-6 h-6 text-[#78664E]" />
-          </div>
-          <h3 className="font-sans font-semibold text-[#16051F] text-lg mb-2">
-            Bem-vindo(a) à Academia
-          </h3>
-          <p className="font-sans text-sm text-[#667085] mb-6 max-w-sm">
-            Você ainda não possui nenhum curso em andamento. Descubra nossos cursos e comece sua jornada na medicina felina.
-          </p>
-          <Link
-            href="/app/cursos"
-            className="amf-action bg-[#0E5B5C] text-white font-sans font-semibold text-sm px-6 py-3 rounded-full hover:bg-[#004F4D] transition-colors"
-          >
-            Explorar cursos
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const primaryCourse = courses[0];
-
+export function SuaAcademia({ courses }: { courses: UserCourseProgress[]; materialsCount?: number }) {
   return (
-    <div className="flex flex-col mb-8">
-      <h2 className="amf-section-heading font-editorial text-2xl text-[#16051F] mb-5">Sua Academia</h2>
-
-
-      <div className="amf-academy-widgets flex flex-col gap-4">
-        {/* Card Principal */}
-        <div className="amf-widget bg-white rounded-[20px] p-5 border border-[#DED5C9] shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col relative overflow-hidden">
-          {primaryCourse.coverUrl && <img src={primaryCourse.coverUrl} alt={primaryCourse.courseTitle} className="w-[calc(100%+2.5rem)] max-w-none -mx-5 -mt-5 mb-5 aspect-video object-cover" />}
-          <div className="flex items-start justify-between mb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#FAF7F1] flex items-center justify-center flex-shrink-0">
-                {primaryCourse.status === 'completed' ? (
-                  <Award className="w-5 h-5 text-[#0E5B5C]" />
-                ) : primaryCourse.status === 'in_progress' ? (
-                  <BookOpen className="w-5 h-5 text-[#0E5B5C]" />
-                ) : (
-                  <PlayCircle className="w-5 h-5 text-[#0E5B5C]" />
-                )}
-              </div>
-              <div className="flex flex-col">
-                <span className="font-sans text-[11px] font-bold tracking-wider text-[#0E5B5C] uppercase">
-                  {primaryCourse.status === 'completed' 
-                    ? 'Curso Concluído' 
-                    : primaryCourse.status === 'in_progress' 
-                      ? 'Continuar curso' 
-                      : 'Começar curso'}
-                </span>
-                <h3 className="font-sans font-semibold text-[#16051F] text-base leading-snug mt-0.5 line-clamp-2">
-                  {primaryCourse.courseTitle}
-                </h3>
-              </div>
-            </div>
-
-            <Link 
-              href={`/app/cursos/${primaryCourse.courseSlug}${primaryCourse.lastLessonSlug ? `/aula/${primaryCourse.lastLessonSlug}` : ''}`}
-              className="bg-[#FAF7F1] text-[#0E5B5C] p-2.5 rounded-full hover:bg-[#E8E1D3] transition-colors"
-              aria-label="Acessar curso"
-            >
-              <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-            </Link>
-          </div>
-
-          <div className="flex flex-col gap-1.5 relative z-10">
-            <div className="flex justify-between items-center">
-              <span className="font-sans text-xs font-medium text-[#667085] truncate pr-4">
-                {primaryCourse.lastLessonTitle || 'Pronto para iniciar'}
-              </span>
-              <span className="font-sans text-xs font-bold text-[#0E5B5C]">
-                {Math.round(primaryCourse.progressPercent)}%
-              </span>
-            </div>
-            <div className="w-full h-1.5 bg-[#FAF7F1] rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-[#0E5B5C] rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${primaryCourse.progressPercent}%` }}
-              />
-            </div>
-          </div>
+    <section aria-labelledby="home-academy-title" className="mb-8">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="home-academy-title" className="amf-section-heading font-editorial text-2xl text-[#16051F]">Sua Academia</h2>
+          <p className="mt-1 text-sm text-[#667085]">Seus cursos e seu progresso</p>
         </div>
-
-        {/* Card Materiais */}
-        <Link 
-          href="/app/perfil/materiais"
-          className="amf-widget amf-material-widget bg-[#FAF7F1] rounded-[16px] p-4 flex items-center justify-between border border-[#DED5C9] hover:bg-[#F5F0E7] transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 border border-[#DED5C9]">
-              <BookOpen className="w-4 h-4 text-[#D4AD62]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans text-[11px] font-bold text-[#D4AD62] uppercase tracking-wider">
-                Meus materiais
-              </span>
-              <span className="font-sans text-xs font-medium text-[#16051F]">
-                {materialsCount} arquivo{materialsCount !== 1 && 's'} salvo{materialsCount !== 1 && 's'}
-              </span>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-[#78664E]" />
-        </Link>
-
-        {/* Outros cursos */}
-        {courses.length > 1 && (
-          <Link 
-            href="/app/cursos"
-            className="flex items-center justify-center py-2 font-sans text-sm font-semibold text-[#0E5B5C] hover:text-[#004F4D] transition-colors w-max mx-auto mt-2 gap-1"
-          >
-            Ver meus {courses.length} cursos
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        )}
+        {courses.length > 0 && <Link href="/app/cursos" className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-[#0E5B5C] hover:text-[#004F4D]">Ver biblioteca <ChevronRight className="h-4 w-4" /></Link>}
       </div>
-    </div>
+
+      {courses.length === 0 ? (
+        <div className="amf-widget flex flex-col items-center justify-center rounded-[20px] border border-[#DED5C9] bg-white p-6 text-center shadow-sm">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#FAF7F1]"><GraduationCap className="h-6 w-6 text-[#78664E]" /></div>
+          <h3 className="mb-2 text-lg font-semibold text-[#16051F]">Sua biblioteca está pronta</h3>
+          <p className="mb-6 max-w-sm text-sm text-[#667085]">Quando você tiver acesso a um curso, ele aparecerá aqui com seu progresso.</p>
+          <Link href="/app/cursos" className="amf-action rounded-full bg-[#0E5B5C] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#004F4D]">Explorar cursos</Link>
+        </div>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {courses.map(course => {
+            const progress = Math.max(0, Math.min(100, Math.round(course.progressPercent || 0)));
+            const destination = `/app/cursos/${encodeURIComponent(course.courseSlug)}${course.lastLessonSlug ? `/aula/${encodeURIComponent(course.lastLessonSlug)}` : ''}`;
+            const status = course.status === 'completed' ? 'Curso concluído' : course.status === 'in_progress' ? 'Continuar curso' : 'Começar curso';
+            const action = course.status === 'completed' ? 'Rever curso' : course.status === 'in_progress' ? 'Continuar' : 'Começar';
+            const StatusIcon = course.status === 'completed' ? Award : course.status === 'in_progress' ? BookOpen : PlayCircle;
+            return (
+              <li key={course.courseId}>
+                <article className="amf-widget h-full overflow-hidden rounded-[20px] border border-[#DED5C9] bg-white shadow-sm transition-shadow hover:shadow-md">
+                  {course.coverUrl ? <Image src={course.coverUrl} alt="" width={1280} height={720} unoptimized className="aspect-video w-full object-cover" /> : <div className="flex aspect-video items-center justify-center bg-[#F1E8D9] text-[#0E5B5C]"><GraduationCap className="h-10 w-10" aria-hidden="true" /></div>}
+                  <div className="p-5">
+                    <div className="mb-3 flex items-start gap-3">
+                      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FAF7F1] text-[#0E5B5C]"><StatusIcon className="h-5 w-5" aria-hidden="true" /></span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#0E5B5C]">{status}</p>
+                        <h3 className="mt-0.5 line-clamp-2 text-base font-semibold leading-snug text-[#16051F]">{course.courseTitle}</h3>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                        <span className="truncate text-[#667085]">{course.lastLessonTitle || 'Pronto para iniciar'}</span>
+                        <span className="shrink-0 font-bold text-[#0E5B5C]">{progress}%</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[#FAF7F1]" role="progressbar" aria-label={`Progresso em ${course.courseTitle}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+                        <div className="h-full rounded-full bg-[#0E5B5C] transition-[width]" style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
+                    <Link href={destination} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#0E5B5C] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#004F4D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0E5B5C]">
+                      {action}<ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

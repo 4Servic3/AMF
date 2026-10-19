@@ -1,8 +1,16 @@
-'use server';
+import 'server-only';
 
 import { trackEvent } from './analytics';
 import { createClient } from '@/lib/supabase/server';
 
+async function requireProgressIdentity(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user || user.id !== userId) throw new Error('Autenticação necessária para registrar progresso.');
+}
+async function requireProgressAccess(supabase: Awaited<ReturnType<typeof createClient>>, courseId: string) {
+  const { data, error } = await supabase.rpc('has_course_access', { course_uuid: courseId });
+  if (error || data !== true) throw new Error('Acesso ao curso não autorizado.');
+}
 export interface LessonProgress {
   id?: string;
   profile_id: string;
@@ -30,7 +38,9 @@ export async function updateSecureProgress(
   isEnded?: boolean
 ): Promise<UpdateProgressResult> {
   const supabase = await createClient();
+  await requireProgressIdentity(supabase, userId);
 
+  if (!Number.isFinite(positionSeconds) || positionSeconds < 0) throw new Error('Posição inválida.');
   // 1. Get lesson and course context
   const { data: lesson, error: lessonError } = await supabase
     .from('lessons')
@@ -48,6 +58,7 @@ export async function updateSecureProgress(
     throw new Error('Course context not found');
   }
 
+  await requireProgressAccess(supabase, courseId);
   // 2. Fetch authoritative duration
   let authoritativeDuration = lesson.duration_seconds || 0;
   if (lesson.video_asset_id) {
@@ -153,6 +164,7 @@ export async function markAsCompleted(
   isAuto: boolean = true
 ): Promise<void> {
   const supabase = await createClient();
+  await requireProgressIdentity(supabase, userId);
 
   const { data: lesson } = await supabase
     .from('lessons')
@@ -164,8 +176,11 @@ export async function markAsCompleted(
   const courseModuleData = Array.isArray(lesson.course_modules) ? lesson.course_modules[0] : lesson.course_modules;
   const courseId = (courseModuleData as any)?.course_id;
   if (!courseId) return;
+  await requireProgressAccess(supabase, courseId);
+  const { data: saved, error: savedError } = await supabase.from('lesson_progress').select('is_completed,progress_percent').eq('profile_id', userId).eq('lesson_id', lessonId).single();
+  if (savedError || !saved || (!saved.is_completed && !(Number(saved.progress_percent) >= 90))) throw new Error('Conclua a aula antes de marcar como concluída.');
 
-  await supabase.from('lesson_progress').upsert({
+  const completedResult = await supabase.from('lesson_progress').upsert({
     profile_id: userId,
     lesson_id: lessonId,
     course_id: courseId,
@@ -179,6 +194,7 @@ export async function markAsCompleted(
     onConflict: 'profile_id,lesson_id'
   });
 
+  if (completedResult.error) throw new Error('Não foi possível salvar o progresso.');
   trackEvent('lesson_completed', { userId, lessonId, method: isAuto ? 'auto' : 'manual' });
 
   // Check for course completion to issue certificate
@@ -187,6 +203,7 @@ export async function markAsCompleted(
 
 async function checkAndIssueCertificate(userId: string, courseId: string) {
   const supabase = await createClient();
+  await requireProgressIdentity(supabase, userId);
 
   // 1. Get Course to see if certificate is enabled
   const { data: course } = await supabase
@@ -239,6 +256,12 @@ async function checkAndIssueCertificate(userId: string, courseId: string) {
 
 export async function getProgress(userId: string, lessonId: string): Promise<LessonProgress | null> {
   const supabase = await createClient();
+  await requireProgressIdentity(supabase, userId);
+  const { data: lesson, error: lessonError } = await supabase.from('lessons').select('course_modules(course_id)').eq('id', lessonId).single();
+  if (lessonError || !lesson?.course_modules) return null;
+  const courseModule = Array.isArray(lesson.course_modules) ? lesson.course_modules[0] : lesson.course_modules;
+  if (!courseModule?.course_id) return null;
+  await requireProgressAccess(supabase, courseModule.course_id);
   const { data } = await supabase
     .from('lesson_progress')
     .select('*')
@@ -248,3 +271,5 @@ export async function getProgress(userId: string, lessonId: string): Promise<Les
     
   return data as LessonProgress;
 }
+
+
