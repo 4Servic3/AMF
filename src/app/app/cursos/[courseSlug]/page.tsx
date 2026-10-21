@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Paywall } from '@/components/ui/paywall';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { gatewayHref } from '@/lib/commerce/gateway';
+import { formatLessonDuration, lessonPathSegment } from '@/lib/lesson-route';
 
 // Real query to get course and access
 export default async function CoursePage({ params }: { params: Promise<{ courseSlug: string }> }) {
@@ -51,7 +53,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
     .select(`
       id, title, description, order_index,
       lessons (
-        id, title, type, duration_seconds, order_index, status,
+        id, slug, title, type, duration_seconds, order_index, status,
         video_asset_id, external_resource_id
       )
     `)
@@ -68,7 +70,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       type: l.type,
       status: l.status,
       duration_seconds: l.duration_seconds || 0,
-      slug: l.id, // MVP: using ID as slug for routing
+      slug: lessonPathSegment(l),
       // NUNCA passamos IDs de assets privados para o cliente se ele não tem acesso
       hasVideo: !!l.video_asset_id,
       is_completed: false // Será preenchido abaixo
@@ -145,7 +147,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
               </div>
             )}
             <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-md">
-              <span>{totalLessons} itens</span>
+              <span>{totalLessons} {totalLessons === 1 ? 'item' : 'itens'}</span>
             </div>
           </div>
 
@@ -153,7 +155,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
             <div className="flex flex-wrap items-center gap-6 mt-auto">
               {nextLesson && (
                 <Link 
-                  href={`/app/cursos/${courseSlug}/aula/${nextLesson.slug}`}
+                  href={`/app/cursos/${encodeURIComponent(courseSlug)}/aula/${encodeURIComponent(nextLesson.slug)}`}
                   className="amf-action bg-[#160820] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-[#2c1040] transition-colors shadow-md"
                 >
                   {completedCount > 0 ? 'Continuar Curso' : 'Começar Agora'}
@@ -178,10 +180,10 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
       {!hasAccess ? (
         <Paywall 
           title="Acesso Exclusivo"
-          description="Para assistir às aulas e baixar os materiais restritos deste curso, garanta sua inscrição ou faça parte da assinatura premium."
+          description="Para assistir às aulas e baixar os materiais deste curso, libere o seu acesso."
           themeColor="#160820"
-          ctaText="Ver Opções de Acesso"
-          ctaUrl={`/app/produtos/${courseSlug}`}
+          ctaText="Liberar acesso"
+          ctaUrl={gatewayHref({ kind: 'course', slug: course.slug }, 'cursos')}
         />
       ) : (
         <div className="flex flex-col lg:flex-row gap-8">
@@ -193,7 +195,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                 <summary className="flex items-center justify-between p-5 cursor-pointer select-none font-bold text-[#160820] hover:bg-[#FAF7F1] transition-colors">
                   <div>
                     {mod.title}
-                    <div className="text-xs font-normal text-gray-500 mt-1">{mod.lessons.length} aulas</div>
+                    <div className="text-xs font-normal text-gray-500 mt-1">{mod.lessons.length} {mod.lessons.length === 1 ? 'item' : 'itens'}</div>
                   </div>
                   <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -222,7 +224,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseS
                             {lesson.title}
                           </div>
                           <div className="text-[11px] mt-0.5 text-gray-500">
-                            {isComingSoon ? 'Em breve' : isVideo ? `${Math.round(lesson.duration_seconds / 60)} min` : isExternal ? 'Comunidade' : 'Material'}
+                            {isComingSoon ? 'Em breve' : isVideo ? (formatLessonDuration(lesson.duration_seconds) ?? 'Vídeo') : isExternal ? 'Comunidade' : 'Material'}
                           </div>
                         </div>
                         {!isComingSoon && (

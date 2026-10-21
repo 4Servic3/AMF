@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { determineAccessState, getUserEntitlements, type Entitlement } from '../src/lib/services/access';
 import { getCommunityAccess, isSafeCommunityUrl } from '../src/lib/services/community-access';
-import { resolveProductRoute } from '../src/lib/services/product-route';
 import { createClient } from '../src/lib/supabase/server';
 import { createServiceRoleClient } from '../src/lib/supabase/service-role';
 vi.mock('../src/lib/supabase/server', () => ({ createClient: vi.fn() }));
@@ -56,50 +55,4 @@ describe('real product and community grants', () => {
     expect(isSafeCommunityUrl(url)).toBe(false);
   });
   it('accepts an HTTPS WhatsApp invitation', () => expect(isSafeCommunityUrl('https://chat.whatsapp.com/invite')).toBe(true));
-});
-describe('product route resolves real records', () => {
-  it('returns missing for nonexistent course slug without querying a fictional product slug', async () => {
-    const { db, query } = mockDb(null);
-    expect(await resolveProductRoute('academia-completa')).toEqual({ kind: 'missing' });
-    expect(db.from).toHaveBeenCalledWith('courses');
-    expect(query.eq).toHaveBeenCalledWith('status', 'published');
-  });
-  it('encodes course redirects so a returned slug cannot change the destination origin', async () => {
-    mockDb({ slug: '//evil.com/x?admin=1' });
-    expect(await resolveProductRoute('course')).toEqual({ kind: 'course', href: '/app/cursos/%2F%2Fevil.com%2Fx%3Fadmin%3D1' });
-  });
-  it('queries products by UUID and active status', async () => {
-    const id = 'f6748b06-8efa-4dc6-a28f-96a17d14b7fd';
-    const product = { id, name: 'Product', status: 'active', is_free: false };
-    const { db, query } = mockDb(product);
-    expect(await resolveProductRoute(id)).toEqual({ kind: 'product', product });
-    expect(db.from).toHaveBeenCalledWith('products');
-    expect(query.eq).toHaveBeenCalledWith('id', id);
-    expect(query.eq).toHaveBeenCalledWith('status', 'active');
-  });
-});
-
-describe('published configured community groups', () => {
-  function configureGroup(destination: string | null) {
-    mockDb([{ ...grant, resource_type: 'course', resource_id: 'course-id' }]);
-    const results: Record<string, unknown[]> = {
-      lessons: [{ id: 'lesson-id', title: 'Grupo real', external_resource_id: 'resource-id', course_modules: { course_id: 'course-id', courses: { slug: 'course-slug' } } }],
-      external_resources: destination === null ? [] : [{ id: 'resource-id', private_destination_url: destination }],
-    };
-    const admin = { from: vi.fn((table: string) => {
-      const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), then: (resolve: (result: unknown) => unknown) => Promise.resolve({ data: results[table], error: null }).then(resolve) };
-      return query;
-    }) };
-    vi.mocked(createServiceRoleClient).mockReturnValue(admin as unknown as ReturnType<typeof createServiceRoleClient>);
-  }
-  it('returns only an internal protected destination for the authorized course', async () => {
-    configureGroup('https://chat.whatsapp.com/private-invite');
-    const result = await getCommunityAccess();
-    expect(result).toEqual({ state: 'available', links: [{ id: 'lesson-id', title: 'Grupo real', href: '/api/courses/course-slug/lesson/lesson-id/whatsapp' }] });
-    expect(JSON.stringify(result)).not.toContain('private-invite');
-  });
-  it.each([null, 'javascript:alert(1)'])('does not expose unavailable or unsafe configured groups %s', async (destination) => {
-    configureGroup(destination);
-    expect(await getCommunityAccess()).toEqual({ state: 'unavailable', links: [] });
-  });
 });

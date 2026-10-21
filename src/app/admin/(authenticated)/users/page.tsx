@@ -25,6 +25,7 @@ export default async function Users({
       <PageHeader
         title="Alunos"
         description="Perfis, acessos e histórico de aprendizagem."
+        actions={<Link className="amf-primary" href="/admin/users/new">Criar usuário de teste</Link>}
       />
       <form className="flex gap-3">
         <input

@@ -6,7 +6,7 @@ import { reprocessWebhook, requeueJob } from "../../actions/ops";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import { RefreshCw } from "lucide-react";
 
-export const metadata = { title: "Operacoes | AMF Admin" };
+export const metadata = { title: "Monitoramento | AMF Admin" };
 
 export default async function OperationsPage() {
   await requireAal2();
@@ -42,7 +42,7 @@ export default async function OperationsPage() {
                 <th className="p-3 font-medium">ID</th>
                 <th className="p-3 font-medium">Evento</th>
                 <th className="p-3 font-medium">Status</th>
-                <th className="p-3 text-right font-medium">Acoes</th>
+                <th className="p-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +90,7 @@ export default async function OperationsPage() {
                 <th className="p-3 font-medium">ID</th>
                 <th className="p-3 font-medium">Nome</th>
                 <th className="p-3 font-medium">Status</th>
-                <th className="p-3 text-right font-medium">Acoes</th>
+                <th className="p-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>

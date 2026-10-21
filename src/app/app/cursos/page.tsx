@@ -65,7 +65,9 @@ export default async function Catalog() {
       progressPercent,
       isActiveSubscription: activeSubscription && productType === 'subscription',
       billingInterval: billingInterval || null,
-      destinationUrl: `/app/cursos/${encodeURIComponent(course.slug)}`,
+      destinationUrl: hasAccess
+        ? `/app/cursos/${encodeURIComponent(course.slug)}`
+        : `/app/gateway?curso=${encodeURIComponent(course.slug)}`,
       isPublished: true,
     };
   });

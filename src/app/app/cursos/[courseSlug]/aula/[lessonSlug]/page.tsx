@@ -6,6 +6,8 @@ import { Paywall } from '@/components/ui/paywall';
 import { SecureLessonPlayer } from '@/components/player';
 import { PdfViewer } from '@/components/ui/pdf-viewer';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { gatewayHref } from '@/lib/commerce/gateway';
+import { formatLessonDuration, lessonHref, lessonLookup } from '@/lib/lesson-route';
 
 export default async function LessonPage({ params }: { params: Promise<{ courseSlug: string, lessonSlug: string }> }) {
   const { courseSlug, lessonSlug } = await params;
@@ -34,23 +36,26 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
     return (
       <div className="max-w-4xl mx-auto pt-12">
         <Paywall 
-          title="Conteúdo Bloqueado" 
-          description="Você precisa possuir este curso para acessar a aula." 
-          themeColor="#160820" 
-          ctaText="Ver detalhes do curso" 
-          ctaUrl={`/app/produtos/${courseSlug}`} 
+          title="Conteúdo bloqueado"
+          description="Libere o acesso a este curso para assistir às aulas e abrir os materiais."
+          themeColor="#160820"
+          ctaText="Liberar acesso"
+          ctaUrl={gatewayHref({ kind: 'course', slug: courseSlug }, 'cursos')}
         />
       </div>
     );
   }
 
-  // 3. Fetch current lesson
+  // 3. Fetch current lesson (slug canônico; id aceito para links antigos)
+  const lookup = lessonLookup(lessonSlug);
+  if (!lookup) notFound();
   const { data: currentLesson } = await supabase
     .from('lessons')
     .select('*, course_modules!inner(course_id,status), lesson_materials(id,name,title,mime_type,status)')
-    .eq('id', lessonSlug)
+    .eq(lookup.column, lookup.value)
+    .eq('course_modules.course_id', course.id)
     .eq('status','published')
-    .single();
+    .maybeSingle();
 
   if (!currentLesson || currentLesson.course_modules.course_id !== course.id || currentLesson.course_modules.status !== 'published') {
     notFound();
@@ -71,7 +76,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
     .select(`
       id, title, order_index,
       lessons (
-        id, title, type, duration_seconds, order_index, status
+        id, slug, title, type, duration_seconds, order_index, status
       )
     `)
     .eq('course_id', course.id)
@@ -87,7 +92,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
 
   // Find next/prev lessons in the flattened array
   const allLessons = modules.flatMap(m => m.lessons);
-  const currentIndex = allLessons.findIndex(l => l.id === lessonSlug);
+  const currentIndex = allLessons.findIndex(l => l.id === currentLesson.id);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
@@ -136,7 +141,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
                 lessonId={currentLesson.id} 
                 courseSlug={courseSlug}
                 title={currentLesson.title}
-                nextLessonHref={nextLesson ? `/app/cursos/${courseSlug}/aula/${nextLesson.id}` : undefined}
+                nextLessonHref={nextLesson ? lessonHref(courseSlug, nextLesson) : undefined}
               />
             </div>
           </div>
@@ -200,14 +205,14 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
           {materials.length > 0 && <section aria-label="Materiais da aula" className="space-y-3"><h2 className="amf-section-heading font-semibold">Materiais da aula</h2>{materials.map(material => <a key={material.id} className="block rounded-lg border p-3 text-sm underline" href={`/api/courses/${courseSlug}/material/${material.id}/download`}>Baixar {material.name || material.title}</a>)}</section>}
           <div className="flex flex-wrap items-center justify-between gap-4">
             {prevLesson ? (
-              <Link href={`/app/cursos/${courseSlug}/aula/${prevLesson.id}`} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#160820] transition-colors">
+              <Link href={lessonHref(courseSlug, prevLesson)} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#160820] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Anterior
               </Link>
             ) : <div></div>}
             
             {nextLesson ? (
-              <Link href={`/app/cursos/${courseSlug}/aula/${nextLesson.id}`} className="flex items-center gap-2 text-sm font-bold bg-[#160820] text-white px-6 py-2.5 rounded-full hover:bg-[#2c1040] transition-colors shadow-sm">
+              <Link href={lessonHref(courseSlug, nextLesson)} className="flex items-center gap-2 text-sm font-bold bg-[#160820] text-white px-6 py-2.5 rounded-full hover:bg-[#2c1040] transition-colors shadow-sm">
                 Próxima
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
               </Link>
@@ -234,14 +239,14 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
               </div>
               <div className="flex flex-col">
                 {mod.lessons.map(lesson => {
-                  const isActive = lesson.id === lessonSlug;
+                  const isActive = lesson.id === currentLesson.id;
                   const isComingSoon = lesson.status === 'coming_soon';
                   const isVideo = lesson.type === 'video';
                   
                   return (
                     <Link 
                       key={lesson.id} 
-                      href={isComingSoon ? '#' : `/app/cursos/${courseSlug}/aula/${lesson.id}`}
+                      href={isComingSoon ? '#' : lessonHref(courseSlug, lesson)}
                       className={`flex items-start gap-3 p-4 text-sm transition-colors ${isActive ? 'bg-[#D4AD62]/10 border-l-2 border-[#D4AD62]' : isComingSoon ? 'cursor-not-allowed opacity-60' : 'hover:bg-gray-50 border-l-2 border-transparent'}`}
                     >
                       <div className="mt-0.5">
@@ -256,7 +261,7 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
                       <div className="min-w-0">
                         <div className={`font-bold truncate ${isActive ? 'text-[#160820]' : 'text-gray-700'}`}>{lesson.title}</div>
                         <div className="text-[11px] text-gray-500 mt-0.5">
-                          {isComingSoon ? 'Em breve' : isVideo ? `${Math.round(lesson.duration_seconds / 60)} min` : lesson.type === 'external_link' ? 'Comunidade' : 'Material'}
+                          {isComingSoon ? 'Em breve' : isVideo ? (formatLessonDuration(lesson.duration_seconds) ?? 'Vídeo') : lesson.type === 'external_link' ? 'Comunidade' : 'Material'}
                         </div>
                       </div>
                     </Link>

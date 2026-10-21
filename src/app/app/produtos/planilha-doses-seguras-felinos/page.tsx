@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft, ArrowUpRight, Download, LockKeyhole, Calculator, FileSpreadsheet } from 'lucide-react';
 import { getPlanilhaAccess } from '@/lib/products/planilha-access';
+import { gatewayHref, PRODUCT_SLUGS } from '@/lib/commerce/gateway';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Doses Seguras para Felinos | AMF' };
@@ -12,8 +13,6 @@ export default async function PlanilhaProductPage() {
   const access = await getPlanilhaAccess();
   if (access.state === 'unauthenticated') redirect('/entrar');
   const available = access.state === 'available';
-  const checkout = process.env.PLANILHA_CHECKOUT_URL;
-  const checkoutUrl = checkout && /^https:\/\//.test(checkout) ? checkout : null;
   return (
     <div className="mx-auto w-full max-w-5xl pb-8 text-[#24102D]">
       <Link href="/app" className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[#1F5F54]"><ArrowLeft size={18} />Voltar ao início</Link>
@@ -38,8 +37,8 @@ export default async function PlanilhaProductPage() {
             </> : <>
               <LockKeyhole size={24} className="mb-3 text-[#1F5F54]" />
               <h2 className="text-xl font-semibold">{access.state === 'unavailable' ? 'Acesso temporariamente indisponível' : 'Conteúdo exclusivo do produto'}</h2>
-              <p className="mt-3 text-sm leading-6 text-[#625C62]">{access.state === 'unavailable' ? 'Não foi possível verificar seu acesso agora. Tente novamente em instantes.' : 'A calculadora e o arquivo Excel ficam disponíveis para as contas com este produto adquirido e liberado. Se você já comprou, confira se está usando o mesmo e-mail da compra.'}</p>
-              {access.state === 'locked' && checkoutUrl && <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1F5F54] px-4 py-3 text-sm font-semibold text-white">Adquirir produto<ArrowUpRight size={18} /></a>}
+              <p className="mt-3 text-sm leading-6 text-[#625C62]">{access.state === 'unavailable' ? 'Não foi possível verificar seu acesso agora. Tente novamente em instantes.' : 'A calculadora e o arquivo Excel ficam disponíveis para quem adquiriu este produto. Se você já comprou, confira se entrou com o mesmo e-mail da compra.'}</p>
+              {access.state === 'locked' && <Link href={gatewayHref({ kind: 'product', slug: PRODUCT_SLUGS.planilha }, 'planilha')} className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1F5F54] px-4 py-3 text-sm font-semibold text-white">Liberar acesso<ArrowUpRight size={18} /></Link>}
             </>}
           </div>
         </div>

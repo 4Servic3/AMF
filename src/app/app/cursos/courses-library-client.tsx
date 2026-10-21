@@ -75,7 +75,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
   }, [filteredProducts]);
 
   // 4. Dynamic Counters
-  const countCourses = products.filter(p => p.productType === 'course' && p.isPublished).length;
+  const countCourses = products.filter(p => p.isPublished && p.accessState !== 'locked').length;
   const countSubscriptions = products.filter(p => p.productType === 'subscription' && p.isActiveSubscription && p.isPublished).length;
   const countInProgress = products.filter(p => p.accessState !== 'locked' && p.isPublished && (p.progressPercent || 0) > 0 && (p.progressPercent || 0) < 100).length;
 
@@ -130,7 +130,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
           <div className="amf-header-metrics flex w-full divide-x divide-[#E7B64F]/20">
             <div className="flex-1 flex flex-col items-center min-w-0">
               <span className="text-xl font-bold leading-none mb-1">{countCourses}</span>
-              <span className="text-xs text-white/60 truncate w-full text-center">curso{countCourses !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-white/60 truncate w-full text-center">liberado{countCourses !== 1 ? 's' : ''}</span>
             </div>
             <div className="flex-1 flex flex-col items-center min-w-0">
               <span className="text-xl font-bold leading-none mb-1">{countSubscriptions}</span>
@@ -210,7 +210,7 @@ export function CoursesLibraryClient({ products }: CoursesLibraryClientProps) {
               <h2 className="amf-section-heading text-[18px] font-editorial text-[#160820] font-bold">
                 {activeTab === 'Meus cursos' ? 'Meus acessos' : activeTab === 'Assinaturas' ? 'Planos de assinatura' : 'Todos os cursos'}
               </h2>
-              <span className="text-[12px] text-[#657080] font-sans">{sortedProducts.length} formação{sortedProducts.length !== 1 ? 'ões' : ''}</span>
+              <span className="text-[12px] text-[#657080] font-sans">{sortedProducts.length} {sortedProducts.length === 1 ? 'conteúdo' : 'conteúdos'}</span>
             </div>
             
             <div className="amf-course-grid flex flex-col gap-3 min-w-0">

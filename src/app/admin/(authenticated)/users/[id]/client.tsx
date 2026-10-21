@@ -10,6 +10,7 @@ import {
   handleDataRequest,
 } from "@/app/admin/actions/users";
 import { accessStatus } from "@/lib/admin-values";
+import { describeAccess, encodeAccessTarget } from "@/lib/admin-access-target";
 import ActionForm from "@/components/admin/ui/ActionForm";
 import DataTable from "@/components/admin/ui/DataTable";
 export default function UserCrmClient({
@@ -18,12 +19,14 @@ export default function UserCrmClient({
   notes,
   progress,
   courses,
+  products,
 }: {
   user: any;
   entitlements: any[];
   notes: any[];
   progress: any[];
   courses: any[];
+  products: any[];
 }) {
   const [tab, setTab] = useState("Perfil"),
     [busy, setBusy] = useState(false),
@@ -114,9 +117,7 @@ export default function UserCrmClient({
             columns={[
               {
                 header: "Conteúdo",
-                cell: (e) =>
-                  courses.find((c) => c.id === e.resource_id)?.title ||
-                  e.resource_type + " · " + e.resource_id,
+                cell: (e) => describeAccess(e, courses, products),
               },
               { header: "Situação", cell: (e) => accessStatus(e) },
               {
@@ -142,26 +143,35 @@ export default function UserCrmClient({
             ]}
           />
           <section className="amf-panel">
-            <h2 className="mb-4 text-xl">Conceder acesso a curso</h2>
+            <h2 className="mb-4 text-xl">Conceder acesso</h2>
             <ActionForm
               action={async (form) => {
                 await grantManualAccess(
                   user.id,
-                  String(form.get("course")),
+                  String(form.get("target")),
                   String(form.get("reason")),
                 );
               }}
               label="Conceder acesso"
             >
               <label className="block">
-                Curso
-                <select className="mt-2 w-full" name="course" required>
+                Conteúdo
+                <select className="mt-2 w-full" name="target" required>
                   <option value="">Selecione</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
+                  <optgroup label="Cursos publicados">
+                    {courses.filter((c) => c.status === "published").map((c) => (
+                      <option key={c.id} value={encodeAccessTarget({ kind: "course", id: c.id })}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Produtos">
+                    {products.filter((p) => p.status === "active" && p.type !== "course").map((p) => (
+                      <option key={p.id} value={encodeAccessTarget({ kind: "product", id: p.id })}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </label>
               <label className="block">
