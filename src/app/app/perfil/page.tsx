@@ -39,15 +39,6 @@ export default async function Perfil() {
   
   const courseCount = entitlements?.length || 0;
 
-  // 3. Fetch Assinatura
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('status, current_period_end, products(name)')
-    .eq('profile_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   // 4. Fetch Certificados
   const { data: certificates } = await supabase
     .from('certificates')
@@ -119,33 +110,13 @@ export default async function Perfil() {
           </div>
         </section>
 
-        {/* Assinatura */}
+        {/* Compras */}
         <section>
-          <h2 className="amf-section-heading text-lg font-editorial text-[#160820] font-bold mb-3">Plano e Assinatura</h2>
+          <h2 className="amf-section-heading text-lg font-editorial text-[#160820] font-bold mb-3">Minhas compras</h2>
           <div className="amf-widget bg-white rounded-2xl border border-[#E8E1D3] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-[#160820] text-[15px]">
-                  {subscription ? (subscription.products as any)?.name || 'Plano Premium' : 'Nenhum plano ativo'}
-                </h3>
-                {subscription?.status === 'active' && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#0F6466]/10 text-[#0F6466] text-[10px] font-bold uppercase">Ativa</span>
-                )}
-                {subscription?.status === 'canceled' && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase">Cancelada</span>
-                )}
-                {subscription?.status === 'past_due' && (
-                  <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-[10px] font-bold uppercase">Pendente</span>
-                )}
-              </div>
-              {subscription?.current_period_end && (
-                <p className="text-sm text-gray-500">
-                  {subscription.status === 'active' ? 'Renovação em' : 'Validade até'}: {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
-                </p>
-              )}
-            </div>
+            <p className="text-sm text-gray-500">Cursos e produtos liberados na sua conta.</p>
             <Link href="/app/perfil/assinatura" className="text-sm font-bold text-[#0E5B5C] border border-[#0E5B5C] px-4 py-2 rounded-full text-center hover:bg-[#0E5B5C] hover:text-white transition-colors">
-              Gerenciar
+              Ver compras
             </Link>
           </div>
         </section>
