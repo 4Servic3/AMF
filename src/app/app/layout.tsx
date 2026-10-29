@@ -5,6 +5,7 @@ import { GlobalHeader } from '@/components/layout/global-header';
 import { MainContentWrapper } from '@/components/layout/main-content-wrapper';
 import { Navigation } from '@/components/layout/navigation';
 import { StoryViewerProvider } from '@/components/ui/stories/story-viewer-provider';
+import { SupportBubble } from '@/components/support/support-bubble';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      <SupportBubble />
     </StoryViewerProvider>
   );
 }

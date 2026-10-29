@@ -1,7 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { hasPermission } from '@/lib/auth/dal'
+import { adminDb } from '@/lib/admin-data'
+import { ACTIVE_TICKET_STATUSES, awaitingReply, type InboxItem, type InboxTicket } from '@/lib/admin/support-inbox'
 
 export type AdminNotification = {
   id: string
@@ -12,43 +13,32 @@ export type AdminNotification = {
   read: boolean
 }
 
+/** Chamados que esperam a equipe, do mais recente para o mais antigo. */
+export async function loadSupportInbox(): Promise<InboxItem[]> {
+  const db = await adminDb('support.manage')
+  const { data, error } = await db
+    .from('support_tickets')
+    .select('id,subject,status,created_at,profile_id,profiles!profile_id(full_name,email),support_messages(sender_id,is_internal,created_at)')
+    .in('status', ACTIVE_TICKET_STATUSES)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) {
+    console.error('Support inbox query failed', error)
+    return []
+  }
+  return awaitingReply((data || []) as unknown as InboxTicket[])
+}
+
 export async function getAdminNotifications(): Promise<{ count: number, notifications: AdminNotification[] }> {
-  const supabase = await createClient()
-  const canManageCases = await hasPermission('content.manage') || await hasPermission('cases.manage')
-  const canManageSupport = await hasPermission('support.manage')
-  
-  let notifications: AdminNotification[] = []
-  
-  if (canManageCases) {
-    const { count } = await supabase.from('cases').select('*', { count: 'exact', head: true }).eq('status', 'pending_review')
-    if (count && count > 0) {
-      notifications.push({
-        id: 'pending-cases',
-        title: 'Casos pendentes',
-        description: `${count} casos aguardam revisão.`,
-        href: '/admin/cases?status=pending_review',
-        createdAt: new Date().toISOString(),
-        read: false
-      })
-    }
-  }
-  
-  if (canManageSupport) {
-    const { count } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open')
-    if (count && count > 0) {
-      notifications.push({
-        id: 'open-tickets',
-        title: 'Tickets abertos',
-        description: `${count} tickets de suporte abertos.`,
-        href: '/admin/support?status=open',
-        createdAt: new Date().toISOString(),
-        read: false
-      })
-    }
-  }
-  
-  return {
-    count: notifications.filter(n => !n.read).length,
-    notifications
-  }
+  if (!(await hasPermission('support.manage'))) return { count: 0, notifications: [] }
+  const inbox = await loadSupportInbox()
+  const notifications = inbox.slice(0, 8).map((t) => ({
+    id: t.id,
+    title: t.isNew ? 'Novo chamado de suporte' : 'Nova mensagem no suporte',
+    description: `${t.student}: ${t.subject}`,
+    href: `/admin/support/${t.id}`,
+    createdAt: t.at,
+    read: false,
+  }))
+  return { count: inbox.length, notifications }
 }

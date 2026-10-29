@@ -4,6 +4,13 @@ import StatusBadge from "@/components/admin/ui/StatusBadge";
 import ActionForm from "@/components/admin/ui/ActionForm";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import DataTable from "@/components/admin/ui/DataTable";
+/** O que todos os alunos veem no sino; respostas do suporte (com profile_id) ficam de fora. */
+async function generalNotices(db: Awaited<ReturnType<typeof adminDb>>) {
+  const recent = () => db.from("notifications").select("id,title,message,created_at").order("created_at", { ascending: false }).limit(5);
+  const general = await recent().is("profile_id", null);
+  return general.error?.code === "42703" ? recent() : general;
+}
+
 export default async function Communications() {
   const db = await adminDb("communications.manage");
   const [{ data, error }, live] = await Promise.all([
@@ -12,8 +19,7 @@ export default async function Communications() {
       .select("id,name,status,channels,created_at")
       .order("created_at", { ascending: false })
       .limit(100),
-    // O que o aluno vê agora no sino: a mesma tabela que a tela do aluno lê.
-    db.from("notifications").select("id,title,message,created_at").order("created_at", { ascending: false }).limit(5),
+    generalNotices(db),
   ]);
   queryError(error);
   queryError(live.error);
