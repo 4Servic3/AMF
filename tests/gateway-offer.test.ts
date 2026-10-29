@@ -38,8 +38,8 @@ describe('gateway offer', () => {
     expect(await loadGatewayOffer({ kind: 'product', slug: 'nao-existe' })).toBeNull()
   })
 
-  it('shows a course without linked product, without a payment link', async () => {
+  it('shows a course without linked product, sending to the placeholder checkout', async () => {
     mocks.rows.courses = { id: '918c176f-8d14-43a9-89e9-67aa43820a9d', slug: 'imersao', title: 'Imersão', short_description: null, product_id: null }
-    expect(await loadGatewayOffer({ kind: 'course', slug: 'imersao' })).toMatchObject({ name: 'Imersão', owned: false, checkoutUrl: null, accessHref: '/app/cursos/imersao' })
+    expect(await loadGatewayOffer({ kind: 'course', slug: 'imersao' })).toMatchObject({ name: 'Imersão', owned: false, checkoutUrl: '/checkout', accessHref: '/app/cursos/imersao' })
   })
 })
