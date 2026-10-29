@@ -13,8 +13,13 @@ import { z } from 'zod'
 export async function startCaseStory(input: unknown) {
   const session = await requirePermission('cases.manage')
   const parsed = caseStoryInput.safeParse(input)
-  if (!parsed.success) return { error: 'Selecione um caso e um vídeo de até 1 GB ou imagem JPG, PNG ou WebP de até 10 MB.' }
+  if (!parsed.success) {
+    const rule = parsed.error.issues.find(issue => issue.code === 'custom')
+    return { error: rule?.message || 'Selecione um caso e um vídeo de até 1 GB ou imagem JPG, PNG ou WebP de até 10 MB.' }
+  }
   const data = parsed.data
+  // Só envia a coluna quando há agendamento: sem data, o insert é igual ao de antes.
+  const schedule = data.scheduledFor ? { scheduled_for: data.scheduledFor } : {}
   const db = createServiceRoleClient()
   let caseId = data.caseId
   if (caseId) {
@@ -33,13 +38,13 @@ export async function startCaseStory(input: unknown) {
       const path = `${caseId}/${id}`
       const signed = await db.storage.from('case-story-images').createSignedUploadUrl(path,{upsert:false})
       if (signed.error) throw new Error('upload_failed')
-      const saved = await db.from('case_story_videos').insert({id,case_id:caseId,caption:data.caption,media_type:'image',storage_path:path,size_bytes:data.fileSize,created_by:session.user.id})
+      const saved = await db.from('case_story_videos').insert({id,case_id:caseId,caption:data.caption,media_type:'image',storage_path:path,size_bytes:data.fileSize,created_by:session.user.id,...schedule})
       if (saved.error) throw new Error('save_failed')
       return {id,caseId,path,token:signed.data.token}
     }
     const upload = await createDirectUpload({ corsOrigin: origin, passthrough: `case-story:${id}` })
     uploadId = upload.uploadId
-    const saved = await db.from('case_story_videos').insert({ id, case_id: caseId, caption: data.caption, mux_upload_id: uploadId, created_by: session.user.id })
+    const saved = await db.from('case_story_videos').insert({ id, case_id: caseId, caption: data.caption, mux_upload_id: uploadId, created_by: session.user.id, ...schedule })
     if (saved.error) throw new Error('save_failed')
     revalidatePath('/admin/stories'); revalidatePath('/admin/cases')
     return { id, caseId, uploadUrl: upload.uploadUrl }

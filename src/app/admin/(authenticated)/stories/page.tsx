@@ -19,6 +19,7 @@ export default async function StoriesPage({ searchParams }: { searchParams: Prom
   const now=requestTime()
   const titles=new Map(cases.map(c=>[c.id,c.title]))
   const live=stories.filter(s=>s.status==='published'&&storyIsRecent(s.published_at,now)).sort((a,b)=>(b.published_at||'').localeCompare(a.published_at||''))
+  const scheduled=stories.filter(s=>s.status==='published'&&s.published_at&&Date.parse(s.published_at)>now).sort((a,b)=>(a.published_at||'').localeCompare(b.published_at||''))
   return <div className="mx-auto max-w-5xl space-y-6">
     <PageHeader title="Stories" description="Publique em 9:16. Cada story fica 48 horas na home do aluno e continua salvo no caso." />
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -31,6 +32,10 @@ export default async function StoriesPage({ searchParams }: { searchParams: Prom
           <img src={'/api/case-stories/'+s.id+'/thumbnail'} alt="" loading="lazy" className="h-16 w-9 shrink-0 rounded-md bg-[var(--admin-fill)] object-cover" />
           <span className="min-w-0 text-sm"><span className="block truncate font-medium">{titles.get(s.case_id)||'Caso'}</span><span className="block truncate text-[var(--admin-secondary)]">{s.caption||'Sem legenda'}</span><span className="block text-xs text-[var(--admin-tertiary)]">{timeLeft(s.published_at!,now)}</span></span>
         </li>)}</ul>
+        {scheduled.length>0 && <>
+          <h2 className="mt-6 text-[17px]">Agendados</h2>
+          <ul className="mt-3 space-y-2">{scheduled.map(s=><li key={s.id} className="text-sm"><span className="block truncate font-medium">{titles.get(s.case_id)||'Caso'}</span><span className="block text-[var(--admin-secondary)]">entra em {new Date(s.published_at!).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></li>)}</ul>
+        </>}
       </aside>
     </div>
   </div>

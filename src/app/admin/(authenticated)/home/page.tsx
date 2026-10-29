@@ -16,7 +16,7 @@ export default async function Home() {
   ]);
   [banners, media, courses].forEach((r) => queryError(r.error));
   const images = (media.data || []).map((m: { id: string; file_name: string | null }) => ({ id: m.id, label: m.file_name || "Imagem" }));
-  const list = (banners.data || []) as { id: string; version: number; title: string; status: string; media_asset_id: string | null; cta_target_id: string | null }[];
+  const list = (banners.data || []) as { id: string; version: number; title: string; status: string; media_asset_id: string | null; cta_target_id: string | null; starts_at?: string | null; ends_at?: string | null }[];
   const live = list.filter((b) => b.status === "published").length;
   return (
     <div className="mx-auto max-w-5xl space-y-6">

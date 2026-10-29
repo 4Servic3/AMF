@@ -7,8 +7,10 @@ export const caseStoryInput = z.object({
   fileName: z.string().min(1).max(255),
   fileType: z.string().regex(/^(video\/|image\/(jpeg|png|webp)$)/),
   fileSize: z.number().positive().max(1024 * 1024 * 1024),
+  scheduledFor: z.string().datetime().nullable().optional(),
 }).refine(value => value.caseId || value.caseTitle.length > 0, { message: 'Selecione ou dê um nome ao caso.' })
   .refine(value => !value.fileType.startsWith('image/') || value.fileSize <= 10 * 1024 * 1024, {message:'Imagens devem ter até 10 MB.'})
+  .refine(value => !value.scheduledFor || Date.parse(value.scheduledFor) > Date.now(), {message:'Escolha uma data de publicação futura.'})
 
 export type CaseStoryRow = { id: string; case_id: string; caption: string; status: string; created_at: string }
 export type CaseOption = { id: string; title: string }

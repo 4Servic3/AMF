@@ -3,7 +3,10 @@ import { useState } from "react";
 import ActionForm from "@/components/admin/ui/ActionForm";
 import { saveHomeBanner } from "@/app/admin/actions/content";
 
-type Banner = { id?: string; version: number; title: string; status: string; media_asset_id?: string | null; cta_target_id?: string | null };
+type Banner = { id?: string; version: number; title: string; status: string; media_asset_id?: string | null; cta_target_id?: string | null; starts_at?: string | null; ends_at?: string | null };
+
+/** "2026-11-01T03:00:00Z" -> "2026-11-01" no horário de Brasília, para o campo de data. */
+const toDay = (iso?: string | null) => (iso ? new Date(new Date(iso).getTime() - 3 * 3600_000).toISOString().slice(0, 10) : "");
 type Option = { id: string; label: string };
 
 const DEFAULT_IMAGE = "/assets/amf-home/banner-imersao-felinos.png";
@@ -76,6 +79,11 @@ export default function BannerEditor({ banner, images, courses, isNew = false }:
               {courses.map((c) => <option key={c.slug} value={c.slug}>{c.title}</option>)}
             </select>
           </label>
+          <fieldset className="grid gap-3 sm:grid-cols-2">
+            <legend className="mb-2 text-sm text-[var(--admin-secondary)]">Período no ar. Sem datas, o banner é permanente.</legend>
+            <label className="block">Começa em<input className="mt-2 block w-full" type="date" name="starts_at" defaultValue={toDay(banner.starts_at)} /></label>
+            <label className="block">Termina em<input className="mt-2 block w-full" type="date" name="ends_at" defaultValue={toDay(banner.ends_at)} /></label>
+          </fieldset>
           <label className="block">Situação
             <select className="mt-2 w-full" name="status" defaultValue={banner.status}>
               <option value="draft">Rascunho</option>
