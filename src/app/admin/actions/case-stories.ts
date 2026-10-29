@@ -7,6 +7,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { createDirectUpload, getMuxClient } from '@/lib/mux/client'
 import { caseStoryInput } from '@/lib/case-stories'
 import { syncCaseStory } from '@/lib/mux/case-stories'
+import { reorderedTimestamps } from '@/lib/story-lifecycle'
 import { z } from 'zod'
 
 export async function startCaseStory(input: unknown) {
@@ -65,5 +66,23 @@ export async function archiveCaseStory(id: string) {
   const result = await createServiceRoleClient().from('case_story_videos').update({status:'archived'}).eq('id',id)
   if (result.error) return {error:'Não foi possível remover o story.'}
   revalidatePath('/admin/stories'); revalidatePath('/admin/cases'); revalidatePath('/app'); revalidatePath('/app/casos')
+  return {success:true}
+}
+
+/** Muda a ordem dos stories publicados de um caso, na sequência em que aparecem para o aluno. */
+export async function reorderCaseStories(caseId: string, orderedIds: string[]) {
+  await requirePermission('cases.manage')
+  const ids = z.array(z.string().uuid()).max(200).safeParse(orderedIds)
+  if (!z.string().uuid().safeParse(caseId).success || !ids.success) return {error:'Ordem inválida.'}
+  const db = createServiceRoleClient()
+  const current = await db.from('case_story_videos').select('id,created_at').eq('case_id',caseId).eq('status','published')
+  if (current.error) return {error:'Não foi possível carregar os stories do caso.'}
+  const changes = reorderedTimestamps(current.data || [], ids.data)
+  if (!changes) return {error:'A lista de stories mudou. Recarregue a página e tente de novo.'}
+  for (const change of changes) {
+    const result = await db.from('case_story_videos').update({created_at:change.created_at}).eq('id',change.id).eq('case_id',caseId)
+    if (result.error) return {error:'Não foi possível salvar a nova ordem.'}
+  }
+  revalidatePath('/admin/cases'); revalidatePath('/app'); revalidatePath('/app/casos')
   return {success:true}
 }

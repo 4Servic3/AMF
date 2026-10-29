@@ -1,144 +1,147 @@
-import React from 'react'
 import Link from 'next/link'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import PageHeader from '@/components/admin/ui/PageHeader'
-import DataTable from '@/components/admin/ui/DataTable'
-import StatusBadge from '@/components/admin/ui/StatusBadge'
-import { requireAal2, requirePermission } from '@/lib/auth/dal'
+import { adminDb, queryError } from '@/lib/admin-data'
+import { PLANILHA_PRODUCT_ID } from '@/lib/products/planilha-access'
 
 export const metadata = {
-  title: 'Cursos | AMF Admin',
+  title: 'Cursos e materiais | AMF Admin',
+}
+
+type CourseRow = {
+  id: string
+  title: string
+  status: string
+  slug: string | null
+  all_students: boolean
+  thumbnail_url: string | null
+  media_assets: { file_path: string | null } | { file_path: string | null }[] | null
+  course_modules: { id: string; lessons: { count: number }[] | null }[] | null
+}
+
+const STATUS: Record<string, { label: string; className: string }> = {
+  published: { label: 'Publicado', className: 'bg-[#e8f6ee] text-[#1f7a4d]' },
+  draft: { label: 'Rascunho', className: 'bg-amber-50 text-amber-800' },
+  archived: { label: 'Arquivado', className: 'bg-[var(--admin-fill)] text-[var(--admin-secondary)]' },
+  active: { label: 'À venda', className: 'bg-[#e8f6ee] text-[#1f7a4d]' },
+  inactive: { label: 'Pausado', className: 'bg-amber-50 text-amber-800' },
+}
+const FALLBACK_COVER = '/assets/amf-casos/hero/hero-obstrucao-uretral.webp'
+
+function Badge({ status }: { status: string }) {
+  const s = STATUS[status] || STATUS.draft
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${s.className}`}>{s.label}</span>
+}
+
+function Card({ cover, badge, kind, title, facts, actions }: { cover: string; badge: React.ReactNode; kind: string; title: string; facts: string[]; actions: React.ReactNode }) {
+  return (
+    <article className="amf-panel flex flex-col overflow-hidden !p-0">
+      <div className="relative aspect-[16/9] bg-[var(--admin-fill)]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+        <div className="absolute left-3 top-3">{badge}</div>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-tint)]">{kind}</p>
+        <h2 className="mt-1 text-lg leading-snug">{title}</h2>
+        <p className="mt-1 text-sm text-[var(--admin-secondary)]">{facts.join(' · ')}</p>
+        <div className="mt-auto flex flex-wrap gap-2 pt-4">{actions}</div>
+      </div>
+    </article>
+  )
 }
 
 export default async function CoursesPage() {
-  await requireAal2()
-  await requirePermission('courses.manage')
+  const db = await adminDb('courses.manage')
+  const [courses, planilha] = await Promise.all([
+    db
+      .from('courses')
+      .select('id,title,status,slug,all_students,thumbnail_url,media_assets!cover_asset_id(file_path),course_modules(id,lessons(count))')
+      .order('created_at', { ascending: false }),
+    db.from('products').select('id,name,status').eq('id', PLANILHA_PRODUCT_ID).maybeSingle(),
+  ])
+  queryError(courses.error)
+  queryError(planilha.error)
+  const all = (courses.data || []) as CourseRow[]
+  const rows = all.filter((c) => c.status !== 'archived')
+  const archived = all.filter((c) => c.status === 'archived')
 
-  // Use service role so admin sees ALL courses regardless of status (draft, archived etc.)
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Uma contagem por item: exata mesmo com muitos alunos e barata para poucos cursos.
+  const accessCount = (type: 'course' | 'product', id: string) =>
+    db.from('entitlements').select('id', { count: 'exact', head: true }).eq('resource_type', type).eq('resource_id', id).eq('status', 'active')
+  const counts = await Promise.all([
+    ...rows.map((c) => accessCount('course', c.id)),
+    planilha.data ? accessCount('product', planilha.data.id) : Promise.resolve({ count: 0, error: null }),
+  ])
+  counts.forEach((r) => queryError(r.error))
 
-  const { data: courses, error } = await supabaseAdmin
-    .from('courses')
-    .select('id, title, status, created_at, slug')
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching courses:', error)
-    throw new Error('Não foi possível carregar os cursos.')
+  const coverOf = (c: CourseRow) => {
+    const asset = Array.isArray(c.media_assets) ? c.media_assets[0] : c.media_assets
+    const path = c.thumbnail_url || asset?.file_path || FALLBACK_COVER
+    return path.startsWith('/') || path.startsWith('https://') ? path : db.storage.from('public_media').getPublicUrl(path).data.publicUrl
   }
-
-  const statusVariantMap: Record<string, 'success' | 'warning' | 'neutral'> = {
-    published: 'success',
-    draft: 'warning',
-    archived: 'neutral',
-  }
-
-  const statusLabelMap: Record<string, string> = {
-    published: 'Publicado',
-    draft: 'Rascunho',
-    archived: 'Arquivado',
-  }
-
-  const columns = [
-    {
-      header: 'Curso',
-      accessorKey: 'title',
-      cell: (row: any) => (
-        <Link
-          href={`/admin/courses/editor/${row.id}`}
-          className="font-medium text-amf-petrol-900 hover:text-amf-petrol-700 hover:underline"
-        >
-          {row.title}
-        </Link>
-      )
-    },
-    {
-      header: 'Status',
-      cell: (row: any) => {
-        const status = row.status || 'draft'
-        const variant = statusVariantMap[status] ?? 'neutral'
-        const label = statusLabelMap[status] ?? status.toUpperCase()
-        return <StatusBadge variant={variant}>{label}</StatusBadge>
-      }
-    },
-    {
-      header: 'Slug',
-      cell: (row: any) => (
-        <span className="text-xs text-amf-muted-600 font-mono">{row.slug || '—'}</span>
-      )
-    },
-    {
-      header: 'Criado em',
-      cell: (row: any) =>
-        new Date(row.created_at || Date.now()).toLocaleDateString('pt-BR')
-    },
-    {
-      header: 'Ações',
-      cell: (row: any) => (
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/admin/courses/editor/${row.id}`}
-            className="text-sm text-amf-petrol-900 hover:text-amf-petrol-700 font-medium hover:underline"
-          >
-            Editar
-          </Link>
-          <Link
-            href={`/admin/courses/preview/${row.id}`}
-            className="text-sm text-amf-muted-600 hover:text-amf-ink-700 hover:underline"
-          >
-            Preview
-          </Link>
-        </div>
-      )
-    },
-  ]
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Cursos"
-        description="Cadastre cursos, organize módulos e aulas e envie os vídeos."
-        actions={
-          <Link
-            href="/admin/courses/editor/new"
-            className="inline-flex items-center gap-2 bg-amf-petrol-900 hover:bg-amf-petrol-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Novo curso
-          </Link>
-        }
+        title="Cursos e materiais"
+        description="Tudo o que o aluno estuda no aplicativo: cursos e a planilha de doses seguras."
+        actions={<Link href="/admin/courses/editor/new" className="amf-primary">Novo curso</Link>}
       />
-
-      {(!courses || courses.length === 0) ? (
-        <div className="rounded-xl border border-dashed border-amf-border bg-white px-6 py-16 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-amf-ivory-100 border border-amf-border flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-amf-muted-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
-          <h3 className="text-amf-ink-900 font-semibold mb-1">Nenhum curso cadastrado</h3>
-          <p className="text-amf-muted-600 text-sm mb-6">
-            Comece criando o primeiro curso da plataforma.
-          </p>
-          <Link
-            href="/admin/courses/editor/new"
-            className="inline-flex items-center gap-2 bg-amf-petrol-900 hover:bg-amf-petrol-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Criar primeiro curso
-          </Link>
-        </div>
-      ) : (
-        <DataTable columns={columns} data={courses} />
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {rows.map((c, i) => {
+          const modules = c.course_modules || []
+          const lessons = modules.reduce((sum, m) => sum + (m.lessons?.[0]?.count || 0), 0)
+          const students = counts[i].count || 0
+          return (
+            <Card
+              key={c.id}
+              cover={coverOf(c)}
+              badge={<Badge status={c.status} />}
+              kind="Curso"
+              title={c.title}
+              facts={[
+                `${modules.length} ${modules.length === 1 ? 'módulo' : 'módulos'}`,
+                `${lessons} ${lessons === 1 ? 'aula' : 'aulas'}`,
+                c.all_students ? 'aberto a todos os alunos' : `${students} ${students === 1 ? 'aluno' : 'alunos'} com acesso`,
+              ]}
+              actions={<>
+                <Link href={`/admin/courses/editor/${c.id}`} className="amf-primary">Editar</Link>
+                <Link href={`/admin/courses/preview/${c.id}`} className="amf-secondary">Ver como aluno</Link>
+              </>}
+            />
+          )
+        })}
+        {planilha.data && (
+          <Card
+            cover="/assets/amf-home/banner-planilha-felinos.jpeg"
+            badge={<Badge status={planilha.data.status} />}
+            kind="Material"
+            title="Planilha de doses seguras (tabela de vacinas)"
+            facts={['Calculadora e planilha Excel', `${counts[rows.length].count || 0} com acesso`]}
+            actions={<>
+              <Link href="/admin/products" className="amf-primary">Preço e checkout</Link>
+              <Link href={`/admin/access?recurso=product:${planilha.data.id}`} className="amf-secondary">Quem tem acesso</Link>
+              <a href="/app/produtos/planilha-doses-seguras-felinos/calculadora" target="_blank" rel="noopener noreferrer" className="amf-secondary">Abrir no app</a>
+            </>}
+          />
+        )}
+        <Link href="/admin/courses/editor/new" className="flex min-h-64 flex-col items-center justify-center gap-2 rounded-[var(--admin-radius)] border-2 border-dashed border-[var(--admin-border)] p-6 text-center text-[var(--admin-secondary)] hover:border-[var(--admin-tint)] hover:text-[var(--admin-tint)]">
+          <span className="text-3xl leading-none">+</span>
+          <span className="font-semibold">Criar novo curso</span>
+        </Link>
+      </div>
+      {archived.length > 0 && (
+        <details className="amf-panel">
+          <summary className="cursor-pointer font-semibold">Arquivados ({archived.length})</summary>
+          <ul className="mt-3 divide-y divide-[var(--admin-separator)]">
+            {archived.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <span>{c.title}</span>
+                <Link href={`/admin/courses/editor/${c.id}`} className="font-semibold text-[var(--admin-tint)]">Abrir</Link>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </div>
   )
