@@ -1,12 +1,12 @@
-import { loadLiveHomeBanners, type PublishedHomeBanner } from "@/lib/home-banners";
-import { bannerHref } from "@/lib/admin-values";
+import { loadLiveHomeBanners } from "@/lib/home-banners";
+import { buildHomeSlides } from "@/lib/home-banner-slides";
 import React, { Suspense } from "react";
 import HomeCaseStories from "@/components/home/home-case-stories";
 import { redirect } from "next/navigation";
 import { loadMemberCourses } from "@/lib/member-courses";
 import { createClient } from "@/lib/supabase/server";
 import { PremiumHomeHeader } from "@/components/home/premium-home-header";
-import { HomeBannerCarousel, type HomeBannerSlide } from "@/components/home/home-banner-carousel";
+import { HomeBannerCarousel } from "@/components/home/home-banner-carousel";
 import {
   SuaAcademia,
   type UserCourseProgress,
@@ -17,27 +17,7 @@ export default async function AppHome() {
   const [{ userId, summaries: courses }, banners] = await Promise.all([loadMemberCourses(), loadLiveHomeBanners()]);
   if (!userId) redirect('/entrar');
 
-  const homeBanners: HomeBannerSlide[] = banners?.length
-    ? banners.map((banner: PublishedHomeBanner) => ({
-        id: banner.id,
-        imageUrl: banner.media_asset_id
-          ? `/api/media/${banner.media_asset_id}`
-          : "/assets/amf-home/banner-imersao-felinos.png",
-        href: bannerHref(banner.cta_target_type, banner.cta_target_id),
-        alt: banner.title || "Boas-vindas à área de membros",
-      }))
-    : [{
-        id: "welcome",
-        imageUrl: "/assets/amf-home/banner-imersao-felinos.png",
-        alt: "Boas-vindas à área de membros",
-      }];
-  homeBanners.push({
-    id: "planilha-doses-seguras-felinos",
-    imageUrl: "/assets/amf-home/banner-planilha-felinos.jpeg",
-    href: "/app/produtos/planilha-doses-seguras-felinos",
-    alt: "Planilha de doses seguras para felinos — Dra. Polyana",
-    contain: true,
-  });
+  const homeBanners = buildHomeSlides(banners);
   return (
     <div className="premium-home flex flex-col w-full min-h-[100dvh] bg-[#FAF7F1] min-w-0 max-w-full">
       <PremiumHomeHeader>
