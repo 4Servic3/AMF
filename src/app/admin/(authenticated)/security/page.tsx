@@ -3,7 +3,7 @@ import { requireAal2, requirePermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/admin/ui/PageHeader";
 
-export const metadata = { title: "Seguranca | AMF Admin" };
+export const metadata = { title: "Segurança | AMF Admin" };
 
 export default async function SecurityPage() {
   await requireAal2();
@@ -21,33 +21,33 @@ export default async function SecurityPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <PageHeader
-        title="Seguranca"
-        description="Sessoes, autenticacao e auditoria de acesso."
+        title="Segurança"
+        description="Sessões, autenticação e auditoria de acesso."
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-amf-border p-5">
           <p className="text-xs font-medium text-amf-ink-400 uppercase tracking-wider mb-1">
-            Autenticacao
+            Autenticação
           </p>
-          <p className="text-lg font-semibold">MFA Obrigatorio</p>
+          <p className="text-lg font-semibold">Duas etapas obrigatórias</p>
           <p className="text-sm text-amf-ink-400 mt-1">
-            AAL2 exigido em todas as sessoes admin
+            Verificação em duas etapas exigida em todas as sessões do admin
           </p>
         </div>
         <div className="bg-white rounded-xl border border-amf-border p-5">
           <p className="text-xs font-medium text-amf-ink-400 uppercase tracking-wider mb-1">
             Acesso
           </p>
-          <p className="text-lg font-semibold">RBAC Ativo</p>
+          <p className="text-lg font-semibold">Permissões por função</p>
           <p className="text-sm text-amf-ink-400 mt-1">
-            Controle por roles e permissions granulares
+            Cada administrador acessa apenas as áreas da sua função
           </p>
         </div>
         <div className="bg-white rounded-xl border border-amf-border p-5">
           <p className="text-xs font-medium text-amf-ink-400 uppercase tracking-wider mb-1">
             Auditoria
           </p>
-          <p className="text-lg font-semibold">Logs Habilitados</p>
+          <p className="text-lg font-semibold">Registros ativos</p>
           <p className="text-sm text-amf-ink-400 mt-1">
             Consulte as operações registradas
           </p>
@@ -55,7 +55,7 @@ export default async function SecurityPage() {
       </div>
       <div className="bg-white rounded-xl border border-amf-border overflow-hidden">
         <div className="p-4 border-b border-amf-border">
-          <h2 className="text-sm font-semibold">Atividade de Acesso Recente</h2>
+          <h2 className="text-sm font-semibold">Atividade de acesso recente</h2>
         </div>
         <table className="w-full text-sm">
           <thead>

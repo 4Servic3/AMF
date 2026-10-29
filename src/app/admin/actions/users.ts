@@ -4,27 +4,102 @@ import { requirePermission, writeAdminAuditEvent } from "@/lib/auth/dal";
 import { grantCourseAccess, revokeCourseAccess } from "./courses";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { parseAccessTarget } from "@/lib/admin-access-target";
+import { randomBytes, randomUUID } from "node:crypto";
+
+const newMemberSchema = z.object({
+  fullName: z.string().trim().max(120).optional().default(""),
+  email: z.string().trim().max(254).optional().default(""),
+  password: z.string().max(128).optional().default(""),
+  temporary: z.boolean().default(false),
+  courseId: z.string().uuid().optional().nullable(),
+}).strict();
+
+export async function createMemberTestUser(input: unknown) {
+  const session = await requirePermission("users.manage");
+  const db = await adminDb("users.manage");
+  const parsed = newMemberSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: "Confira o nome, e-mail e senha informados." };
+  const values = parsed.data;
+  const temporary = values.temporary;
+  const email = temporary ? `teste-${randomUUID()}@example.invalid` : values.email.toLowerCase();
+  if (!temporary && !values.fullName.trim()) return { success: false as const, error: "Informe o nome do aluno." };
+  if (!temporary && !z.string().email().safeParse(email).success) return { success: false as const, error: "Informe um e-mail válido." };
+  const password = temporary || !values.password
+    ? `AMF-${randomBytes(24).toString("base64url")}!a9`
+    : values.password;
+  if (!temporary && values.password && values.password.length < 12)
+    return { success: false as const, error: "Use uma senha com pelo menos 12 caracteres." };
+  let fullName = temporary ? "Conta de teste AMF" : values.fullName.trim();
+  if (values.courseId) {
+    const { data: course, error } = await db.from("courses").select("id").eq("id", values.courseId).eq("status", "published").maybeSingle();
+    if (error || !course) return { success: false as const, error: "O curso escolhido não está publicado ou não está disponível." };
+  }
+  const { data: created, error: createError } = await db.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName, first_name: fullName.split(/\s+/)[0] },
+  });
+  if (createError || !created.user) return { success: false as const, error: "Não foi possível criar a conta. Verifique se o e-mail já está cadastrado." };
+  const userId = created.user.id;
+  const { error: profileError } = await db.from("profiles").insert({ id: userId, full_name: fullName, email, role: "member" });
+  if (profileError) {
+    await db.auth.admin.deleteUser(userId);
+    return { success: false as const, error: "A conta não foi concluída porque o perfil não pôde ser criado." };
+  }
+  if (values.courseId) {
+    const { error } = await db.rpc("course_access_admin", {
+      p_course: values.courseId, p_actor: session.user.id, p_email: email, p_expires: null,
+    });
+    if (error) {
+      await db.auth.admin.deleteUser(userId);
+      return { success: false as const, error: "A conta não foi concluída porque o acesso ao curso falhou." };
+    }
+  }
+  await writeAdminAuditEvent({
+    action: "create_member_test_user",
+    resourceType: "profile",
+    resourceId: userId,
+    details: { temporary, course_id: values.courseId || null },
+  });
+  revalidatePath("/admin/users");
+  revalidatePath("/app/cursos", "layout");
+  revalidatePath("/app");
+  return { success: true as const, userId, email, password, temporary, fullName };
+}
 export async function grantManualAccess(
   userId: string,
-  courseId: string,
+  target: string,
   reason: string,
 ) {
+  const session = await requirePermission("users.manage");
   const db = await adminDb("users.manage");
   z.uuid().parse(userId);
-  z.string().trim().min(3).max(500).parse(reason);
-  const { data, error } = await db
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .single();
-  queryError(error);
-  const result = await grantCourseAccess(courseId, data.email, null);
-  if (!result.success) throw new Error(result.error);
+  const why = z.string().trim().min(3).max(500).parse(reason);
+  const parsed = parseAccessTarget(target);
+  if (!parsed) throw new Error("Escolha um curso ou produto válido.");
+  if (parsed.kind === "course") {
+    const { data, error } = await db
+      .from("profiles")
+      .select("email")
+      .eq("id", userId)
+      .single();
+    queryError(error);
+    const result = await grantCourseAccess(parsed.id, data.email, null);
+    if (!result.success) throw new Error(result.error);
+  } else {
+    const { error } = await db.rpc("product_access_admin", {
+      p_product: parsed.id, p_actor: session.user.id, p_profile: userId, p_reason: why,
+    });
+    if (error) throw new Error(error.code === "P0001" ? error.message : "Não foi possível conceder o acesso.");
+  }
   await writeAdminAuditEvent({
     action: "grant_access",
     resourceType: "profile",
     resourceId: userId,
-    reason,
+    reason: why,
+    details: { target: parsed },
   });
   revalidatePath("/admin/users/" + userId);
   revalidatePath("/admin/access");
@@ -34,6 +109,7 @@ export async function revokeAccess(
   entitlementId: string,
   reason: string,
 ) {
+  const session = await requirePermission("users.manage");
   const db = await adminDb("users.manage");
   z.uuid().parse(userId);
   z.uuid().parse(entitlementId);
@@ -48,12 +124,10 @@ export async function revokeAccess(
     const result = await revokeCourseAccess(data.resource_id, entitlementId);
     if (!result.success) throw new Error(result.error);
   } else {
-    const result = await db
-      .from("entitlements")
-      .update({ status: "revoked" })
-      .eq("id", entitlementId)
-      .eq("profile_id", userId);
-    queryError(result.error);
+    const result = await db.rpc("product_access_admin", {
+      p_product: data.resource_id, p_actor: session.user.id, p_revoke: entitlementId, p_reason: reason,
+    });
+    if (result.error) throw new Error(result.error.code === "P0001" ? result.error.message : "Não foi possível revogar o acesso.");
   }
   await writeAdminAuditEvent({
     action: "revoke_access",

@@ -33,7 +33,7 @@ export default async function AuditPage() {
             <tr className="border-b bg-gray-50 text-left">
               <th className="p-3 font-medium">Data/Hora</th>
               <th className="p-3 font-medium">Ator</th>
-              <th className="p-3 font-medium">Acao</th>
+              <th className="p-3 font-medium">Ação</th>
               <th className="p-3 font-medium">Recurso</th>
               <th className="p-3 font-medium">Detalhes</th>
             </tr>

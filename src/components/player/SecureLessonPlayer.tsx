@@ -1,5 +1,6 @@
 'use client';
 
+import { gatewayHref } from '@/lib/commerce/gateway';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MuxPlayer from '@mux/mux-player-react/lazy';
 import Link from 'next/link';
@@ -409,10 +410,10 @@ function LessonPlayerSession({
         </p>
         {courseSlug && (
           <Link
-            href={`/app/produtos/${courseSlug}`}
+            href={gatewayHref({ kind: 'course', slug: courseSlug }, 'cursos')}
             className="px-5 py-2.5 bg-[#D4AD62] hover:bg-[#c29d54] text-[#160820] text-sm font-bold rounded-xl transition-all shadow-sm"
           >
-            Ver detalhes do curso
+            Liberar acesso
           </Link>
         )}
       </div>

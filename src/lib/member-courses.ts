@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getMemberAccess } from '@/lib/access/member-access';
 import { summarizeMemberCourses, type MemberCourse, type MemberLesson, type MemberProgress } from './member-course-summary';
 const PAGE = 500;
 export async function collectMemberRows<T>(query: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>): Promise<T[]> {
@@ -17,13 +18,13 @@ export const loadMemberCourses = cache(async () => {
   const db = await createClient();
   const { data: { user }, error } = await db.auth.getUser();
   if (error || !user) return { userId: null, catalog: [] as MemberCourse[], summaries: [] };
-  const [catalog, grants] = await Promise.all([
+  const [catalog, access] = await Promise.all([
     collectMemberRows<MemberCourse>((from,to) => db.from('courses').select('id,product_id,title,slug,thumbnail_url,short_description,all_students,media_assets!cover_asset_id(file_path)').eq('status','published').order('id').range(from,to)),
-    collectMemberRows<{resource_id:string;starts_at:string|null;expires_at:string|null}>((from,to) => db.from('entitlements').select('resource_id,starts_at,expires_at').eq('profile_id',user.id).eq('resource_type','course').eq('status','active').order('id').range(from,to)),
+    getMemberAccess(),
   ]);
-  const now = Date.now();
-  const ids = new Set(grants.filter(g => typeof g.starts_at === 'string' && Date.parse(g.starts_at) <= now && (g.expires_at === null || Date.parse(g.expires_at) > now)).map(g => g.resource_id));
-  const accessible = catalog.filter(c => c.all_students || ids.has(c.id));
+  if (access.state === 'unavailable') throw new Error('Não foi possível verificar seus acessos. Tente novamente.');
+  // Mesma regra do banco (has_course_access): grant vigente ou liberação geral do curso.
+  const accessible = catalog.filter(c => access.courseIds.has(c.id));
   const lessons: MemberLesson[] = [], progress: MemberProgress[] = [];
   // Bounded IN filters avoid long URLs, without one query per course.
   for (let offset = 0; offset < accessible.length; offset += 100) {

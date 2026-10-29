@@ -16,7 +16,7 @@ export default async function UserDetail({
     .maybeSingle();
   queryError(error);
   if (!user) notFound();
-  const [access, notes, progress, courses, auth] = await Promise.all([
+  const [access, notes, progress, courses, products, auth] = await Promise.all([
     db.from("entitlements").select("*").eq("profile_id", id),
     db
       .from("user_internal_notes")
@@ -27,20 +27,25 @@ export default async function UserDetail({
       .from("lesson_progress")
       .select("id,is_completed,progress_percent,lesson:lessons(title)")
       .eq("profile_id", id),
-    db.from("courses").select("id,title").order("title"),
+    db.from("courses").select("id,title,status").order("title"),
+    db.from("products").select("id,name,type,status").order("sort_order").order("name"),
     db.auth.admin.getUserById(id),
   ]);
-  [access, notes, progress, courses, auth].forEach((r) => queryError(r.error));
+  [access, notes, progress, courses, products, auth].forEach((r) => queryError(r.error));
+  // Request-time server data: suspension must use the current server clock.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   return (
     <UserCrmClient
       user={{
         ...user,
-        suspended: Date.parse(auth.data.user.banned_until || "") > Date.now(),
+        suspended: Date.parse(auth.data.user.banned_until || "") > now,
       }}
       entitlements={access.data}
       notes={notes.data}
       progress={progress.data}
       courses={courses.data}
+      products={products.data}
     />
   );
 }

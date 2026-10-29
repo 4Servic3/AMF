@@ -1,16 +1,21 @@
 import { adminDb, queryError } from "@/lib/admin-data";
 import { accessStatus } from "@/lib/admin-values";
 import Link from "next/link";
+import { describeAccess } from "@/lib/admin-access-target";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import DataTable from "@/components/admin/ui/DataTable";
 export default async function Access() {
   const db = await adminDb("users.manage");
-  const { data, error } = await db
-    .from("entitlements")
-    .select("*,profile:profiles!profile_id(full_name,email)")
-    .order("created_at", { ascending: false })
-    .limit(100);
-  queryError(error);
+  const [{ data, error }, courses, products] = await Promise.all([
+    db
+      .from("entitlements")
+      .select("*,profile:profiles!profile_id(full_name,email)")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    db.from("courses").select("id,title"),
+    db.from("products").select("id,name"),
+  ]);
+  [error, courses.error, products.error].forEach(queryError);
   return (
     <div className="space-y-6">
       <PageHeader
@@ -30,7 +35,7 @@ export default async function Access() {
           },
           {
             header: "Recurso",
-            cell: (r) => r.resource_type + " · " + r.resource_id,
+            cell: (r) => describeAccess(r, courses.data || [], products.data || []),
           },
           { header: "Status", cell: (r) => accessStatus(r) },
           {
@@ -40,7 +45,7 @@ export default async function Access() {
                 ? new Date(r.expires_at).toLocaleDateString("pt-BR")
                 : "Sem prazo",
           },
-          { header: "Origem", accessorKey: "source_type" },
+          { header: "Origem", cell: (r) => (r.source_type === "manual" ? "Manual (admin)" : r.source_type === "purchase" ? "Compra" : r.source_type === "subscription" ? "Assinatura" : r.source_type) },
         ]}
       />
     </div>

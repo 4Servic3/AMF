@@ -16,7 +16,8 @@ import {
   Settings, 
   ShieldCheck, 
   FileSearch,
-  Activity
+  Activity,
+  ShoppingBag
 } from 'lucide-react'
 
 export type NavGroup = 'Painel' | 'Conteúdo' | 'Usuários' | 'Operação' | 'Governança'
@@ -43,6 +44,7 @@ export const adminNavigationRegistry: NavItem[] = [
   // Usuários
   { key: 'users', label: 'Usuários', route: '/admin/users', icon: Users, permission: 'users.manage', group: 'Usuários' },
   { key: 'access', label: 'Acessos', route: '/admin/access', icon: Key, permission: 'users.manage', group: 'Usuários' },
+  { key: 'products', label: 'Produtos e vendas', route: '/admin/products', icon: ShoppingBag, permission: 'settings.manage', group: 'Usuários' },
   { key: 'subscriptions', label: 'Assinaturas', route: '/admin/subscriptions', icon: CreditCard, permission: 'users.manage', group: 'Usuários' },
   { key: 'support', label: 'Suporte', route: '/admin/support', icon: LifeBuoy, permission: 'support.manage', group: 'Usuários' },
   

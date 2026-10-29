@@ -5,7 +5,7 @@ import { getFeatureFlags } from "@/lib/services/flags";
 import { FeatureFlagToggle } from "@/components/admin/feature-flag-toggle";
 import PageHeader from "@/components/admin/ui/PageHeader";
 
-export const metadata = { title: "Configuracoes | AMF Admin" };
+export const metadata = { title: "Configurações | AMF Admin" };
 
 export default async function SettingsPage() {
   await requireAal2();
@@ -20,7 +20,7 @@ export default async function SettingsPage() {
     },
     {
       key: "member_cases_enabled",
-      desc: "Acesso aos casos clinicos",
+      desc: "Acesso aos casos clínicos",
       enabled: flags.member_cases_enabled,
     },
     {
@@ -35,12 +35,12 @@ export default async function SettingsPage() {
     },
     {
       key: "member_home_news_enabled",
-      desc: "Acesso as novidades na home",
+      desc: "Acesso às novidades na home",
       enabled: flags.member_home_news_enabled,
     },
     {
       key: "member_academy_enabled",
-      desc: "Acesso a academia flutuante",
+      desc: "Acesso à academia flutuante",
       enabled: flags.member_academy_enabled,
     },
   ];
@@ -48,8 +48,8 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageHeader
-        title="Configuracoes"
-        description="Gerencie feature flags e configuracoes do sistema."
+        title="Configurações"
+        description="Ative ou desative áreas do aplicativo e publique as informações institucionais."
       />
       <div className="bg-white rounded-xl border border-amf-border p-6 space-y-4">
         <h2 className="text-lg font-semibold">Recursos do Membro</h2>
