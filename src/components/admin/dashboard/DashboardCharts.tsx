@@ -72,7 +72,7 @@ export default function DashboardCharts() {
                   dx={-10}
                 />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5ea', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e6e3ee', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   labelStyle={{ color: '#6B7280', marginBottom: '4px' }}
                 />
                 <Line 

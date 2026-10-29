@@ -122,7 +122,7 @@ export default function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed
 
         <div className="shrink-0 border-t border-black/[.06] p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className={twMerge("flex items-center gap-3 px-1", isCollapsed && "lg:justify-center lg:px-0")}>
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#3fa7a0] to-[var(--admin-tint)] text-[13px] font-semibold text-white">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#a98ad8] to-[var(--admin-tint)] text-[13px] font-semibold text-white">
               {name.slice(0, 2).toUpperCase()}
             </div>
             <div className={twMerge("min-w-0 flex-1", isCollapsed && "lg:hidden")}>

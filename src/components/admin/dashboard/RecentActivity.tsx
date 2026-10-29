@@ -24,18 +24,18 @@ export default async function RecentActivity() {
   }
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-[#e5e5ea] shadow-sm flex flex-col">
+    <div className="bg-white p-5 rounded-xl border border-[#e6e3ee] shadow-sm flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[16px] font-serif font-bold text-amf-ink-900">Atividade administrativa recente</h3>
-        <Link href="/admin/audit" className="text-[12px] font-medium text-[#0a7a74] flex items-center hover:underline">
+        <Link href="/admin/audit" className="text-[12px] font-medium text-[#7c4dbb] flex items-center hover:underline">
           Abrir auditoria completa <ChevronRight size={14} />
         </Link>
       </div>
       
-      <div className="overflow-x-auto rounded-lg border border-[#e5e5ea]">
+      <div className="overflow-x-auto rounded-lg border border-[#e6e3ee]">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-amf-surface border-b border-[#e5e5ea]">
+            <tr className="bg-amf-surface border-b border-[#e6e3ee]">
               <th className="px-4 py-3 text-[11px] font-bold text-amf-muted-600 uppercase tracking-wider">Data e hora</th>
               <th className="px-4 py-3 text-[11px] font-bold text-amf-muted-600 uppercase tracking-wider">Ator</th>
               <th className="px-4 py-3 text-[11px] font-bold text-amf-muted-600 uppercase tracking-wider">Ação realizada</th>
@@ -44,7 +44,7 @@ export default async function RecentActivity() {
               <th className="px-4 py-3 text-[11px] font-bold text-amf-muted-600 uppercase tracking-wider">Resultado</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#e5e5ea]">
+          <tbody className="divide-y divide-[#e6e3ee]">
             {(!safeLogs || safeLogs.length === 0) ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-[13px] text-amf-muted-600">Nenhuma atividade recente.</td>
@@ -64,7 +64,7 @@ export default async function RecentActivity() {
                       {actorName}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#e5e5ea]/50 text-amf-ink-900 font-mono">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#e6e3ee]/50 text-amf-ink-900 font-mono">
                         {log.action}
                       </span>
                     </td>
@@ -76,7 +76,7 @@ export default async function RecentActivity() {
                     </td>
                     <td className="px-4 py-2.5">
                       <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                        isError ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-[#0a7a74]/5 text-[#0a7a74] border border-[#0a7a74]/10'
+                        isError ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-[#7c4dbb]/5 text-[#7c4dbb] border border-[#7c4dbb]/10'
                       }`}>
                         {isError ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
                         {isError ? 'Falha' : 'Sucesso'}

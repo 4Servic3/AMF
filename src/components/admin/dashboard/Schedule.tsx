@@ -31,20 +31,20 @@ export default async function Schedule() {
   });
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-[#e5e5ea] shadow-sm h-full flex flex-col">
+    <div className="bg-white p-5 rounded-xl border border-[#e6e3ee] shadow-sm h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[16px] font-serif font-bold text-amf-ink-900">Publicações e agenda</h3>
-        <Link href="/admin/operations" className="text-[12px] font-medium text-[#0a7a74] flex items-center hover:underline">
+        <Link href="/admin/operations" className="text-[12px] font-medium text-[#7c4dbb] flex items-center hover:underline">
           Ver agenda completa <ChevronRight size={14} />
         </Link>
       </div>
 
-      <div className="flex justify-between items-center mb-4 pb-4 border-b border-[#e5e5ea]">
+      <div className="flex justify-between items-center mb-4 pb-4 border-b border-[#e6e3ee]">
         {weekDays.map((day, idx) => (
           <div key={idx} className="flex flex-col items-center gap-1">
             <span className="text-[11px] font-medium text-amf-muted-600 uppercase">{day.label}</span>
             <span className={`flex items-center justify-center w-7 h-7 rounded-full text-[13px] font-medium ${
-              day.isToday ? 'bg-[#0a7a74] text-white' : 'text-amf-ink-900'
+              day.isToday ? 'bg-[#7c4dbb] text-white' : 'text-amf-ink-900'
             }`}>
               {day.date}
             </span>
@@ -66,15 +66,15 @@ export default async function Schedule() {
                     {c.publish_at && new Date(c.publish_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <div className="w-[2px] h-full bg-[#e5e5ea] rounded-full mt-1 shrink-0 group-last:bg-transparent"></div>
+                <div className="w-[2px] h-full bg-[#e6e3ee] rounded-full mt-1 shrink-0 group-last:bg-transparent"></div>
                 <div className="flex flex-col flex-1 pb-2">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0a7a74]">Caso Clínico</span>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amf-surface border border-[#e5e5ea] text-amf-muted-600">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c4dbb]">Caso Clínico</span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amf-surface border border-[#e6e3ee] text-amf-muted-600">
                       {c.status === 'scheduled' ? 'Agendado' : c.status}
                     </span>
                   </div>
-                  <Link href={`/admin/cases/${c.id}`} className="text-[13px] font-medium text-amf-ink-900 hover:text-[#0a7a74] leading-tight line-clamp-2">
+                  <Link href={`/admin/cases/${c.id}`} className="text-[13px] font-medium text-amf-ink-900 hover:text-[#7c4dbb] leading-tight line-clamp-2">
                     {c.title}
                   </Link>
                 </div>

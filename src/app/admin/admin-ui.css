@@ -1,17 +1,17 @@
 /* AMF admin: light, Apple-style language. Neutral system grays, white grouped
    surfaces, one tint color, hairline separators and translucent chrome. */
 .amf-admin-ui {
-  --admin-bg: #f5f5f7;
+  --admin-bg: #f6f5f9;
   --admin-surface: #ffffff;
-  --admin-fill: #f2f2f7;
-  --admin-separator: #e5e5ea;
-  --admin-border: #d2d2d7;
+  --admin-fill: #f1eff6;
+  --admin-separator: #e6e3ee;
+  --admin-border: #d5d0e0;
   --admin-label: #1d1d1f;
   --admin-secondary: #6e6e73;
   --admin-tertiary: #86868b;
-  --admin-tint: #0a7a74;
-  --admin-tint-hover: #08625d;
-  --admin-tint-soft: rgba(10, 122, 116, 0.1);
+  --admin-tint: #7c4dbb;
+  --admin-tint-hover: #6a3fa3;
+  --admin-tint-soft: rgba(124, 77, 187, 0.1);
   --admin-danger: #d70015;
   --admin-radius: 18px;
   --admin-radius-control: 11px;
@@ -33,6 +33,10 @@
   --color-amf-plum: var(--admin-label);
   --color-amf-petrol-900: var(--admin-tint);
   --color-amf-petrol-700: var(--admin-tint-hover);
+  --color-amf-teal-400: #a98ad8;
+  --color-amf-teal-300: #c9b6e8;
+  --color-amf-teal: var(--admin-tint);
+  --color-teal-400: #a98ad8;
   --color-cream-50: var(--admin-label);
   --color-cream-100: var(--admin-secondary);
 
@@ -159,7 +163,7 @@
   opacity: 0.45;
 }
 .amf-admin-ui :is(button, a, input, select, textarea, summary):focus-visible {
-  outline: 3px solid rgba(10, 122, 116, 0.45);
+  outline: 3px solid rgba(124, 77, 187, 0.45);
   outline-offset: 2px;
 }
 .amf-admin-ui .amf-primary {
@@ -208,7 +212,7 @@
   backdrop-filter: saturate(180%) blur(20px);
 }
 .amf-admin-ui .amf-sidebar-glass {
-  background: rgba(246, 246, 248, 0.86);
+  background: rgba(247, 245, 250, 0.86);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
 }
@@ -264,4 +268,20 @@
 .amf-admin-ui .text-amf-ink-500,
 .amf-admin-ui .text-amf-ink-600 {
   color: var(--admin-secondary);
+}
+.amf-admin-ui .bg-amf-teal-700 {
+  background: var(--admin-tint-hover);
+}
+.amf-admin-ui .hover\:text-amf-teal-700:hover {
+  color: var(--admin-tint-hover);
+}
+.amf-admin-ui .hover\:bg-amf-teal-50:hover {
+  background: var(--admin-tint-soft);
+}
+.amf-admin-ui .border-amf-teal-500,
+.amf-admin-ui .border-amf-teal-600 {
+  border-color: var(--admin-tint);
+}
+.amf-admin-ui .focus\:ring-amf-teal-500:focus {
+  --tw-ring-color: var(--admin-tint);
 }

@@ -1,8 +1,8 @@
 export default function MFALayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex flex-col justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f6f5f9] flex flex-col justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <p className="text-center font-serif text-3xl text-[#0a7a74]">AMF</p>
+        <p className="text-center font-serif text-3xl text-[#7c4dbb]">AMF</p>
         <h2 className="mt-2 text-center text-[28px] font-bold tracking-tight text-[#1d1d1f]">
           Verificação em duas etapas
         </h2>
