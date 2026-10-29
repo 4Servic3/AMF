@@ -21,10 +21,11 @@ type PublishedHomeBanner = {
 };
 
 export default async function AppHome() {
-  const { userId, summaries: courses } = await loadMemberCourses();
-  if (!userId) redirect('/entrar');
-  const { data: banners } = await createServiceRoleClient().from('home_banners')
+  // Banners publicados são públicos: a consulta começa junto com os cursos do aluno.
+  const bannersQuery = createServiceRoleClient().from('home_banners')
     .select('id,media_asset_id,cta_target_type,cta_target_id,title').eq('status','published').order('position',{ascending:true}).limit(20);
+  const [{ userId, summaries: courses }, { data: banners }] = await Promise.all([loadMemberCourses(), bannersQuery]);
+  if (!userId) redirect('/entrar');
 
   const homeBanners: HomeBannerSlide[] = banners?.length
     ? banners.map((banner: PublishedHomeBanner) => ({

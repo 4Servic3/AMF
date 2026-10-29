@@ -1,6 +1,6 @@
 import 'server-only'
 import { storyIsRecent } from '@/lib/story-lifecycle'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/auth-user'
 import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { getFeatureFlags } from '@/lib/services/flags'
 import { getMemberAccess } from '@/lib/access/member-access'
@@ -10,8 +10,7 @@ import type { PublishedCase } from '@/components/casos/PublishedCaseStories'
 type PublishedRow = { id: string; title: string; case_story_videos: { id: string; caption: string | null; created_at: string; status: string; published_at: string | null }[] }
 
 export async function getPublishedCaseStories(homeOnly = false): Promise<PublishedCase[]> {
-  const client = await createClient()
-  const { data: { user } } = await client.auth.getUser()
+  const { data: { user } } = await getAuthUser()
   if (!user || !(await getFeatureFlags()).member_cases_enabled) return []
   const [caseResult, access] = await Promise.all([
     createServiceRoleClient().from('cases')

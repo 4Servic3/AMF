@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/supabase/auth-user';
 
 /**
  * O que o aluno autenticado pode abrir agora. Fonte única para catálogo, curso,
@@ -43,7 +44,7 @@ export const getMemberAccess = cache(async (): Promise<MemberAccess> => {
   let userId: string | null = null;
   try {
     const db = await createClient();
-    const { data: { user }, error } = await db.auth.getUser();
+    const { data: { user }, error } = await getAuthUser();
     if (error || !user) return closedAccess('anonymous', null);
     userId = user.id;
     const { data, error: rpcError } = await db.rpc('member_access_summary');

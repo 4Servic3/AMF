@@ -2,7 +2,10 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { StoryCollection } from '@/lib/models/stories';
-import { StoryViewer } from './story-viewer';
+import dynamic from 'next/dynamic';
+
+// Só baixa o visualizador quando um story é aberto.
+const StoryViewer = dynamic(() => import('./story-viewer').then(m => m.StoryViewer), { ssr: false });
 
 type StoryContextType = {
   openStory: (collection: StoryCollection, initialIndex?: number) => void;

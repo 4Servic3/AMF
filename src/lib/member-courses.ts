@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/supabase/auth-user';
 import { getMemberAccess } from '@/lib/access/member-access';
 import { summarizeMemberCourses, type MemberCourse, type MemberLesson, type MemberProgress } from './member-course-summary';
 const PAGE = 500;
@@ -16,7 +17,7 @@ export async function collectMemberRows<T>(query: (from: number, to: number) => 
 // React cache is request-scoped: private progress is never cached across users.
 export const loadMemberCourses = cache(async () => {
   const db = await createClient();
-  const { data: { user }, error } = await db.auth.getUser();
+  const { data: { user }, error } = await getAuthUser();
   if (error || !user) return { userId: null, catalog: [] as MemberCourse[], summaries: [] };
   const [catalog, access] = await Promise.all([
     collectMemberRows<MemberCourse>((from,to) => db.from('courses').select('id,product_id,title,slug,thumbnail_url,short_description,all_students,media_assets!cover_asset_id(file_path)').eq('status','published').order('id').range(from,to)),
