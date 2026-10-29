@@ -19,10 +19,11 @@ export default async function Access() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Acessos"
-        description="100 concessões mais recentes. Abra o perfil do aluno para gerenciar."
+        title="Quem tem acesso"
+        description="Cada linha é um curso ou produto liberado para um aluno, por compra ou liberação manual. Mostra as 100 liberações mais recentes; para liberar ou remover, abra a ficha do aluno."
       />
       <DataTable
+        empty={{ title: "Nenhum acesso liberado ainda.", description: "Os acessos aparecem aqui quando um aluno compra ou quando você libera um curso ou produto na ficha dele." }}
         data={data || []}
         columns={[
           {

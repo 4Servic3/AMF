@@ -285,3 +285,14 @@
 .amf-admin-ui .focus\:ring-amf-teal-500:focus {
   --tw-ring-color: var(--admin-tint);
 }
+
+/* Abas da seção aberta, acima do conteúdo da tela. */
+.amf-section-tabs {
+  max-width: 1280px;
+  margin: 0 auto 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.amf-section-tabs::-webkit-scrollbar {
+  display: none;
+}

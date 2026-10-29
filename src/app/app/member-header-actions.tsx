@@ -42,10 +42,20 @@ export function MemberHeaderActions({ compact = false }: { compact?: boolean }) 
     setLoading(false);
   }
 
+  // Busca ao abrir a tela para o ponto de "não lida" aparecer sem precisar tocar no sino.
+  useEffect(() => {
+    let active = true;
+    loadNotificationPreview()
+      .then(result => { if (active && !result.error) setItems(result.items); })
+      .catch(() => { /* O sino continua funcionando: ao abrir, tenta de novo e mostra o erro. */ });
+    return () => { active = false; };
+  }, []);
+
   async function toggleNotifications() {
     if (menu === 'notifications') { setMenu(null); return; }
     setMenu('notifications');
-    if (items !== null || loading) return;
+    if (loading) return;
+    // Sempre atualiza ao abrir, para mostrar avisos publicados depois que a tela carregou.
     await fetchNotifications();
   }
 
@@ -74,7 +84,7 @@ export function MemberHeaderActions({ compact = false }: { compact?: boolean }) 
               <h2 className="font-semibold">Notificações</h2>
               <Link href="/app/notificacoes" onClick={() => setMenu(null)} className="text-xs font-semibold text-[#0E5B5C] underline underline-offset-2">Ver todas</Link>
             </div>
-            {loading ? <p className="flex items-center gap-2 px-4 py-5 text-sm text-[#657080]" role="status"><LoaderCircle size={16} className="animate-spin" />Carregando…</p>
+            {loading && items === null ? <p className="flex items-center gap-2 px-4 py-5 text-sm text-[#657080]" role="status"><LoaderCircle size={16} className="animate-spin" />Carregando…</p>
               : loadError ? <div className="px-4 py-5"><p className="text-sm text-[#657080]" role="alert">Não foi possível carregar as notificações.</p><button type="button" onClick={() => void fetchNotifications()} className="mt-2 text-sm font-semibold text-[#0E5B5C] underline">Tentar novamente</button></div>
                 : !items?.length ? <p className="px-4 py-6 text-center text-sm text-[#657080]">Nenhuma notificação</p>
                   : <ul className="max-h-80 overflow-y-auto divide-y divide-[#EEE8DE]">{items.map(item => <li key={item.id}>

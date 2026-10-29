@@ -10,12 +10,15 @@ interface DataTableProps {
   }[];
   data: any[];
   className?: string;
+  /** Explicação para a tabela vazia: o que esta lista mostra e como ela se enche. */
+  empty?: { title: string; description?: string };
 }
 
 export default function DataTable({
   columns,
   data,
   className,
+  empty,
 }: DataTableProps) {
   return (
     <div
@@ -46,9 +49,10 @@ export default function DataTable({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-8 text-center text-amf-muted-600"
+                  className="px-6 py-10 text-center text-amf-muted-600"
                 >
-                  Nenhum registro encontrado.
+                  <p className="font-semibold text-[var(--admin-label)]">{empty?.title ?? "Nada por aqui ainda."}</p>
+                  {empty?.description && <p className="mx-auto mt-1 max-w-md text-[13px]">{empty.description}</p>}
                 </td>
               </tr>
             ) : (

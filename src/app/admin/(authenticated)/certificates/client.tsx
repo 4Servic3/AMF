@@ -103,7 +103,7 @@ export default function CertificatesClient({
 
   return (
     <>
-      <DataTable columns={columns} data={initialData} />
+      <DataTable columns={columns} data={initialData} empty={{ title: "Nenhum certificado emitido ainda.", description: "O aluno emite o certificado sozinho quando atinge o progresso mínimo do curso." }} />
 
       {revokeModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

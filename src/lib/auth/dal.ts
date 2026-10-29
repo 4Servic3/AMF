@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -19,7 +20,8 @@ export async function requireAdminSession() {
   return session!;
 }
 
-export async function requireAal2() {
+/** Por requisição (React cache): a moldura e a tela compartilham a mesma checagem. */
+export const requireAal2 = cache(async () => {
   const supabase = await createClient();
 
   // Use getUser() as recommended by Supabase security warnings to get fresh DB data
@@ -49,9 +51,9 @@ export async function requireAal2() {
     data: { session },
   } = await supabase.auth.getSession();
   return session!;
-}
+});
 
-export async function getAdminContext() {
+export const getAdminContext = cache(async () => {
   const session = await requireAal2();
   const supabase = await createClient();
   const user = session.user;
@@ -67,7 +69,7 @@ export async function getAdminContext() {
   const userRoles = roles?.map((r) => (r.role as any).key) || [];
 
   return { session, user, roles: userRoles };
-}
+});
 
 export async function requirePermission(permissionKey: string) {
   const { session } = await getAdminContext();
@@ -81,13 +83,14 @@ export async function requirePermission(permissionKey: string) {
   return session;
 }
 
-export async function hasPermission(permissionKey: string) {
+/** Uma consulta por permissão e por requisição, mesmo que várias telas perguntem. */
+export const hasPermission = cache(async (permissionKey: string) => {
   const supabase = await createClient();
   const { data: hasAccess } = await supabase.rpc("has_permission", {
     required_permission: permissionKey,
   });
   return !!hasAccess;
-}
+});
 
 export async function requireRecentReauthentication(
   maxAgeSeconds: number = 300,
