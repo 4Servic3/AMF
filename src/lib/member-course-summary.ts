@@ -14,9 +14,12 @@ export function summarizeMemberCourses(courses: MemberCourse[], lessons: MemberL
     const published = byCourse.get(course.id) || [];
     const required = published.filter(l => l.type === 'video' && l.is_mandatory);
     const percent = (l: MemberLesson) => { const p = progressByLesson.get(l.id); const value = Number(p?.progress_percent || 0); return p?.is_completed ? 100 : Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0; };
-    const progressPercent = required.length ? Math.round(required.reduce((sum, l) => sum + percent(l), 0) / required.length) : 0;
+    const rawPercent = required.length ? required.reduce((sum, l) => sum + percent(l), 0) / required.length : 0;
+    const started = published.some(l => progressByLesson.has(l.id));
+    // Alguns minutos de uma aula longa somem no arredondamento; quem já começou nunca vê 0%.
+    const progressPercent = started ? Math.max(1, Math.round(rawPercent)) : Math.round(rawPercent);
     const completed = required.length > 0 && required.every(l => progressByLesson.get(l.id)?.is_completed === true);
     const last = published.filter(l => progressByLesson.has(l.id)).sort((a,b) => Date.parse(progressByLesson.get(b.id)!.updated_at) - Date.parse(progressByLesson.get(a.id)!.updated_at))[0];
-    return { courseId: course.id, courseTitle: course.title, courseSlug: course.slug, coverUrl: course.thumbnail_url, lastLessonTitle: last?.title, lastLessonSlug: last ? lessonPathSegment(last) : undefined, progressPercent, status: completed ? 'completed' as const : progressPercent > 0 ? 'in_progress' as const : 'not_started' as const };
+    return { courseId: course.id, courseTitle: course.title, courseSlug: course.slug, coverUrl: course.thumbnail_url, lastLessonTitle: last?.title, lastLessonSlug: last ? lessonPathSegment(last) : undefined, progressPercent, status: completed ? 'completed' as const : started ? 'in_progress' as const : 'not_started' as const };
   }).sort((a,b) => Number(b.status === 'in_progress') - Number(a.status === 'in_progress'));
 }

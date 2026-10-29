@@ -12,31 +12,13 @@ export default async function SettingsPage() {
   await requirePermission("settings.manage");
   const flags = await getFeatureFlags();
 
+  // Só flags que de fato mudam o app; as demais (stories, close friends, novidades,
+  // cursos) não eram lidas em lugar nenhum e confundiam quem administra.
   const flagEntries = [
     {
-      key: "member_courses_enabled",
-      desc: "Acesso aos cursos",
-      enabled: flags.member_courses_enabled,
-    },
-    {
       key: "member_cases_enabled",
-      desc: "Acesso aos casos clínicos",
+      desc: "Casos clínicos e stories da home",
       enabled: flags.member_cases_enabled,
-    },
-    {
-      key: "member_stories_enabled",
-      desc: "Acesso aos stories da home",
-      enabled: flags.member_stories_enabled,
-    },
-    {
-      key: "member_close_friends_enabled",
-      desc: "Acesso ao close friends",
-      enabled: flags.member_close_friends_enabled,
-    },
-    {
-      key: "member_home_news_enabled",
-      desc: "Acesso às novidades na home",
-      enabled: flags.member_home_news_enabled,
     },
     {
       key: "member_academy_enabled",
