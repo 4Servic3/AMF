@@ -68,3 +68,14 @@ export async function replyOwnTicket(input: unknown) {
     .insert({ ticket_id: values.ticketId, sender_id: userId, content: values.content, is_internal: false });
   if (insertError) throw new Error('Não foi possível enviar sua mensagem. Tente novamente.');
 }
+
+/** Conversa em andamento mais recente (aberta ou em atendimento), para o botão flutuante de suporte. */
+export async function getActiveConversation() {
+  const { userId, db } = await requireMemberAccount();
+  const { data, error } = await db.from('support_tickets').select('id,profile_id,status')
+    .eq('profile_id', userId).in('status', ['open', 'pending'])
+    .order('created_at', { ascending: false }).limit(1);
+  if (error) throw new Error('Não foi possível carregar o suporte.');
+  const latest = (data || []).find((row: { profile_id: string }) => row.profile_id === userId) as { id: string } | undefined;
+  return latest ? getOwnTicket(latest.id) : null;
+}

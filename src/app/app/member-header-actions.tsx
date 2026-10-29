@@ -79,7 +79,7 @@ export function MemberHeaderActions({ compact = false }: { compact?: boolean }) 
           {items?.some(item => !item.read) && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[#160820] bg-[#E7B64F]" aria-label="Há notificações não lidas" />}
         </button>
         {menu === 'notifications' && (
-          <section id="member-notifications-popover" aria-label="Notificações recentes" className="absolute right-0 top-[calc(100%+12px)] z-[100] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#DED5C8] bg-white text-left text-[#160820] shadow-xl">
+          <section id="member-notifications-popover" aria-label="Notificações recentes" className="absolute right-0 top-[calc(100%+12px)] z-[100] w-[min(22rem,calc(100vw-2rem))] max-sm:fixed max-sm:inset-x-4 max-sm:top-[calc(env(safe-area-inset-top)+76px)] max-sm:w-auto overflow-hidden rounded-2xl border border-[#DED5C8] bg-white text-left text-[#160820] shadow-xl">
             <div className="flex items-center justify-between border-b border-[#EEE8DE] px-4 py-3">
               <h2 className="font-semibold">Notificações</h2>
               <Link href="/app/notificacoes" onClick={() => setMenu(null)} className="text-xs font-semibold text-[#0E5B5C] underline underline-offset-2">Ver todas</Link>

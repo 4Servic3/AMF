@@ -1,68 +1,73 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Bell } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bell, Headphones } from "lucide-react";
 import Link from "next/link";
-import { getAdminNotifications, AdminNotification } from "@/app/admin/actions/notifications";
+import { usePathname } from "next/navigation";
+import { getAdminNotifications, type AdminNotification } from "@/app/admin/actions/notifications";
 
+const REFRESH_MS = 60_000;
+
+/** Sino do admin: chamados de suporte esperando resposta. Atualiza ao trocar de tela e a cada minuto. */
 export function AdminNotifications() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [data, setData] = useState<{ count: number, notifications: AdminNotification[] }>({ count: 0, notifications: [] });
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState<{ count: number; notifications: AdminNotification[] }>({ count: 0, notifications: [] });
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    getAdminNotifications().then(setData).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+    let active = true;
+    const load = () => {
+      if (document.hidden) return;
+      getAdminNotifications().then((d) => { if (active) setData(d); }).catch(() => undefined);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    load();
+    const timer = setInterval(load, REFRESH_MS);
+    return () => { active = false; clearInterval(timer); };
+  }, [pathname]);
+
+  useEffect(() => {
+    const outside = (event: PointerEvent) => { if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
   }, []);
 
   return (
     <div ref={ref} className="relative">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-cream-100 hover:text-white hover:bg-plum-800 rounded-lg relative transition-colors"
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={data.count ? `Notificações: ${data.count} chamados esperando resposta` : "Notificações"}
+        className="relative flex h-10 w-10 items-center justify-center rounded-full text-[var(--admin-label)] hover:bg-[var(--admin-fill)]"
       >
-        <Bell size={20} />
+        <Bell size={19} aria-hidden="true" />
         {data.count > 0 && (
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-gold-500 rounded-full border-2 border-plum-900" />
+          <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-bold leading-none text-white">
+            {data.count > 9 ? "9+" : data.count}
+          </span>
         )}
       </button>
-
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-white text-ink rounded-md shadow-lg border border-border py-2 z-50">
-          <div className="px-4 py-2 border-b border-border flex justify-between items-center">
-            <h3 className="font-semibold text-sm">Notificações</h3>
-            <span className="text-xs bg-cream-100 text-plum-900 px-2 py-0.5 rounded-full font-medium">
-              {data.count} novas
-            </span>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(340px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-black/[.08] bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-[var(--admin-separator)] px-4 py-3">
+            <p className="text-sm font-semibold">Notificações</p>
+            <Link href="/admin/support" onClick={() => setOpen(false)} className="text-xs font-semibold text-[var(--admin-tint)]">Ver suporte</Link>
           </div>
-          
           <div className="max-h-80 overflow-y-auto">
             {data.notifications.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-muted">
-                Nenhuma notificação no momento.
-              </div>
+              <p className="px-4 py-6 text-center text-sm text-[var(--admin-secondary)]">Nenhum chamado esperando resposta.</p>
             ) : (
-              data.notifications.map(notification => (
-                <Link 
-                  key={notification.id} 
-                  href={notification.href}
-                  onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 hover:bg-cream-50 transition-colors border-b border-border last:border-0"
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-sm font-medium text-plum-900">{notification.title}</span>
-                    {!notification.read && <span className="w-2 h-2 bg-gold-500 rounded-full mt-1.5 shrink-0" /> }
-                  </div>
-                  <p className="text-xs text-muted mb-1">{notification.description}</p>
+              data.notifications.map((n) => (
+                <Link key={n.id} href={n.href} onClick={() => setOpen(false)} className="flex gap-3 border-b border-[var(--admin-separator)] px-4 py-3 last:border-0 hover:bg-[var(--admin-fill)]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f1eafb] text-[var(--admin-tint)]"><Headphones size={16} aria-hidden="true" /></span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{n.title}</span>
+                    <span className="block truncate text-xs text-[var(--admin-secondary)]">{n.description}</span>
+                    <span className="block text-[11px] text-[var(--admin-tertiary)]">{new Date(n.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                  </span>
                 </Link>
               ))
             )}

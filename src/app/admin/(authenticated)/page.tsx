@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { BellPlus, BookOpen, Clapperboard, LifeBuoy, UserPlus } from "lucide-react";
+import { BellPlus, BookOpen, ChevronRight, Clapperboard, Headphones, LifeBuoy, UserPlus } from "lucide-react";
+import { loadSupportInbox } from "@/app/admin/actions/notifications";
+import type { InboxItem } from "@/lib/admin/support-inbox";
 import { hasPermission, requirePermission } from "@/lib/auth/dal";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { allRows, queryError } from "@/lib/admin-data";
@@ -49,6 +51,41 @@ async function profilesFor(db: ReturnType<typeof createServiceRoleClient>, ids: 
   return rows;
 }
 
+/** Aviso no topo do painel quando há chamados esperando a equipe. */
+function SupportAlert({ inbox }: { inbox: InboxItem[] }) {
+  if (!inbox.length) return null;
+  const fresh = inbox.filter((t) => t.isNew).length;
+  return (
+    <section className="amf-panel border border-[#e3d6f5] !bg-[#faf6ff]" aria-labelledby="suporte-alerta">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--admin-tint)] text-white"><Headphones size={18} aria-hidden="true" /></span>
+          <div>
+            <h2 id="suporte-alerta" className="text-[17px]">
+              {inbox.length} {inbox.length === 1 ? "chamado esperando resposta" : "chamados esperando resposta"}
+            </h2>
+            <p className="text-sm text-[var(--admin-secondary)]">{fresh ? `${fresh} ${fresh === 1 ? "novo" : "novos"}, ainda sem nenhuma resposta da equipe.` : "Os alunos mandaram mensagens novas."}</p>
+          </div>
+        </div>
+        <Link href="/admin/support" className="amf-secondary text-sm">Abrir suporte</Link>
+      </div>
+      <ul className="mt-3 divide-y divide-[var(--admin-separator)]">
+        {inbox.slice(0, 3).map((t) => (
+          <li key={t.id}>
+            <Link href={`/admin/support/${t.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-[var(--admin-tint)]">
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{t.subject}</span>
+                <span className="block truncate text-xs text-[var(--admin-secondary)]">{t.student} · {t.isNew ? "Novo chamado" : "Nova mensagem"}</span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-[var(--admin-tertiary)]" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default async function Dashboard({
   searchParams,
 }: {
@@ -71,6 +108,7 @@ export default async function Dashboard({
   const courses = (coursesRes.data || []) as { id: string; title: string; all_students: boolean }[];
   const course = courses.find((c) => c.id === params.curso) ?? courses[0];
   const openTickets = ticketsRes.error ? null : ticketsRes.count ?? 0;
+  const inbox = canSupport ? await loadSupportInbox() : [];
 
   const shortcuts = [
     canSeeStudents && { href: "/admin/users/new", label: "Cadastrar aluno", icon: UserPlus },
@@ -102,6 +140,8 @@ export default async function Dashboard({
     return (
       <div className="space-y-6">
         {header}
+      <SupportAlert inbox={inbox} />
+        <SupportAlert inbox={inbox} />
         <section className="amf-panel text-center">
           <p className="font-semibold">Nenhum curso publicado ainda.</p>
           <p className="mt-1 text-sm text-[var(--admin-secondary)]">Publique um curso para acompanhar o progresso dos alunos aqui.</p>
@@ -167,6 +207,7 @@ export default async function Dashboard({
   return (
     <div className="space-y-6">
       {header}
+      <SupportAlert inbox={inbox} />
 
       {courses.length > 1 && (
         <nav aria-label="Escolher curso" className="flex flex-wrap gap-2">

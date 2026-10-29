@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/member-account', () => ({ requireMemberAccount: vi.fn() }));
 import { requireMemberAccount } from '@/lib/member-account';
-import { listMemberNotifications, markMemberNotifications, safeNotificationLink } from '@/lib/member-notifications';
+import { listMemberNotifications, markMemberNotifications, markSupportNoticesRead, safeNotificationLink } from '@/lib/member-notifications';
 const id = '11111111-1111-4111-8111-111111111111';
 function setup(results: unknown[]) {
  const queries: any[] = [];
- const db = { from: vi.fn(() => { const result = results.shift(); const q: any = {}; for (const m of ['select','order','range','eq','in','upsert']) q[m] = vi.fn(() => q); q.then = (resolve: any) => Promise.resolve(result).then(resolve); queries.push(q); return q; }) };
+ const db = { from: vi.fn(() => { const result = results.shift(); const q: any = {}; for (const m of ['select','order','range','eq','in','upsert','or','limit']) q[m] = vi.fn(() => q); q.then = (resolve: any) => Promise.resolve(result).then(resolve); queries.push(q); return q; }) };
  vi.mocked(requireMemberAccount).mockResolvedValue({userId:'verified-user',db} as any); return {db,queries};
 }
 beforeEach(() => vi.resetAllMocks());
@@ -22,4 +22,15 @@ describe('member notifications', () => {
  const {queries}=setup([{data:[{id},{id:'unexpected'}],error:null},{error:null}]); await markMemberNotifications([id,id]);expect(queries[1].upsert).toHaveBeenCalledWith([{profile_id:'verified-user',notification_id:id}],{onConflict:'profile_id,notification_id',ignoreDuplicates:true});
  });
  it('does not mask database failures as an empty feed',async()=>{setup([{data:null,error:{message:'down'}}]);await expect(listMemberNotifications(1)).rejects.toThrow()});
+ it('shows general notices plus the members own, never other members personal notices',async()=>{
+ const {queries}=setup([{data:[],error:null}]); await listMemberNotifications(1); expect(queries[0].or).toHaveBeenCalledWith('profile_id.is.null,profile_id.eq.verified-user');
+ });
+ it('falls back to general notices before the profile column exists',async()=>{
+ const {queries}=setup([{data:null,error:{code:'42703'}},{data:[{id,target_url:null,title:'Geral'}],error:null},{data:[],error:null}]);
+ const result=await listMemberNotifications(1); expect(result.items).toHaveLength(1); expect(queries[1].or).not.toHaveBeenCalled();
+ });
+ it('marks the support reply notices of an opened ticket as read',async()=>{
+ const {queries}=setup([{data:[{id}],error:null},{error:null}]); await markSupportNoticesRead(id);
+ expect(queries[0].eq).toHaveBeenCalledWith('target_url',`/app/perfil/suporte/${id}`); expect(queries[1].upsert).toHaveBeenCalledWith([{profile_id:'verified-user',notification_id:id}],expect.anything());
+ });
 });

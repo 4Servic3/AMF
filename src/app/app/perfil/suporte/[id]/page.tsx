@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getOwnTicket } from '@/lib/member-support';
+import { markSupportNoticesRead } from '@/lib/member-notifications';
 import { ticketStatuses } from '@/lib/member-account-schema';
 import { SupportForm } from '../support-form';
 import { SupportShell } from '../support-shell';
@@ -10,6 +11,7 @@ export default async function TicketPage({ params, searchParams }: { params: Pro
   const [{ id }, { page }] = await Promise.all([params, searchParams]);
   const result = await getOwnTicket(id, page);
   if (!result) notFound();
+  await markSupportNoticesRead(id);
   const { ticket, messages } = result;
   return <SupportShell backHref="/app/perfil/suporte" title="Meu chamado">
     <h2 className="break-words text-2xl font-bold text-[#14172A]">{ticket.subject}</h2>

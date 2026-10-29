@@ -3,6 +3,7 @@ import { Plus, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { currentNavItem, currentSection } from "./nav-state";
+import { AdminNotifications } from "./AdminNotifications";
 export default function Header({ allowedKeys }: { allowedKeys: string[] }) {
   const pathname = usePathname();
   const current = currentSection(pathname, allowedKeys) ?? currentNavItem(pathname);
@@ -15,6 +16,7 @@ export default function Header({ allowedKeys }: { allowedKeys: string[] }) {
         </p>
       </div>
       <div className="flex items-center gap-2">
+        {allowedKeys.includes("support") && <AdminNotifications />}
         <Link
           href="/app"
           className="flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-[var(--admin-tint)] hover:bg-[var(--admin-fill)]"
