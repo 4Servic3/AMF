@@ -16,7 +16,9 @@ beforeEach(() => {
   mocks.rpc.mockResolvedValue({ error: null })
   mocks.from.mockImplementation((table: string) => table === 'courses'
     ? { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: mocks.courseMaybeSingle }) }) }) }
-    : { insert: mocks.profileInsert })
+    : table === 'products'
+      ? { select: () => ({ eq: () => ({ eq: () => ({ neq: () => ({ maybeSingle: mocks.courseMaybeSingle }) }) }) }) }
+      : { insert: mocks.profileInsert })
   mocks.courseMaybeSingle.mockResolvedValue({ data: { id: 'course-id' }, error: null })
   mocks.adminDb.mockResolvedValue({ from: mocks.from, rpc: mocks.rpc, auth: { admin: { createUser: mocks.createUser, deleteUser: mocks.deleteUser } } })
 })
@@ -47,4 +49,25 @@ it('grants a selected published course through the existing audited access RPC',
   const result = await createMemberTestUser({ temporary: true, courseId: '11111111-1111-4111-8111-111111111111' })
   expect(result.success).toBe(true)
   expect(mocks.rpc).toHaveBeenCalledWith('course_access_admin', expect.objectContaining({ p_course: '11111111-1111-4111-8111-111111111111', p_actor: 'admin-user' }))
+})
+
+it('grants several courses and products with one shared expiry date', async () => {
+  const course = '11111111-1111-4111-8111-111111111111'
+  const product = '22222222-2222-4222-8222-222222222222'
+  const result = await createMemberTestUser({ temporary: true, courseIds: [course], productIds: [product], expiresAt: '2099-12-31' })
+  expect(result.success).toBe(true)
+  expect(mocks.rpc).toHaveBeenCalledWith('course_access_admin', expect.objectContaining({ p_course: course, p_expires: '2100-01-01T02:59:59.000Z' }))
+  expect(mocks.rpc).toHaveBeenCalledWith('product_access_admin', expect.objectContaining({ p_product: product, p_profile: 'created-user', p_expires: '2100-01-01T02:59:59.000Z' }))
+})
+
+it('rejects a past expiry date before creating the account', async () => {
+  expect(await createMemberTestUser({ temporary: true, productIds: ['22222222-2222-4222-8222-222222222222'], expiresAt: '2000-01-01' })).toMatchObject({ success: false })
+  expect(mocks.createUser).not.toHaveBeenCalled()
+})
+
+it('removes the new account when a product grant fails', async () => {
+  mocks.rpc.mockResolvedValue({ error: { message: 'boom' } })
+  const result = await createMemberTestUser({ temporary: true, productIds: ['22222222-2222-4222-8222-222222222222'] })
+  expect(result).toMatchObject({ success: false })
+  expect(mocks.deleteUser).toHaveBeenCalledWith('created-user')
 })

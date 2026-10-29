@@ -13,6 +13,9 @@ const newMemberSchema = z.object({
   password: z.string().max(128).optional().default(""),
   temporary: z.boolean().default(false),
   courseId: z.string().uuid().optional().nullable(),
+  courseIds: z.array(z.string().uuid()).max(50).optional().default([]),
+  productIds: z.array(z.string().uuid()).max(50).optional().default([]),
+  expiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 }).strict();
 
 export async function createMemberTestUser(input: unknown) {
@@ -31,9 +34,19 @@ export async function createMemberTestUser(input: unknown) {
   if (!temporary && values.password && values.password.length < 12)
     return { success: false as const, error: "Use uma senha com pelo menos 12 caracteres." };
   let fullName = temporary ? "Conta de teste AMF" : values.fullName.trim();
-  if (values.courseId) {
-    const { data: course, error } = await db.from("courses").select("id").eq("id", values.courseId).eq("status", "published").maybeSingle();
+  const courseIds = [...new Set([...(values.courseId ? [values.courseId] : []), ...values.courseIds])];
+  const productIds = [...new Set(values.productIds)];
+  // Fim do dia escolhido, no horário de Brasília, vale para todos os acessos liberados.
+  const expires = values.expiresAt ? new Date(`${values.expiresAt}T23:59:59-03:00`) : null;
+  if (expires && (Number.isNaN(expires.getTime()) || expires.getTime() <= Date.now()))
+    return { success: false as const, error: "Escolha uma data de expiração futura." };
+  for (const courseId of courseIds) {
+    const { data: course, error } = await db.from("courses").select("id").eq("id", courseId).eq("status", "published").maybeSingle();
     if (error || !course) return { success: false as const, error: "O curso escolhido não está publicado ou não está disponível." };
+  }
+  for (const productId of productIds) {
+    const { data: product, error } = await db.from("products").select("id").eq("id", productId).eq("status", "active").neq("type", "course").maybeSingle();
+    if (error || !product) return { success: false as const, error: "O produto escolhido não está ativo ou não está disponível." };
   }
   const { data: created, error: createError } = await db.auth.admin.createUser({
     email,
@@ -48,20 +61,30 @@ export async function createMemberTestUser(input: unknown) {
     await db.auth.admin.deleteUser(userId);
     return { success: false as const, error: "A conta não foi concluída porque o perfil não pôde ser criado." };
   }
-  if (values.courseId) {
+  for (const courseId of courseIds) {
     const { error } = await db.rpc("course_access_admin", {
-      p_course: values.courseId, p_actor: session.user.id, p_email: email, p_expires: null,
+      p_course: courseId, p_actor: session.user.id, p_email: email, p_expires: expires?.toISOString() ?? null,
     });
     if (error) {
       await db.auth.admin.deleteUser(userId);
       return { success: false as const, error: "A conta não foi concluída porque o acesso ao curso falhou." };
     }
   }
+  for (const productId of productIds) {
+    const { error } = await db.rpc("product_access_admin", {
+      p_product: productId, p_actor: session.user.id, p_profile: userId, p_expires: expires?.toISOString() ?? null,
+      p_reason: "Liberado na criação do usuário",
+    });
+    if (error) {
+      await db.auth.admin.deleteUser(userId);
+      return { success: false as const, error: "A conta não foi concluída porque o acesso ao produto falhou." };
+    }
+  }
   await writeAdminAuditEvent({
     action: "create_member_test_user",
     resourceType: "profile",
     resourceId: userId,
-    details: { temporary, course_id: values.courseId || null },
+    details: { temporary, course_ids: courseIds, product_ids: productIds, expires_at: expires?.toISOString() ?? null },
   });
   revalidatePath("/admin/users");
   revalidatePath("/app/cursos", "layout");

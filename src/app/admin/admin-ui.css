@@ -296,3 +296,8 @@
 .amf-section-tabs::-webkit-scrollbar {
   display: none;
 }
+
+/* Botão que abre um <details>; some quando o painel está aberto. */
+.amf-admin-ui details[open] .amf-when-closed {
+  display: none;
+}
