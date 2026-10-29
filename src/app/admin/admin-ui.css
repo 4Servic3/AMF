@@ -1,125 +1,231 @@
-/* Shared AMF admin language: native typography, ivory canvas, plum chrome. */
+/* AMF admin: light, Apple-style language. Neutral system grays, white grouped
+   surfaces, one tint color, hairline separators and translucent chrome. */
 .amf-admin-ui {
+  --admin-bg: #f5f5f7;
+  --admin-surface: #ffffff;
+  --admin-fill: #f2f2f7;
+  --admin-separator: #e5e5ea;
+  --admin-border: #d2d2d7;
+  --admin-label: #1d1d1f;
+  --admin-secondary: #6e6e73;
+  --admin-tertiary: #86868b;
+  --admin-tint: #0a7a74;
+  --admin-tint-hover: #08625d;
+  --admin-tint-soft: rgba(10, 122, 116, 0.1);
+  --admin-danger: #d70015;
+  --admin-radius: 18px;
+  --admin-radius-control: 11px;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+
+  /* Theme tokens remapped inside the admin so legacy utilities follow the new palette. */
+  --color-amf-ivory-50: var(--admin-bg);
+  --color-amf-ivory-100: var(--admin-fill);
+  --color-amf-ivory-200: var(--admin-separator);
+  --color-amf-creme: var(--admin-bg);
+  --color-amf-border: var(--admin-separator);
+  --color-amf-ink-900: var(--admin-label);
+  --color-amf-ink-800: #3a3a3c;
+  --color-amf-ink-700: #3a3a3c;
+  --color-amf-muted-600: var(--admin-secondary);
+  --color-amf-muted: var(--admin-secondary);
+  --color-amf-foreground: var(--admin-label);
+  --color-amf-plum-900: var(--admin-label);
+  --color-amf-plum: var(--admin-label);
+  --color-amf-petrol-900: var(--admin-tint);
+  --color-amf-petrol-700: var(--admin-tint-hover);
+  --color-cream-50: var(--admin-label);
+  --color-cream-100: var(--admin-secondary);
+
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  background: #faf7f0;
-  color: #172b35;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  background: var(--admin-bg);
+  color: var(--admin-label);
   -webkit-font-smoothing: antialiased;
+  font-size: 15px;
 }
 .amf-admin-ui h1,
 .amf-admin-ui h2,
 .amf-admin-ui h3,
 .amf-admin-ui h4 {
-  font-family: inherit;
-  letter-spacing: -0.025em;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.022em;
   font-weight: 600;
+  color: var(--admin-label);
 }
 .amf-admin-ui h1 {
-  line-height: 1.15;
+  line-height: 1.12;
+  font-weight: 700;
 }
 .amf-admin-ui p {
-  line-height: 1.6;
+  line-height: 1.55;
 }
 .amf-admin-main {
-  padding: clamp(16px, 3vw, 36px);
+  padding: clamp(16px, 3vw, 40px);
   scrollbar-gutter: stable;
 }
 .amf-admin-main > div {
-  max-width: 1440px;
+  max-width: 1280px;
   margin-inline: auto;
   min-width: 0;
 }
+
+/* Grouped surfaces */
 .amf-admin-ui .amf-admin-main :is(div, section, form)[class~="bg-white"],
-.amf-admin-ui .amf-admin-main :is(div, section)[class~="bg-amf-surface"] {
-  border-radius: 24px;
-  border-color: #e7e1d8;
-  box-shadow: 0 3px 14px #25152e04;
+.amf-admin-ui .amf-admin-main :is(div, section)[class~="bg-amf-surface"],
+.amf-admin-ui .amf-panel {
+  border-radius: var(--admin-radius);
+  border-color: transparent;
+  box-shadow: var(--admin-shadow);
+}
+.amf-admin-ui .amf-panel {
+  background: var(--admin-surface);
+  border: 0;
+  padding: 24px;
 }
 .amf-admin-ui .amf-admin-main :is(div, section):has(> table) {
   overflow-x: auto;
 }
+
+/* Tables read like grouped lists */
 .amf-admin-ui table {
   border-collapse: collapse;
 }
+.amf-admin-ui thead {
+  background: transparent;
+}
 .amf-admin-ui th {
   font-size: 12px;
-  color: #716b64;
+  font-weight: 500;
+  color: var(--admin-secondary);
   white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .amf-admin-ui td {
   vertical-align: middle;
 }
+.amf-admin-ui tr {
+  border-color: var(--admin-separator);
+}
+.amf-admin-ui tbody tr:hover {
+  background: #fafafc;
+}
+
+/* Controls */
 .amf-admin-ui
-  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
 .amf-admin-ui select,
 .amf-admin-ui textarea {
-  border: 1px solid #ded8cf;
-  border-radius: 14px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-control);
   min-height: 44px;
   padding: 10px 12px;
   font: inherit;
+  color: var(--admin-label);
   max-width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.amf-admin-ui
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):focus,
+.amf-admin-ui select:focus,
+.amf-admin-ui textarea:focus {
+  border-color: var(--admin-tint);
+  box-shadow: 0 0 0 4px var(--admin-tint-soft);
+  outline: none;
+}
+.amf-admin-ui input[type="checkbox"],
+.amf-admin-ui input[type="radio"] {
+  accent-color: var(--admin-tint);
+}
+.amf-admin-ui ::placeholder {
+  color: var(--admin-tertiary);
 }
 .amf-admin-ui button,
 .amf-admin-ui a {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .amf-admin-ui button {
   min-height: 44px;
   cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+}
+.amf-admin-ui button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .amf-admin-ui button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.45;
 }
-.amf-admin-ui :is(button, a, input, select, textarea):focus-visible {
-  outline: 3px solid #bda66a;
-  outline-offset: 3px;
-}
-.amf-admin-ui .amf-panel {
-  background: white;
-  border: 1px solid #e7e1d8;
-  border-radius: 24px;
-  padding: 24px;
+.amf-admin-ui :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgba(10, 122, 116, 0.45);
+  outline-offset: 2px;
 }
 .amf-admin-ui .amf-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 14px;
-  background: #0f615f;
+  border-radius: 999px;
+  background: var(--admin-tint);
   color: white;
-  padding: 10px 18px;
+  padding: 10px 20px;
   font-weight: 600;
   min-height: 44px;
+}
+.amf-admin-ui .amf-primary:hover {
+  background: var(--admin-tint-hover);
 }
 .amf-admin-ui .amf-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid #ded8cf;
-  border-radius: 14px;
-  padding: 10px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--admin-fill);
+  color: var(--admin-tint);
+  font-weight: 600;
+  padding: 10px 18px;
   min-height: 44px;
+}
+.amf-admin-ui .amf-secondary:hover {
+  background: var(--admin-separator);
 }
 .amf-admin-ui .amf-feedback {
   padding: 12px 16px;
-  background: #f3eee5;
-  border-radius: 14px;
+  background: var(--admin-tint-soft);
+  color: var(--admin-tint-hover);
+  border-radius: 12px;
   font-size: 14px;
 }
-.amf-admin-ui .amf-admin-sidebar nav a {
-  min-height: 44px;
-  border-radius: 13px;
+
+/* Chrome: translucent bars like iOS/macOS */
+.amf-admin-ui .amf-glass {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
 }
-.amf-admin-ui .amf-admin-sidebar {
-  background: #1a1024;
+.amf-admin-ui .amf-sidebar-glass {
+  background: rgba(246, 246, 248, 0.86);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+.amf-admin-tabbar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 1023px) {
+  /* Room for the bottom tab bar on phones and tablets. */
+  .amf-admin-main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
 }
 @media (max-width: 640px) {
   .amf-admin-main {
-    padding: 16px;
+    padding-inline: 16px;
+    padding-top: 20px;
   }
   .amf-admin-main > div[class~="p-6"],
   .amf-admin-main > div[class~="p-8"] {
@@ -145,17 +251,17 @@
 
 /* Compatibility for legacy admin utilities that had no theme token. */
 .amf-admin-ui .bg-amf-teal-600 {
-  background: #0f615f;
+  background: var(--admin-tint);
 }
 .amf-admin-ui .hover\:bg-amf-teal-700:hover {
-  background: #124b49;
+  background: var(--admin-tint-hover);
 }
 .amf-admin-ui .text-amf-teal-600,
 .amf-admin-ui .text-amf-teal-700 {
-  color: #0f615f;
+  color: var(--admin-tint);
 }
 .amf-admin-ui .text-amf-ink-400,
 .amf-admin-ui .text-amf-ink-500,
 .amf-admin-ui .text-amf-ink-600 {
-  color: #746e65;
+  color: var(--admin-secondary);
 }

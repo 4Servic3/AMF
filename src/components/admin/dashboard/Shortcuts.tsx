@@ -21,7 +21,7 @@ export default async function Shortcuts() {
   ];
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-[#EBE3D5] shadow-sm h-full flex flex-col">
+    <div className="bg-white p-5 rounded-xl border border-[#e5e5ea] shadow-sm h-full flex flex-col">
       <div className="mb-4">
         <h3 className="text-[16px] font-serif font-bold text-amf-ink-900">Atalhos administrativos</h3>
       </div>
@@ -30,8 +30,8 @@ export default async function Shortcuts() {
           const Icon = link.icon;
           if (link.permitted) {
             return (
-              <Link key={idx} href={link.href} className="flex items-center gap-3 p-3 bg-amf-surface hover:border-[#0F766E]/50 rounded-lg transition-all border border-[#EBE3D5] hover:shadow-sm outline-none">
-                <Icon size={18} strokeWidth={1.5} className="text-[#0F766E] shrink-0" />
+              <Link key={idx} href={link.href} className="flex items-center gap-3 p-3 bg-amf-surface hover:border-[#0a7a74]/50 rounded-lg transition-all border border-[#e5e5ea] hover:shadow-sm outline-none">
+                <Icon size={18} strokeWidth={1.5} className="text-[#0a7a74] shrink-0" />
                 <span className="text-[13px] font-medium text-amf-ink-900">{link.label}</span>
               </Link>
             );

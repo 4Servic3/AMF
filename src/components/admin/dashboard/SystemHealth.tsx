@@ -56,13 +56,13 @@ export default async function SystemHealth() {
   ];
 
   return (
-    <div className="bg-[#0F766E]/[0.03] p-5 rounded-xl border border-[#0F766E]/10 shadow-sm h-full flex flex-col">
+    <div className="bg-[#0a7a74]/[0.03] p-5 rounded-xl border border-[#0a7a74]/10 shadow-sm h-full flex flex-col">
       <h3 className="text-lg font-serif font-bold text-amf-ink-900 mb-4">Saúde do sistema</h3>
       <div className="flex-1 space-y-2">
         {services.map(service => (
-          <div key={service.name} className="flex items-center justify-between p-2.5 rounded-lg bg-white/60 border border-[#0F766E]/10 backdrop-blur-sm">
+          <div key={service.name} className="flex items-center justify-between p-2.5 rounded-lg bg-white/60 border border-[#0a7a74]/10 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-md text-[#0F766E] bg-[#0F766E]/5">
+              <div className="p-1.5 rounded-md text-[#0a7a74] bg-[#0a7a74]/5">
                 <service.icon size={16} strokeWidth={2} />
               </div>
               <span className="text-[13px] font-medium text-amf-ink-900">{service.name}</span>
@@ -70,7 +70,7 @@ export default async function SystemHealth() {
             
             <div className={twMerge(
               "flex items-center gap-1.5 text-[12px] font-medium px-2 py-0.5 rounded-md border",
-              service.status === 'Operacional' ? 'text-[#0F766E] bg-[#0F766E]/5 border-[#0F766E]/10' : 
+              service.status === 'Operacional' ? 'text-[#0a7a74] bg-[#0a7a74]/5 border-[#0a7a74]/10' : 
               service.status === 'Down' ? 'text-red-600 bg-red-50 border-red-100' : 
               'text-[#D4AF37] bg-[#D4AF37]/5 border-[#D4AF37]/10'
             )}>

@@ -7,7 +7,7 @@ export default function SessionExpiredPage() {
       </p>
       <a
         href="/admin/login"
-        className="inline-block rounded-md bg-[#0f615f] py-2 px-4 text-sm font-medium text-white"
+        className="inline-block rounded-md bg-[#0a7a74] py-2 px-4 text-sm font-medium text-white"
       >
         Log In
       </a>

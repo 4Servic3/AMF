@@ -53,7 +53,7 @@ export default async function Reports() {
           ],
         ].map(([label, value]) => (
           <div key={label} className="amf-panel">
-            <p className="text-sm text-[#746e65]">{label}</p>
+            <p className="text-sm text-[#6e6e73]">{label}</p>
             <p className="mt-3 text-3xl font-semibold">{value}</p>
           </div>
         ))}

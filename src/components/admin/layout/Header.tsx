@@ -1,51 +1,34 @@
 "use client";
-import { Menu, Plus, ArrowUpRight } from "lucide-react";
+import { Plus, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { adminNavigationRegistry } from "@/config/admin-navigation";
-export default function Header({
-  toggleSidebar,
-  allowedKeys,
-}: {
-  toggleSidebar: () => void;
-  allowedKeys: string[];
-}) {
+import { currentNavItem } from "./nav-state";
+export default function Header({ allowedKeys }: { allowedKeys: string[] }) {
   const pathname = usePathname();
-  const current = adminNavigationRegistry.find(
-    (item) =>
-      pathname === item.route ||
-      (item.route != "/admin" && pathname.startsWith(item.route + "/")),
-  );
+  const current = currentNavItem(pathname);
   return (
-    <header className="flex min-h-20 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#1A0B2E] px-4 text-white md:px-8">
-      <div className="flex min-w-0 items-center gap-3">
-        <button
-          onClick={toggleSidebar}
-          aria-label="Abrir menu"
-          className="rounded-xl p-2 lg:hidden"
-        >
-          <Menu size={22} />
-        </button>
-        <div>
-          <p className="text-[10px] uppercase tracking-[.18em] text-[#d1c3a5]">
-            AMF · Administração
-          </p>
-          <p className="text-sm font-medium">{current?.label || "Editor"}</p>
-        </div>
+    <header className="amf-glass sticky top-0 z-20 flex min-h-[56px] shrink-0 items-center justify-between gap-3 border-b border-black/[.08] px-4 pt-[env(safe-area-inset-top)] md:px-8">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="font-serif text-lg text-[var(--admin-tint)] lg:hidden" aria-hidden="true">AMF</span>
+        <p className="truncate text-[15px] font-semibold text-[var(--admin-label)]">
+          {current?.label || "Editor"}
+        </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Link
           href="/app"
-          className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-white/80"
+          className="flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-[var(--admin-tint)] hover:bg-[var(--admin-fill)]"
         >
-          Ver aplicativo <ArrowUpRight size={16} />
+          <span className="hidden sm:inline">Ver aplicativo</span>
+          <span className="sm:hidden">App</span>
+          <ArrowUpRight size={16} aria-hidden="true" />
         </Link>
         {allowedKeys.includes("stories") && (
           <Link
             href="/admin/stories"
-            className="hidden min-h-11 items-center gap-2 rounded-xl bg-[#0f615f] px-4 text-sm sm:flex"
+            className="hidden min-h-10 items-center gap-1.5 rounded-full bg-[var(--admin-tint)] px-4 text-sm font-semibold text-white hover:bg-[var(--admin-tint-hover)] sm:flex"
           >
-            <Plus size={16} />
+            <Plus size={16} aria-hidden="true" />
             Novo story
           </Link>
         )}

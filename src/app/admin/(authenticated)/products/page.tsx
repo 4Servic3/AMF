@@ -30,13 +30,13 @@ export default async function ProductsPage() {
         const price = (product.product_prices || []).find((p) => p.active);
         const course = ((courses.data || []) as CourseRow[]).find((c) => c.product_id === product.id);
         return (
-          <section key={product.id} className="space-y-4 rounded-3xl border border-[#e7e1d8] bg-white p-6">
+          <section key={product.id} className="space-y-4 rounded-3xl border border-[#e5e5ea] bg-white p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#0E5B5C]">{TYPE_LABEL[product.type] || product.type}{course ? ` · ${course.title}` : ""}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#0a7a74]">{TYPE_LABEL[product.type] || product.type}{course ? ` · ${course.title}` : ""}</p>
                 <h2 className="mt-1 text-xl">{product.name}</h2>
               </div>
-              {product.slug && <a className="text-sm font-semibold text-[#0E5B5C] underline" href={gatewayHref({ kind: "product", slug: product.slug }, "home")} target="_blank" rel="noopener noreferrer">Ver tela de compra</a>}
+              {product.slug && <a className="text-sm font-semibold text-[#0a7a74] underline" href={gatewayHref({ kind: "product", slug: product.slug }, "home")} target="_blank" rel="noopener noreferrer">Ver tela de compra</a>}
             </div>
             <ActionForm action={saveProductSettings} label="Salvar produto">
               <input type="hidden" name="id" value={product.id} />

@@ -49,7 +49,7 @@ export default async function Users({
             header: "Perfil",
             cell: (row) => (
               <Link
-                className="text-[#0f615f] underline"
+                className="text-[#0a7a74] underline"
                 href={"/admin/users/" + row.id}
               >
                 Gerenciar

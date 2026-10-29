@@ -22,7 +22,7 @@ export function MetricsCharts({
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid vertical={false} stroke="#eee8df" />
+          <CartesianGrid vertical={false} stroke="#e5e5ea" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
           <YAxis yAxisId="money" />
           <YAxis yAxisId="people" orientation="right" allowDecimals={false} />
@@ -32,7 +32,7 @@ export function MetricsCharts({
             yAxisId="money"
             dataKey="revenue"
             name="Receita (R$)"
-            fill="#0f615f"
+            fill="#0a7a74"
             radius={[6, 6, 0, 0]}
           />
           <Bar
