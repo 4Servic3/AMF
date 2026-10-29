@@ -40,3 +40,33 @@ export function parseProductForm(form: FormData) {
     unlocksCases: form.get('unlocksCases') === 'on',
   });
 }
+
+/** "Planilha Doses Seguras — Felinos" -> "planilha-doses-seguras-felinos". */
+export function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/g, '');
+}
+
+/** Novo produto vendido fora de um curso: assinatura, produto avulso (ex.: planilha) ou evento. */
+export const newProductSchema = productSettingsSchema.omit({ id: true }).extend({
+  type: z.enum(['subscription', 'bundle', 'event']),
+});
+
+export function parseNewProductForm(form: FormData) {
+  return newProductSchema.safeParse({
+    name: form.get('name'),
+    description: form.get('description') ?? '',
+    type: form.get('type'),
+    status: form.get('status'),
+    checkoutUrl: form.get('checkoutUrl') ?? '',
+    price: form.get('price') ?? '',
+    interval: form.get('interval') ?? '',
+    unlocksCases: form.get('unlocksCases') === 'on',
+  });
+}

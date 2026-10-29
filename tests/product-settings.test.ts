@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centsToPrice, parseProductForm, priceToCents } from '@/lib/product-settings-schema'
+import { centsToPrice, parseNewProductForm, parseProductForm, priceToCents, slugify } from '@/lib/product-settings-schema'
 
 function form(values: Record<string, string>) {
   const data = new FormData()
@@ -26,5 +26,20 @@ describe('product settings form', () => {
     expect(priceToCents('')).toBeNull()
     expect(centsToPrice(19790)).toBe('197,90')
     expect(centsToPrice(null)).toBe('')
+  })
+})
+
+describe('new product form', () => {
+  it('turns a Portuguese name into a URL slug', () => {
+    expect(slugify('Planilha Doses Seguras — Felinos')).toBe('planilha-doses-seguras-felinos')
+    expect(slugify('  Ação & Reação!  ')).toBe('acao-reacao')
+  })
+
+  it('accepts only types that are sold outside a course', () => {
+    const form = new FormData()
+    form.set('name', 'Mentoria AMF'); form.set('type', 'event'); form.set('status', 'draft')
+    expect(parseNewProductForm(form).success).toBe(true)
+    form.set('type', 'course')
+    expect(parseNewProductForm(form).success).toBe(false)
   })
 })
