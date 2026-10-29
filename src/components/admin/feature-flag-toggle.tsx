@@ -6,18 +6,20 @@ export function FeatureFlagToggle({
   flagKey,
   enabled,
   description,
+  hideLabel = false,
 }: {
   flagKey: string;
   enabled: boolean;
   description: string;
+  hideLabel?: boolean;
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const router = useRouter();
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b py-4 last:border-0">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p className="font-medium">{description}</p>
+        {!hideLabel && <p className="font-medium">{description}</p>}
         {message && (
           <p role="status" className="text-sm text-red-700">
             {message}
