@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ActionForm from "@/components/admin/ui/ActionForm";
 import { saveHomeBanner } from "@/app/admin/actions/content";
+import { bannerHref } from "@/lib/admin-values";
+import { DRAFT_EVENT, DRAFT_REMOVE_EVENT, type BannerDraft } from "./HomePreview";
 
 type Banner = { id?: string; version: number; title: string; status: string; media_asset_id?: string | null; cta_target_id?: string | null; starts_at?: string | null; ends_at?: string | null };
 
@@ -25,8 +27,31 @@ async function uploadImage(file: File) {
 export default function BannerEditor({ banner, images, courses, isNew = false }: { banner: Banner; images: Option[]; courses: { slug: string; title: string }[]; isNew?: boolean }) {
   const [preview, setPreview] = useState(banner.media_asset_id ? `/api/media/${banner.media_asset_id}` : DEFAULT_IMAGE);
   const [assetId, setAssetId] = useState(banner.media_asset_id || "");
+  const key = banner.id || "new";
+  const [fields, setFields] = useState({ title: banner.title, status: banner.status, startsAt: toDay(banner.starts_at), endsAt: toDay(banner.ends_at), course: banner.cta_target_id || "" });
+  const touched = useRef(false);
+
+  // Avisa a prévia da home sempre que o formulário muda; o banner novo só entra depois de mexido.
+  useEffect(() => {
+    if (isNew && !touched.current) return;
+    const detail: BannerDraft & { touched: boolean } = {
+      key, title: fields.title, status: fields.status, startsAt: fields.startsAt, endsAt: fields.endsAt,
+      imageUrl: preview, href: bannerHref("course", fields.course || null), touched: touched.current,
+    };
+    window.dispatchEvent(new CustomEvent(DRAFT_EVENT, { detail }));
+  }, [key, isNew, fields, preview]);
+
+  function readForm(event: React.ChangeEvent<HTMLElement>) {
+    const form = (event.target as HTMLElement).closest("form");
+    if (!form) return;
+    const data = new FormData(form);
+    const text = (name: string) => String(data.get(name) || "");
+    touched.current = true;
+    setFields({ title: text("title"), status: text("status"), startsAt: text("starts_at"), endsAt: text("ends_at"), course: text("cta_target_id") });
+  }
+
   return (
-    <section className="amf-panel">
+    <section className="amf-panel" onChange={readForm}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[17px]">{isNew ? "Novo banner" : banner.title || "Banner"}</h2>
         {!isNew && <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${banner.status === "published" ? "bg-[#e8f6ee] text-[#1f7a4d]" : "bg-[var(--admin-fill)] text-[var(--admin-secondary)]"}`}>{STATUS[banner.status] || banner.status}</span>}
@@ -48,6 +73,7 @@ export default function BannerEditor({ banner, images, courses, isNew = false }:
               setAssetId(id);
             }
             await saveHomeBanner(form);
+            if (isNew) window.dispatchEvent(new CustomEvent(DRAFT_REMOVE_EVENT, { detail: key }));
           }}
         >
           {banner.id && <input type="hidden" name="id" value={banner.id} />}

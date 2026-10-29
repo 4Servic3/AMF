@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { PREVIEW_MESSAGE, sanitizePreviewSlides } from "@/lib/home-banner-slides";
 
 export interface HomeBannerSlide {
   id: string;
@@ -24,7 +25,7 @@ function BannerImage({ slide, first }: { slide: HomeBannerSlide; first: boolean 
       alt={slide.alt}
       fill
       sizes="(max-width: 768px) calc(100vw - 32px), 1240px"
-      unoptimized={slide.imageUrl.startsWith("/api/")}
+      unoptimized={slide.imageUrl.startsWith("/api/") || slide.imageUrl.startsWith("blob:")}
       preload={first}
       className={slide.contain ? "object-contain object-center" : "object-cover object-center"}
       draggable={false}
@@ -33,13 +34,31 @@ function BannerImage({ slide, first }: { slide: HomeBannerSlide; first: boolean 
   );
 }
 
-export function HomeBannerCarousel({ slides }: { slides: HomeBannerSlide[] }) {
+export function HomeBannerCarousel({ slides: published }: { slides: HomeBannerSlide[] }) {
   const [active, setActive] = useState(0);
+  // Na prévia do admin (home dentro de um iframe), os banners em edição chegam por mensagem.
+  const [preview, setPreview] = useState<HomeBannerSlide[] | null>(null);
+  const slides = preview || published;
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
   const viewportId = "home-banner-slides";
   const count = slides.length;
   const current = count ? active % count : 0;
+
+  useEffect(() => {
+    if (window.parent === window) return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent || event.data?.type !== PREVIEW_MESSAGE) return;
+      const next = sanitizePreviewSlides(event.data.slides, window.location.origin);
+      if (!next) return;
+      setPreview(next);
+      const focus = next.findIndex((s) => s.id === event.data.focus);
+      if (focus >= 0) setActive(focus);
+    };
+    window.addEventListener("message", receive);
+    window.parent.postMessage({ type: "amf-preview-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", receive);
+  }, []);
 
   useEffect(() => {
     if (count < 2) return;
@@ -120,9 +139,9 @@ export function HomeBannerCarousel({ slides }: { slides: HomeBannerSlide[] }) {
           >
             {slide.href && slide.href !== "#" ? (
               <Link href={slide.href} tabIndex={index === current ? 0 : -1} className="relative block h-full w-full rounded-[18px] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[#E0C17E]">
-                <BannerImage slide={slide} first={index === 0} />
+                <BannerImage key={slide.imageUrl} slide={slide} first={index === 0} />
               </Link>
-            ) : <BannerImage slide={slide} first={index === 0} />}
+            ) : <BannerImage key={slide.imageUrl} slide={slide} first={index === 0} />}
           </div>
         ))}
       </div>
