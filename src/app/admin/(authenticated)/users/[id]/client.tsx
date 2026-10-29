@@ -13,6 +13,13 @@ import { accessStatus } from "@/lib/admin-values";
 import { describeAccess, encodeAccessTarget } from "@/lib/admin-access-target";
 import ActionForm from "@/components/admin/ui/ActionForm";
 import DataTable from "@/components/admin/ui/DataTable";
+import type { StudentCourse } from "@/lib/admin/student-courses";
+
+const LESSON_STATE = {
+  concluida: { label: "Concluída", className: "bg-[#e8f6ee] text-[#1f7a4d]" },
+  andamento: { label: "Em andamento", className: "bg-[var(--admin-tint-soft)] text-[var(--admin-tint)]" },
+  pendente: { label: "Não iniciada", className: "bg-[var(--admin-fill)] text-[var(--admin-secondary)]" },
+} as const;
 export default function UserCrmClient({
   user,
   entitlements,
@@ -20,6 +27,7 @@ export default function UserCrmClient({
   progress,
   courses,
   products,
+  learning,
 }: {
   user: any;
   entitlements: any[];
@@ -27,6 +35,7 @@ export default function UserCrmClient({
   progress: any[];
   courses: any[];
   products: any[];
+  learning: StudentCourse[];
 }) {
   const [tab, setTab] = useState("Perfil"),
     [busy, setBusy] = useState(false),
@@ -53,6 +62,11 @@ export default function UserCrmClient({
         <p className="mt-2">
           {user.email} · {user.suspended ? "Suspenso" : "Ativo"}
         </p>
+        {learning.length > 0 && (
+          <p className="mt-1 text-sm text-[var(--admin-secondary)]">
+            {learning.map((c) => `${c.title}: ${c.percent}%`).join(" · ")}
+          </p>
+        )}
       </header>
       <nav className="flex gap-2 overflow-x-auto" aria-label="Seções do aluno">
         {[
@@ -188,20 +202,51 @@ export default function UserCrmClient({
         </>
       )}
       {tab === "Aprendizado" && (
-        <DataTable
-          data={progress}
-          columns={[
-            {
-              header: "Aula",
-              cell: (p) => p.lesson?.title || "Aula indisponível",
-            },
-            {
-              header: "Progresso",
-              cell: (p) =>
-                p.is_completed ? "Concluída" : (p.progress_percent || 0) + "%",
-            },
-          ]}
-        />
+        <div className="space-y-4">
+          {!learning.length && (
+            <section className="amf-panel text-center">
+              <p className="font-semibold">Nenhum curso liberado ou iniciado.</p>
+              <p className="mt-1 text-sm text-[var(--admin-secondary)]">Libere um curso na aba Acessos para acompanhar o progresso aqui.</p>
+            </section>
+          )}
+          {learning.map((course) => (
+            <section key={course.id} className="amf-panel">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg">{course.title}</h2>
+                  <p className="text-sm text-[var(--admin-secondary)]">
+                    {course.completed} de {course.total} aulas concluídas
+                    {course.lastActivity && <> · última atividade em {new Date(course.lastActivity).toLocaleDateString("pt-BR")}</>}
+                    {!course.hasAccess && " · sem acesso ativo"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 sm:w-56">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--admin-fill)]">
+                    <div className="h-full rounded-full bg-[var(--admin-tint)]" style={{ width: `${course.percent}%` }} />
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums">{course.percent}%</span>
+                </div>
+              </div>
+              <div className="mt-4 space-y-4">
+                {course.modules.map((mod) => (
+                  <div key={mod.id}>
+                    <h3 className="mb-1 text-[13px] font-semibold uppercase tracking-[.06em] text-[var(--admin-tertiary)]">{mod.title}</h3>
+                    <ul className="divide-y divide-[var(--admin-separator)]">
+                      {mod.lessons.map((lesson) => (
+                        <li key={lesson.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                          <span className="min-w-0 truncate">{lesson.title}</span>
+                          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${LESSON_STATE[lesson.state].className}`}>
+                            {lesson.state === "andamento" && lesson.percent > 0 ? `${lesson.percent}%` : LESSON_STATE[lesson.state].label}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}{" "}
       {tab === "Notas internas" && (
         <section className="amf-panel space-y-6">
