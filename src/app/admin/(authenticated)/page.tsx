@@ -2,7 +2,6 @@ import Link from "next/link";
 import { hasPermission, requirePermission } from "@/lib/auth/dal";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { adminNavigationRegistry } from "@/config/admin-navigation";
-import PageHeader from "@/components/admin/ui/PageHeader";
 export default async function Dashboard() {
   await requirePermission("dashboard.read");
   const db = createServiceRoleClient();
@@ -41,19 +40,21 @@ export default async function Dashboard() {
   );
   return (
     <div className="space-y-8">
-      <section className="rounded-3xl bg-[#1A0B2E] p-6 text-white md:p-10">
-        <p className="mb-3 text-xs uppercase tracking-[.2em] text-[#d1c3a5]">
+      <section className="pt-2">
+        <p className="text-[13px] font-semibold uppercase tracking-[.08em] text-[var(--admin-tint)]">
           Seu espaço de gestão
         </p>
-        <h1 className="text-3xl md:text-4xl">Central de operações</h1>
-        <p className="mt-3 max-w-xl text-white/70">
+        <h1 className="mt-1 text-[34px] md:text-[44px]">Central de operações</h1>
+        <p className="mt-2 max-w-xl text-[17px] text-[var(--admin-secondary)]">
           Conteúdos, alunos e atendimento, organizados em um só lugar.
         </p>
       </section>
-      <PageHeader
-        title="Áreas da plataforma"
-        description="Contagens atuais de registros. Escolha uma área para gerenciar."
-      />
+      <div>
+        <h2 className="text-[22px]">Áreas da plataforma</h2>
+        <p className="mt-1 text-[15px] text-[var(--admin-secondary)]">
+          Contagens atuais de registros. Escolha uma área para gerenciar.
+        </p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {areas.filter(Boolean).map((item) => {
           if (!item) return null;
@@ -62,14 +63,14 @@ export default async function Dashboard() {
             <Link
               key={item.key}
               href={item.route}
-              className="amf-panel group flex items-start gap-4 transition-colors hover:border-[#0f615f]"
+              className="amf-panel group flex items-center gap-4 transition-transform hover:-translate-y-0.5"
             >
-              <span className="rounded-2xl bg-[#f3eee5] p-3 text-[#0f615f]">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] bg-[var(--admin-tint-soft)] text-[var(--admin-tint)]">
                 <Icon size={24} />
               </span>
               <div>
-                <h2 className="text-lg">{item.label}</h2>
-                <p className="mt-1 text-sm text-[#746e65]">
+                <h2 className="text-[17px]">{item.label}</h2>
+                <p className="mt-1 text-sm text-[#6e6e73]">
                   {item.failed
                     ? "Configuração pendente"
                     : item.count === null

@@ -21,10 +21,10 @@ export default async function AttentionUsers() {
     .limit(4);
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-[#EBE3D5] shadow-sm h-full flex flex-col">
+    <div className="bg-white p-5 rounded-xl border border-[#e6e3ee] shadow-sm h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[16px] font-serif font-bold text-amf-ink-900">Atenção requerida</h3>
-        <Link href="/admin/support" className="text-[12px] font-medium text-[#0F766E] flex items-center hover:underline">
+        <Link href="/admin/support" className="text-[12px] font-medium text-[#7c4dbb] flex items-center hover:underline">
           Ver todos <ChevronRight size={14} />
         </Link>
       </div>
@@ -41,8 +41,8 @@ export default async function AttentionUsers() {
               const initials = fullName.substring(0, 2).toUpperCase();
               
               return (
-                <li key={t.id} className="flex gap-3 items-center group border-b border-[#EBE3D5] last:border-0 pb-3 last:pb-0">
-                  <div className="w-8 h-8 rounded-full bg-amf-surface border border-[#EBE3D5] flex items-center justify-center shrink-0">
+                <li key={t.id} className="flex gap-3 items-center group border-b border-[#e6e3ee] last:border-0 pb-3 last:pb-0">
+                  <div className="w-8 h-8 rounded-full bg-amf-surface border border-[#e6e3ee] flex items-center justify-center shrink-0">
                     <span className="text-[11px] font-bold text-amf-ink-900">{initials}</span>
                   </div>
                   
@@ -55,7 +55,7 @@ export default async function AttentionUsers() {
                         Suporte
                       </span>
                     </div>
-                    <Link href={`/admin/support/${t.id}`} className="text-[12px] text-amf-muted-600 truncate hover:text-[#0F766E]">
+                    <Link href={`/admin/support/${t.id}`} className="text-[12px] text-amf-muted-600 truncate hover:text-[#7c4dbb]">
                       {t.subject}
                     </Link>
                   </div>

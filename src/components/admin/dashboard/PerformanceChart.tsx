@@ -52,13 +52,13 @@ export default function PerformanceChart() {
   const data = period === '7 dias' ? mockData7 : period === '30 dias' ? mockData30 : mockData12m;
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-[#EBE3D5] shadow-sm h-full flex flex-col">
+    <div className="bg-white p-5 rounded-xl border border-[#e6e3ee] shadow-sm h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-lg font-serif font-bold text-amf-ink-900">Desempenho da plataforma</h3>
           <p className="text-xs text-amf-muted-600 mt-1">Aprendizes ativos / Conclusões</p>
         </div>
-        <div className="flex bg-[#FBF7F0] rounded-lg p-1 border border-[#EBE3D5]">
+        <div className="flex bg-[#f6f5f9] rounded-lg p-1 border border-[#e6e3ee]">
           {(['7 dias', '30 dias', '12 meses'] as const).map(p => (
             <button
               key={p}
@@ -78,15 +78,15 @@ export default function PerformanceChart() {
       <div className="flex-1 min-h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EBE3D5" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8C8273', fontSize: 11 }} dy={10} />
-            <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#8C8273', fontSize: 11 }} />
-            <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#8C8273', fontSize: 11 }} />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e6e3ee" />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6e6e73', fontSize: 11 }} dy={10} />
+            <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#6e6e73', fontSize: 11 }} />
+            <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#6e6e73', fontSize: 11 }} />
             <Tooltip 
-              contentStyle={{ borderRadius: '8px', border: '1px solid #EBE3D5', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', fontSize: '12px' }}
+              contentStyle={{ borderRadius: '8px', border: '1px solid #e6e3ee', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', fontSize: '12px' }}
             />
             <Bar yAxisId="right" dataKey="completions" name="Conclusões" fill="#D4AF37" radius={[4, 4, 0, 0]} maxBarSize={30} />
-            <Line yAxisId="left" type="monotone" dataKey="active" name="Aprendizes ativos" stroke="#0F766E" strokeWidth={2.5} dot={false} />
+            <Line yAxisId="left" type="monotone" dataKey="active" name="Aprendizes ativos" stroke="#7c4dbb" strokeWidth={2.5} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

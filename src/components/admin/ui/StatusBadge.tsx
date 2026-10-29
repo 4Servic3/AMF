@@ -10,17 +10,17 @@ interface StatusBadgeProps {
 }
 
 const variantStyles: Record<StatusVariant, string> = {
-  success: "bg-[#2E7D62]/10 text-[#2E7D62] border-[#2E7D62]/20",
-  warning: "bg-[#B7791F]/10 text-[#B7791F] border-[#B7791F]/20",
-  error: "bg-[#B44545]/10 text-[#B44545] border-[#B44545]/20",
-  info: "bg-amf-teal-400/10 text-amf-petrol-900 border-amf-teal-400/20",
-  neutral: "bg-amf-ivory-100 text-amf-ink-700 border-amf-border",
+  success: "bg-[#34c759]/15 text-[#1f7a37]",
+  warning: "bg-[#ff9500]/15 text-[#a35a00]",
+  error: "bg-[#ff3b30]/12 text-[#c4221a]",
+  info: "bg-[var(--admin-tint-soft)] text-[var(--admin-tint)]",
+  neutral: "bg-[var(--admin-fill)] text-[var(--admin-secondary)]",
 };
 
 export default function StatusBadge({ children, variant = "neutral", className }: StatusBadgeProps) {
   return (
     <span className={twMerge(
-      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold",
       variantStyles[variant],
       className
     )}>

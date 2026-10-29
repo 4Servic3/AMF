@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import TabBar from "./TabBar";
 export default function AdminLayout({
   children,
   name,
@@ -24,10 +25,7 @@ export default function AdminLayout({
         allowedKeys={allowedKeys}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Header
-          toggleSidebar={() => setOpen(!open)}
-          allowedKeys={allowedKeys}
-        />
+        <Header allowedKeys={allowedKeys} />
         <main
           id="admin-content"
           className="amf-admin-main flex-1 overflow-auto"
@@ -35,6 +33,7 @@ export default function AdminLayout({
           {children}
         </main>
       </div>
+      <TabBar allowedKeys={allowedKeys} onMore={() => setOpen(true)} />
     </div>
   );
 }

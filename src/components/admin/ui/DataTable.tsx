@@ -20,19 +20,19 @@ export default function DataTable({
   return (
     <div
       className={twMerge(
-        "w-full overflow-hidden rounded-2xl border border-amf-border bg-amf-surface shadow-sm",
+        "w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgba(0,0,0,.04),0_4px_16px_rgba(0,0,0,.04)]",
         className,
       )}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-amf-ink-900">
-          <thead className="bg-amf-ivory-50 text-amf-muted-600 border-b border-amf-border">
+          <thead className="text-amf-muted-600 border-b border-amf-border">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   className={twMerge(
-                    "px-6 py-4 font-medium whitespace-nowrap",
+                    "px-5 py-3 text-xs font-medium whitespace-nowrap",
                     col.className,
                   )}
                 >
@@ -55,12 +55,12 @@ export default function DataTable({
               data.map((row, rowIdx) => (
                 <tr
                   key={row.id ?? rowIdx}
-                  className="hover:bg-amf-ivory-50/50 transition-colors"
+                  className="transition-colors"
                 >
                   {columns.map((col, colIdx) => (
                     <td
                       key={colIdx}
-                      className={twMerge("px-6 py-4", col.className)}
+                      className={twMerge("px-5 py-3.5", col.className)}
                     >
                       {col.cell
                         ? col.cell(row)

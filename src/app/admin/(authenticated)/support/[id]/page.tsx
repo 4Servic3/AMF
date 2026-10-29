@@ -54,7 +54,7 @@ export default async function Ticket({
       </section>
       {messages.map((m: any) => (
         <article className="amf-panel" key={m.id}>
-          <p className="text-xs text-[#746e65]">
+          <p className="text-xs text-[#6e6e73]">
             {m.is_internal ? "Nota interna" : "Mensagem"} ·{" "}
             {new Date(m.created_at).toLocaleString("pt-BR")}
           </p>

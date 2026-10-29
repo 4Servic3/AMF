@@ -17,16 +17,16 @@ export default function PageHeader({
   return (
     <div
       className={twMerge(
-        "flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8",
+        "flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6",
         className,
       )}
     >
       <div>
-        <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-amf-ink-900">
+        <h1 className="text-[28px] lg:text-[34px] font-bold tracking-tight text-amf-ink-900">
           {title}
         </h1>
         {description && (
-          <p className="text-amf-muted-600 mt-1">{description}</p>
+          <p className="text-amf-muted-600 mt-1 text-[15px]">{description}</p>
         )}
       </div>
       {actions && (

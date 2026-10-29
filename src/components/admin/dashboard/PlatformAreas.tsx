@@ -49,18 +49,18 @@ export default async function PlatformAreas() {
       {areas.map((area) => {
         const CardContent = (
           <div className={twMerge(
-            "flex items-center justify-between px-4 h-[68px] rounded-xl bg-white border border-[#EBE3D5] transition-all",
-            area.canManage ? 'hover:border-[#0F766E]/50 hover:shadow-sm cursor-pointer' : 'opacity-60'
+            "flex items-center justify-between px-4 h-[68px] rounded-xl bg-white border border-[#e6e3ee] transition-all",
+            area.canManage ? 'hover:border-[#7c4dbb]/50 hover:shadow-sm cursor-pointer' : 'opacity-60'
           )}>
             <div className="flex items-center gap-3">
-              <area.icon size={22} strokeWidth={1.5} className="text-[#0F766E] shrink-0" />
+              <area.icon size={22} strokeWidth={1.5} className="text-[#7c4dbb] shrink-0" />
               <div className="flex flex-col justify-center">
                 <h4 className="text-[14px] font-semibold text-amf-ink-900 leading-tight">{area.title}</h4>
                 <p className="text-[12px] text-amf-muted-600 leading-tight">{area.count} ativos</p>
               </div>
             </div>
             {area.canManage && (
-              <div className="flex items-center gap-1 text-[12px] font-medium text-[#0F766E]">
+              <div className="flex items-center gap-1 text-[12px] font-medium text-[#7c4dbb]">
                 Gerenciar <ChevronRight size={14} />
               </div>
             )}
@@ -68,7 +68,7 @@ export default async function PlatformAreas() {
         );
 
         return area.canManage ? (
-          <Link key={area.title} href={area.href} className="w-full block outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] rounded-xl">
+          <Link key={area.title} href={area.href} className="w-full block outline-none focus-visible:ring-2 focus-visible:ring-[#7c4dbb] rounded-xl">
             {CardContent}
           </Link>
         ) : (
