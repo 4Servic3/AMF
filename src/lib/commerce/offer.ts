@@ -15,6 +15,9 @@ export type GatewayOffer = {
 
 type ProductRow = { id: string; name: string; description: string | null; type: string; slug: string | null; checkout_url: string | null; status: string; product_prices?: { amount: number; interval: string | null; active: boolean }[] | null };
 
+/** Enquanto o produto não tiver link de pagamento cadastrado no admin. */
+const PLACEHOLDER_CHECKOUT = '/checkout';
+
 const PRODUCT_COLUMNS = 'id,name,description,type,slug,checkout_url,status,product_prices(amount,interval,active)';
 
 function accessHrefFor(product: ProductRow, courseSlug: string | null): string {
@@ -68,7 +71,7 @@ export async function loadGatewayOffer(target: GatewayTarget): Promise<GatewayOf
     name: product.name,
     description: product.description,
     price: formatPrice(price?.amount, price?.interval),
-    checkoutUrl: owned ? null : checkoutLink(product.checkout_url, email),
+    checkoutUrl: owned ? null : checkoutLink(product.checkout_url, email) ?? PLACEHOLDER_CHECKOUT,
     owned,
     accessHref: accessHrefFor(product, course?.slug ?? null),
   };
