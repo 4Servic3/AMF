@@ -16,7 +16,8 @@ export async function getPublishedCaseStories(homeOnly = false): Promise<Publish
     createServiceRoleClient().from('cases')
     .select('id,title,case_story_videos!inner(id,caption,created_at,status,published_at)')
     .eq('status', 'published').in('visibility', ['free', 'authenticated'])
-    .eq('case_story_videos.status', 'published').order('published_at', { ascending: false }),
+    .eq('case_story_videos.status', 'published').lte('case_story_videos.published_at', new Date().toISOString())
+    .order('published_at', { ascending: false }),
     getMemberAccess(),
   ])
   if (caseResult.error) throw new Error('Não foi possível carregar os casos.')

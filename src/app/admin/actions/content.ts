@@ -10,10 +10,18 @@ const schema = z.object({
   media_asset_id: z.union([z.uuid(), z.literal("")]),
   cta_target_id: z.string().trim().max(160),
   status: z.enum(["draft", "published", "archived"]),
+  starts_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional().default(""),
+  ends_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional().default(""),
 });
+// Datas do formulário são dias inteiros no horário de Brasília: começa às 00:00 e termina às 23:59.
+const dayStart = (day: string) => (day ? new Date(`${day}T00:00:00-03:00`).toISOString() : null);
+const dayEnd = (day: string) => (day ? new Date(`${day}T23:59:59-03:00`).toISOString() : null);
 export async function saveHomeBanner(form: FormData) {
   const db = await adminDb("content.manage");
   const value = schema.parse(Object.fromEntries(form));
+  const startsAt = dayStart(value.starts_at), endsAt = dayEnd(value.ends_at);
+  if (startsAt && endsAt && endsAt <= startsAt)
+    throw new Error("A data de fim precisa ser depois da data de início.");
   if (value.media_asset_id) {
     const { data, error } = await db
       .from("media_assets")
@@ -48,6 +56,8 @@ export async function saveHomeBanner(form: FormData) {
     cta_target_type: "course",
     cta_target_id: value.cta_target_id || null,
     status: value.status,
+    starts_at: startsAt,
+    ends_at: endsAt,
     section_id: section.id,
     version: value.version + 1,
   };

@@ -16,6 +16,11 @@ describe('case stories validation and publication',()=>{
     expect(caseStoryInput.safeParse({...input,fileType:'image/png',fileSize:11*1024**2}).success).toBe(false)
     expect(caseStoryInput.safeParse({...input,fileType:'image/jpeg'}).success).toBe(true)
   })
+  it('accepts an optional publish date only in the future',()=>{
+    expect(caseStoryInput.safeParse({...input,scheduledFor:null}).success).toBe(true)
+    expect(caseStoryInput.safeParse({...input,scheduledFor:new Date(Date.now()+86400000).toISOString()}).success).toBe(true)
+    expect(caseStoryInput.safeParse({...input,scheduledFor:'2000-01-01T00:00:00.000Z'}).success).toBe(false)
+  })
   it('does not revive an archived story',async()=>{
     mocks.single.mockResolvedValue({data:{status:'archived'}})
     expect(await syncCaseStory('id')).toBe('archived')

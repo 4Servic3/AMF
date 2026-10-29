@@ -12,6 +12,7 @@ export default function CaseStoryStudio({ cases, stories, selectedCase = '' }: {
   const [caseId, setCaseId] = useState(selectedCase)
   const [caseTitle, setCaseTitle] = useState('')
   const [caption, setCaption] = useState('')
+  const [scheduledFor, setScheduledFor] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState('')
   const [cameraReady,setCameraReady] = useState(false)
@@ -169,7 +170,7 @@ export default function CaseStoryStudio({ cases, stories, selectedCase = '' }: {
     publishing.current = true
     setBusy(true); setMessage('Preparando envio…'); setProgress(0)
     try {
-      const result = await startCaseStory({caseId:caseId || null,caseTitle,caption,fileName:file.name,fileType:file.type,fileSize:file.size})
+      const result = await startCaseStory({caseId:caseId || null,caseTitle,caption,fileName:file.name,fileType:file.type,fileSize:file.size,scheduledFor:scheduledFor ? new Date(scheduledFor).toISOString() : null})
       if (result.error || !result.id) throw new Error(result.error || 'Não foi possível iniciar.')
       if (result.path && result.token) {
         const uploaded = await createClient().storage.from('case-story-images').uploadToSignedUrl(result.path,result.token,file,{contentType:file.type})
@@ -183,7 +184,7 @@ export default function CaseStoryStudio({ cases, stories, selectedCase = '' }: {
         upload.on('error',() => reject(new Error('Falha no envio. Verifique a conexão e tente novamente.')))
         })
       }
-      setFile(null); setCaption(''); setCaseTitle(''); setCaseId(result.caseId || '')
+      setFile(null); setCaption(''); setScheduledFor(''); setCaseTitle(''); setCaseId(result.caseId || '')
       const status = await finishCaseStory(result.id)
       setMessage(status.error || (status.status === 'published' ? 'Story publicado! Ele já está na página inicial e na área de casos.' : 'Envio concluído. Processando e publicando automaticamente; você já pode enviar outro story.'))
       router.refresh()
@@ -205,6 +206,7 @@ export default function CaseStoryStudio({ cases, stories, selectedCase = '' }: {
     <label className="block">Caso<select value={caseId} onChange={event => setCaseId(event.target.value)} disabled={busy} className="mt-1 block w-full rounded-xl border p-3"><option value="">Criar novo caso</option>{cases.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
     {!caseId && <label className="block">Nome do novo caso<input value={caseTitle} maxLength={160} disabled={busy} onChange={event => setCaseTitle(event.target.value)} className="mt-1 block w-full rounded-xl border p-3" /></label>}
     <label className="block">Título ou legenda do story<textarea value={caption} maxLength={500} disabled={busy} onChange={event => setCaption(event.target.value)} className="mt-1 block w-full rounded-xl border p-3" /></label>
+    <label className="block">Publicar em <span className="font-normal text-amf-muted">(opcional; vazio = assim que terminar de enviar)</span><input type="datetime-local" value={scheduledFor} disabled={busy} onChange={event => setScheduledFor(event.target.value)} className="mt-1 block w-full sm:w-72" /></label>
     <div className="space-y-3 rounded-xl border border-amf-border bg-white p-4">
     <p className="text-sm text-amf-muted">{!file ? 'Grave ou selecione uma foto ou vídeo para publicar.' : !caseId && !caseTitle.trim() ? 'Dê um nome ao novo caso para liberar a publicação.' : 'Tudo pronto. Publique para mostrar este story na página inicial.'}</p>
     <button type="button" disabled={busy || opening || cameraReady || recording || !file || (!caseId && !caseTitle.trim())} onClick={publish} className="min-h-12 w-full rounded-xl bg-amf-petrol-700 px-5 py-3 font-semibold text-white shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amf-petrol-700 disabled:cursor-not-allowed disabled:opacity-60">{busy ? `Aguarde… ${progress}%` : 'Publicar story'}</button>

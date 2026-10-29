@@ -1,4 +1,4 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { loadLiveHomeBanners, type PublishedHomeBanner } from "@/lib/home-banners";
 import { bannerHref } from "@/lib/admin-values";
 import React, { Suspense } from "react";
 import HomeCaseStories from "@/components/home/home-case-stories";
@@ -12,19 +12,9 @@ import {
   type UserCourseProgress,
 } from "@/components/home/sua-academia";
 
-type PublishedHomeBanner = {
-  id: string;
-  media_asset_id: string | null;
-  cta_target_type: string | null;
-  cta_target_id: string | null;
-  title: string | null;
-};
-
 export default async function AppHome() {
   // Banners publicados são públicos: a consulta começa junto com os cursos do aluno.
-  const bannersQuery = createServiceRoleClient().from('home_banners')
-    .select('id,media_asset_id,cta_target_type,cta_target_id,title').eq('status','published').order('position',{ascending:true}).limit(20);
-  const [{ userId, summaries: courses }, { data: banners }] = await Promise.all([loadMemberCourses(), bannersQuery]);
+  const [{ userId, summaries: courses }, banners] = await Promise.all([loadMemberCourses(), loadLiveHomeBanners()]);
   if (!userId) redirect('/entrar');
 
   const homeBanners: HomeBannerSlide[] = banners?.length

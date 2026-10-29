@@ -8,6 +8,8 @@ import { storyIsRecent } from '@/lib/story-lifecycle'
 import type { CaseStoryRow } from '@/lib/case-stories'
 type Story = CaseStoryRow & {published_at:string|null}
 type Case = {id:string;title:string;case_story_videos:Story[]}
+// Story publicado com data futura: ainda não aparece para o aluno.
+const isScheduled=(iso:string|null)=>!!iso && Date.parse(iso)>Date.now()
 const thumb=(id:string)=>'/api/case-stories/'+id+'/thumbnail'
 const published=(c:Case)=>c.case_story_videos.filter(s=>s.status==='published').sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id))
 export default function CaseStoryArchive({cases}:{cases:Case[]}) {
@@ -64,6 +66,7 @@ export default function CaseStoryArchive({cases}:{cases:Case[]}) {
     <img src={thumb(s.id)} alt={s.caption||open.title} loading="lazy" className="h-full w-full object-cover" />
     <span className="absolute left-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-white/90 px-2 text-xs font-bold text-[var(--admin-label)]">{i+1}</span>
     {storyIsRecent(s.published_at) && <span className="absolute bottom-2 left-2 rounded-full bg-[var(--admin-tint)] px-2 py-0.5 text-[11px] font-semibold text-white">Na home</span>}
+    {isScheduled(s.published_at) && <span className="absolute bottom-2 left-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">Agendado · {new Date(s.published_at!).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>}
    </button>
    <p className="mt-2 line-clamp-2 min-h-10 text-sm font-medium">{s.caption || 'Sem legenda'}</p>
    <div className="mt-2 flex items-center justify-between gap-1">

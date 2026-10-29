@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ user: vi.fn(), flags: vi.fn(), from: vi.fn(), select: vi.fn(), eq: vi.fn(), in: vi.fn(), order: vi.fn(), rpc: vi.fn() }))
+const mocks = vi.hoisted(() => ({ user: vi.fn(), flags: vi.fn(), from: vi.fn(), select: vi.fn(), eq: vi.fn(), in: vi.fn(), order: vi.fn(), rpc: vi.fn(), lte: vi.fn() }))
 vi.mock('server-only', () => ({}))
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: mocks.user }, rpc: mocks.rpc }) }))
 vi.mock('@/lib/services/flags', () => ({ getFeatureFlags: mocks.flags }))
@@ -8,8 +8,8 @@ import { getPublishedCaseStories } from '@/lib/published-case-stories'
 describe('published stories: preview for everyone signed in, full access with the cases product', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    const query = { select: mocks.select, eq: mocks.eq, in: mocks.in, order: mocks.order }
-    mocks.from.mockReturnValue(query); mocks.select.mockReturnValue(query); mocks.eq.mockReturnValue(query); mocks.in.mockReturnValue(query)
+    const query = { select: mocks.select, eq: mocks.eq, in: mocks.in, order: mocks.order, lte: mocks.lte }
+    mocks.from.mockReturnValue(query); mocks.lte.mockReturnValue(query); mocks.select.mockReturnValue(query); mocks.eq.mockReturnValue(query); mocks.in.mockReturnValue(query)
     mocks.rpc.mockResolvedValue({ data: { courses: [], products: [], cases: false }, error: null })
     mocks.user.mockResolvedValue({ data: { user: { id: 'user-without-purchases' } } })
     mocks.flags.mockResolvedValue({ member_cases_enabled: true })
@@ -32,6 +32,7 @@ describe('published stories: preview for everyone signed in, full access with th
     expect(await getPublishedCaseStories()).toEqual([{ id: 'case', title: 'Caso', hasFullAccess: false, items: [{ id: 'a', caption: '', locked: false }, { id: 'b', caption: '', locked: true }] }])
     expect(mocks.eq).toHaveBeenCalledWith('status', 'published')
     expect(mocks.eq).toHaveBeenCalledWith('case_story_videos.status', 'published')
+    expect(mocks.lte).toHaveBeenCalledWith('case_story_videos.published_at', expect.any(String))
     expect(mocks.in).toHaveBeenCalledWith('visibility', ['free', 'authenticated'])
     expect(mocks.from).toHaveBeenCalledTimes(1)
   })
