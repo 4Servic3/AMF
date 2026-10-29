@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/supabase/auth-user';
 import { Paywall } from '@/components/ui/paywall';
 import { SecureLessonPlayer } from '@/components/player';
 import { PdfViewer } from '@/components/ui/pdf-viewer';
@@ -13,15 +14,16 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   const { courseSlug, lessonSlug } = await params;
   
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // 1. Fetch Course
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id, title, status')
-    .eq('status', 'published')
-    .eq('slug', courseSlug)
-    .single();
+  // 1. Usuário e curso em paralelo (o curso é público: RLS só devolve publicados)
+  const [{ data: { user } }, { data: course }] = await Promise.all([
+    getAuthUser(),
+    supabase
+      .from('courses')
+      .select('id, title, status')
+      .eq('status', 'published')
+      .eq('slug', courseSlug)
+      .single(),
+  ]);
 
   if (!course) notFound();
 
@@ -49,13 +51,33 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   // 3. Fetch current lesson (slug canônico; id aceito para links antigos)
   const lookup = lessonLookup(lessonSlug);
   if (!lookup) notFound();
-  const { data: currentLesson } = await supabase
-    .from('lessons')
-    .select('*, course_modules!inner(course_id,status), lesson_materials(id,name,title,mime_type,status)')
-    .eq(lookup.column, lookup.value)
-    .eq('course_modules.course_id', course.id)
-    .eq('status','published')
-    .maybeSingle();
+  // 4. Aula atual e grade do curso em paralelo, só depois da checagem de acesso.
+  // A grade usa service role pontual e nunca expõe playback/URLs privadas.
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const [{ data: currentLesson }, { data: modulesData }] = await Promise.all([
+    supabase
+      .from('lessons')
+      .select('*, course_modules!inner(course_id,status), lesson_materials(id,name,title,mime_type,status)')
+      .eq(lookup.column, lookup.value)
+      .eq('course_modules.course_id', course.id)
+      .eq('status','published')
+      .maybeSingle(),
+    supabaseAdmin
+      .from('course_modules')
+      .select(`
+        id, title, order_index,
+        lessons (
+          id, slug, title, type, duration_seconds, order_index, status
+        )
+      `)
+      .eq('course_id', course.id)
+      .eq('status', 'published')
+      .order('order_index', { ascending: true }),
+  ]);
 
   if (!currentLesson || currentLesson.course_modules.course_id !== course.id || currentLesson.course_modules.status !== 'published') {
     notFound();
@@ -64,24 +86,6 @@ export default async function LessonPage({ params }: { params: Promise<{ courseS
   type Material = { id: string; name: string | null; title: string; mime_type: string | null; status: string };
   const materials = ((currentLesson.lesson_materials || []) as Material[]).filter(m => m.status === 'published');
   const pdf = materials.find(m => m.mime_type === 'application/pdf');
-
-  // 4. Fetch curriculum for sidebar
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { data: modulesData } = await supabaseAdmin
-    .from('course_modules')
-    .select(`
-      id, title, order_index,
-      lessons (
-        id, slug, title, type, duration_seconds, order_index, status
-      )
-    `)
-    .eq('course_id', course.id)
-    .eq('status', 'published')
-    .order('order_index', { ascending: true });
 
   const modules = (modulesData || []).map(mod => ({
     ...mod,

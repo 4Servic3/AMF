@@ -76,3 +76,10 @@
 }
 
 .amf-member-ui [data-courses-main] > .overflow-x-auto button { min-height: 44px; }
+
+/* Visualizador de PDF: troca de página deslizando para o lado. */
+@keyframes amf-pdf-in-next { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes amf-pdf-in-prev { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: none; } }
+.amf-pdf-slide-next { animation: amf-pdf-in-next .22s ease-out; }
+.amf-pdf-slide-prev { animation: amf-pdf-in-prev .22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .amf-pdf-slide-next, .amf-pdf-slide-prev { animation: none; } }

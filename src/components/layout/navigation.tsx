@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import Link, { useLinkStatus } from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, GraduationCap, Library, UserRound, LogOut, Lock } from 'lucide-react';
 
@@ -82,6 +82,7 @@ export function Navigation() {
                 <span className={`hidden xl:block ml-2 font-sans text-[14px] font-medium ${active ? 'font-bold' : ''}`}>
                   {item.label}
                 </span>
+                <NavPending />
               </Link>
             );
           })}
@@ -151,7 +152,7 @@ function NavItemMobile({ href, icon: Icon, label, active, locked, onClick }: { h
       href={href}
       onClick={onClick}
       aria-disabled={locked}
-      className={`flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] h-full gap-1 transition-transform duration-[160ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-lg ${locked ? 'cursor-not-allowed opacity-60' : 'active:scale-[0.985]'}`}
+      className={`relative flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] h-full gap-1 transition-transform duration-[160ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0E5B5C] rounded-lg ${locked ? 'cursor-not-allowed opacity-60' : 'active:scale-[0.985]'}`}
     >
       <div className="relative">
         <Icon 
@@ -172,7 +173,19 @@ function NavItemMobile({ href, icon: Icon, label, active, locked, onClick }: { h
       >
         {label}
       </span>
+      <NavPending />
     </Link>
   );
 }
 
+
+/** Retorno imediato no item tocado enquanto a próxima tela carrega. */
+function NavPending() {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-x-3 top-1 h-[3px] rounded-full bg-[#D4AD62] transition-opacity duration-150 ${pending ? 'animate-pulse opacity-100' : 'opacity-0'}`}
+    />
+  );
+}

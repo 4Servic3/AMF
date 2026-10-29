@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/supabase/auth-user';
 
 export const PLANILHA_PRODUCT_ID = 'f6748b06-8efa-4dc6-a28f-96a17d14b7fd';
 export const PLANILHA_PRODUCT_SLUG = 'planilha-doses-seguras-felinos';
@@ -15,21 +16,20 @@ export async function getPlanilhaAccess(): Promise<PlanilhaAccess> {
   const productId = PLANILHA_PRODUCT_ID;
   try {
     const db = await createClient();
-    const { data: { user }, error: authError } = await db.auth.getUser();
+    const { data: { user }, error: authError } = await getAuthUser();
     if (authError || !user) return { state: 'unauthenticated', userId: null, productId };
     userId = user.id;
 
-    const { data: product, error: productError } = await db
-      .from('products').select('id,status').eq('id', productId).maybeSingle();
+    const [{ data: product, error: productError }, { data: entitlements, error: accessError }] = await Promise.all([
+      db.from('products').select('id,status').eq('id', productId).maybeSingle(),
+      db.from('entitlements')
+        .select('profile_id,resource_id,resource_type,status,starts_at,expires_at')
+        .eq('profile_id', userId).eq('resource_id', productId)
+        .eq('resource_type', 'product').eq('status', 'active'),
+    ]);
     if (productError || !product || product.status !== 'active') {
       return { state: 'unavailable', userId, productId };
     }
-
-    const { data: entitlements, error: accessError } = await db
-      .from('entitlements')
-      .select('profile_id,resource_id,resource_type,status,starts_at,expires_at')
-      .eq('profile_id', userId).eq('resource_id', productId)
-      .eq('resource_type', 'product').eq('status', 'active');
     if (accessError || !entitlements) return { state: 'unavailable', userId, productId };
 
     const now = Date.now();

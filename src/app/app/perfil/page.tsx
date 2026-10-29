@@ -19,32 +19,29 @@ export default async function Perfil() {
     );
   }
 
-  // 1. Fetch Profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, profession, role, avatar_url')
-    .eq('id', user.id)
-    .single();
+  // Perfil, acessos e certificados são independentes: buscados em paralelo.
+  const [{ data: profile }, { data: entitlements }, { data: certificates }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, profession, role, avatar_url')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('entitlements')
+      .select('resource_id')
+      .eq('profile_id', user.id)
+      .eq('resource_type', 'course')
+      .eq('status', 'active'),
+    supabase
+      .from('certificates')
+      .select('id, issue_date, courses(title)')
+      .eq('profile_id', user.id)
+      .order('issue_date', { ascending: false }),
+  ]);
 
   const name = profile?.full_name || user.email?.split('@')[0] || 'Usuário AMF';
   const roleTitle = profile?.profession === 'veterinarian' ? 'Médico-Veterinário' : profile?.profession === 'student' ? 'Estudante' : 'Membro';
-  
-  // 2. Fetch Acessos
-  const { data: entitlements } = await supabase
-    .from('entitlements')
-    .select('resource_id')
-    .eq('profile_id', user.id)
-    .eq('resource_type', 'course')
-    .eq('status', 'active');
-  
   const courseCount = entitlements?.length || 0;
-
-  // 4. Fetch Certificados
-  const { data: certificates } = await supabase
-    .from('certificates')
-    .select('id, issue_date, courses(title)')
-    .eq('profile_id', user.id)
-    .order('issue_date', { ascending: false });
 
   return (
     <div className="amf-profile flex flex-col w-full min-h-screen bg-[#FAF7F1] min-w-0 pb-20">
