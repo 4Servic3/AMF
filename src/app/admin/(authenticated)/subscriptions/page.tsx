@@ -17,6 +17,7 @@ export default async function Subscriptions() {
         description="100 assinaturas mais recentes registradas pelo sistema de pagamentos. Acessos manuais ficam em Acessos."
       />
       <DataTable
+        empty={{ title: "Nenhuma assinatura ainda.", description: "As assinaturas do produto Casos Clínicos vão aparecer aqui com o vencimento quando o provedor de pagamento for conectado." }}
         data={data || []}
         columns={[
           {

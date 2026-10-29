@@ -6,8 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, PanelLeftClose, PanelLeftOpen, X, ShieldCheck, ChevronRight } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { adminNavigationRegistry, NavGroup, NavItem } from "@/config/admin-navigation";
-import { isActiveRoute } from "./nav-state";
+import type { NavSectionGroup } from "@/config/admin-navigation";
+import { isActiveSection, visibleSections, type VisibleSection } from "./nav-state";
 
 interface SidebarProps {
   name: string;
@@ -32,15 +32,13 @@ export default function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, setIsOpen]);
 
-  const groupedNav = adminNavigationRegistry
-    .filter((item) => allowedKeys.includes(item.key))
-    .reduce(
-      (acc, item) => {
-        (acc[item.group] ||= []).push(item);
-        return acc;
-      },
-      {} as Record<NavGroup, NavItem[]>,
-    );
+  const groupedNav = visibleSections(allowedKeys).reduce(
+    (acc, section) => {
+      (acc[section.group] ||= []).push(section);
+      return acc;
+    },
+    {} as Record<NavSectionGroup, VisibleSection[]>,
+  );
 
   return (
     <>
@@ -80,12 +78,12 @@ export default function Sidebar({ isOpen, setIsOpen, isCollapsed, setIsCollapsed
         <nav className="flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-3 pb-4 lg:px-2.5" style={{ scrollbarWidth: "thin" }}>
           {Object.entries(groupedNav).map(([group, items]) => (
             <div key={group}>
-              {group !== "Painel" && (
+              {(
                 <p className={twMerge("mb-1 px-3 text-[12px] font-semibold text-[var(--admin-tertiary)]", isCollapsed && "lg:sr-only")}>{group}</p>
               )}
               <ul className="overflow-hidden rounded-[14px] bg-white lg:rounded-none lg:bg-transparent">
                 {items.map((item) => {
-                  const active = isActiveRoute(pathname, item.route);
+                  const active = isActiveSection(pathname, item);
                   return (
                     <li key={item.key} className="border-b border-black/[.06] last:border-0 lg:border-0">
                       <Link

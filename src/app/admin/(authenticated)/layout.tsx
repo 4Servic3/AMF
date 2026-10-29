@@ -9,16 +9,14 @@ export default async function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const { user } = await getAdminContext();
-  const checks = await Promise.all(
-    adminNavigationRegistry.map(async (item) => ({
-      key: item.key,
-      allowed: await hasPermission(
-        item.permission === "AAL2" ? "dashboard.read" : item.permission,
-      ),
-    })),
+  // Várias telas compartilham a mesma permissão: cada uma é consultada uma vez.
+  const permissionOf = (permission: string) => (permission === "AAL2" ? "dashboard.read" : permission);
+  const unique = [...new Set(adminNavigationRegistry.map((item) => permissionOf(item.permission)))];
+  const granted = new Set(
+    (await Promise.all(unique.map(async (key) => ((await hasPermission(key)) ? key : null)))).filter(Boolean),
   );
-  const allowedKeys = checks
-    .filter((item) => item.allowed)
+  const allowedKeys = adminNavigationRegistry
+    .filter((item) => granted.has(permissionOf(item.permission)))
     .map((item) => item.key);
   if (!allowedKeys.length) redirect("/admin/unauthorized");
   const name = user.user_metadata?.full_name || user.email || "Administrador";

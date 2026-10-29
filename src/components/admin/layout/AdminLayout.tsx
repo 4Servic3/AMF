@@ -3,6 +3,7 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import TabBar from "./TabBar";
+import SectionTabs from "./SectionTabs";
 export default function AdminLayout({
   children,
   name,
@@ -30,6 +31,7 @@ export default function AdminLayout({
           id="admin-content"
           className="amf-admin-main flex-1 overflow-auto"
         >
+          <SectionTabs allowedKeys={allowedKeys} />
           {children}
         </main>
       </div>

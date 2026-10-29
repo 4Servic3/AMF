@@ -6,12 +6,17 @@ import PageHeader from "@/components/admin/ui/PageHeader";
 import DataTable from "@/components/admin/ui/DataTable";
 export default async function Communications() {
   const db = await adminDb("communications.manage");
-  const { data, error } = await db
-    .from("notification_campaigns")
-    .select("id,name,status,channels,created_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [{ data, error }, live] = await Promise.all([
+    db
+      .from("notification_campaigns")
+      .select("id,name,status,channels,created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    // O que o aluno vê agora no sino: a mesma tabela que a tela do aluno lê.
+    db.from("notifications").select("id,title,message,created_at").order("created_at", { ascending: false }).limit(5),
+  ]);
   queryError(error);
+  queryError(live.error);
   return (
     <div className="max-w-4xl space-y-6">
       <PageHeader
@@ -38,10 +43,32 @@ export default async function Communications() {
           </label>
         </ActionForm>
       </section>
+      <section className="amf-panel">
+        <h2 className="text-[17px]">No aplicativo agora</h2>
+        <p className="mt-1 text-sm text-[var(--admin-secondary)]">
+          Os últimos avisos que os alunos veem no sino e em Notificações.
+        </p>
+        {live.data?.length ? (
+          <ul className="mt-4 divide-y divide-[var(--admin-separator)]">
+            {live.data.map((n: { id: string; title: string; message: string; created_at: string }) => (
+              <li key={n.id} className="py-3">
+                <p className="font-semibold">{n.title}</p>
+                <p className="mt-0.5 line-clamp-2 text-sm text-[var(--admin-secondary)]">{n.message}</p>
+                <p className="mt-1 text-xs text-[var(--admin-tertiary)]">
+                  {new Date(n.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4 text-sm text-[var(--admin-secondary)]">Nenhum aviso visível para os alunos ainda.</p>
+        )}
+      </section>
       <p className="text-sm text-[var(--admin-secondary)]">
         Envio por e-mail ainda não está disponível: depende de um serviço de e-mail configurado.
       </p>
       <DataTable
+        empty={{ title: "Nenhum aviso publicado ainda.", description: "Escreva um título e uma mensagem acima e publique. O aviso aparece no sino e na tela de notificações de todos os alunos." }}
         data={data}
         columns={[
           { header: "Campanha", accessorKey: "name" },

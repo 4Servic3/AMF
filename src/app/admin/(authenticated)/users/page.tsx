@@ -37,6 +37,7 @@ export default async function Users({
         <button className="amf-secondary">Buscar</button>
       </form>
       <DataTable
+        empty={{ title: "Nenhum aluno encontrado.", description: "Cadastre um aluno pelo botão no topo ou ajuste a busca." }}
         data={data || []}
         columns={[
           { header: "Nome", accessorKey: "full_name" },

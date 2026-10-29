@@ -3,22 +3,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { isActiveRoute, tabItems } from "./nav-state";
-
-const SHORT_LABELS: Record<string, string> = {
-  dashboard: "Início",
-  communications: "Avisos",
-  users: "Usuários",
-  courses: "Cursos",
-  support: "Suporte",
-  cases: "Casos",
-  access: "Acessos",
-};
+import { isActiveSection, tabItems } from "./nav-state";
 
 export default function TabBar({ allowedKeys, onMore }: { allowedKeys: string[]; onMore: () => void }) {
   const pathname = usePathname();
   const tabs = tabItems(allowedKeys);
-  const onTab = tabs.some((item) => isActiveRoute(pathname, item.route));
+  const onTab = tabs.some((item) => isActiveSection(pathname, item));
   return (
     <nav
       aria-label="Navegação principal"
@@ -26,7 +16,7 @@ export default function TabBar({ allowedKeys, onMore }: { allowedKeys: string[];
     >
       <ul className="mx-auto flex max-w-xl items-stretch justify-around px-2">
         {tabs.map((item) => {
-          const active = isActiveRoute(pathname, item.route);
+          const active = isActiveSection(pathname, item);
           const Icon = item.icon;
           return (
             <li key={item.key} className="flex-1">
@@ -39,7 +29,7 @@ export default function TabBar({ allowedKeys, onMore }: { allowedKeys: string[];
                 )}
               >
                 <Icon size={23} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-                {SHORT_LABELS[item.key] || item.label}
+                {item.shortLabel}
               </Link>
             </li>
           );

@@ -2,10 +2,10 @@
 import { Plus, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { currentNavItem } from "./nav-state";
+import { currentNavItem, currentSection } from "./nav-state";
 export default function Header({ allowedKeys }: { allowedKeys: string[] }) {
   const pathname = usePathname();
-  const current = currentNavItem(pathname);
+  const current = currentSection(pathname, allowedKeys) ?? currentNavItem(pathname);
   return (
     <header className="amf-glass sticky top-0 z-20 flex min-h-[56px] shrink-0 items-center justify-between gap-3 border-b border-black/[.08] px-4 pt-[env(safe-area-inset-top)] md:px-8">
       <div className="flex min-w-0 items-center gap-2">
