@@ -41,7 +41,7 @@ type Course = {
 const field =
   'w-full rounded-lg border border-amf-border px-3 py-2 bg-white text-amf-ink-900 placeholder:text-amf-muted-600 focus:outline-none focus:ring-2 focus:ring-amf-teal-400 focus:border-transparent transition-shadow text-sm'
 const btnSecondary =
-  'rounded-lg border border-amf-border px-4 py-2 text-sm font-medium text-amf-ink-700 bg-white hover:bg-amf-ivory-100 disabled:opacity-50 transition-colors'
+  'shrink-0 whitespace-nowrap rounded-lg border border-amf-border px-4 py-2 text-sm font-medium text-amf-ink-700 bg-white hover:bg-amf-ivory-100 disabled:opacity-50 transition-colors'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 interface Props {
@@ -51,6 +51,8 @@ interface Props {
   initialAccessList: any[]
   initialSchedule: CourseSchedule
 }
+
+const STEPS = ['Informações e capa', 'Módulos e aulas', 'Quem pode assistir', 'Publicar']
 
 export default function CourseEditorClient({ id, initialData, initialCoverUrl, initialAccessList, initialSchedule }: Props) {
   const router = useRouter()
@@ -71,6 +73,7 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
   const [slugEdited, setSlugEdited] = useState(false)
   const [activeVideo, setActiveVideo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [step, setStep] = useState(1)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const isPublished = initialData?.status === 'published'
@@ -175,6 +178,27 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
           </div>
         )}
 
+        {!isNew && (
+          <nav aria-label="Etapas do curso" className="amf-panel !p-2">
+            <ol className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+              {STEPS.map((label, i) => (
+                <li key={label}>
+                  <button
+                    type="button"
+                    onClick={() => setStep(i + 1)}
+                    aria-current={step === i + 1 ? 'step' : undefined}
+                    className={`flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-sm font-medium ${step === i + 1 ? 'bg-[var(--admin-tint-soft)] text-[var(--admin-tint)]' : 'text-[var(--admin-secondary)] hover:bg-[var(--admin-fill)]'}`}
+                  >
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${step === i + 1 ? 'bg-[var(--admin-tint)] text-white' : 'bg-[var(--admin-fill)]'}`}>{i + 1}</span>
+                    {label}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+
+        <div hidden={step !== 1} className="space-y-6">
         {/* ── Section 1: Informações básicas ──────────────────── */}
         <section className="rounded-xl border border-amf-border bg-white overflow-hidden">
           <div className="px-6 py-4 border-b border-amf-border bg-amf-ivory-50">
@@ -327,6 +351,9 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
           </div>
         )}
 
+        </div>
+
+        <div hidden={step !== 2} className="space-y-6">
         {/* ── Section 3: Módulos e aulas ───────────────────────── */}
         {!isNew && (
           <section>
@@ -524,21 +551,31 @@ export default function CourseEditorClient({ id, initialData, initialCoverUrl, i
           </section>
         )}
 
+        </div>
+
         {/* ── Section 4: Gestão de acesso ─────────────────────── */}
         {!isNew && (
-          <details className="rounded-xl border border-amf-border bg-white p-4">
-          <summary className="cursor-pointer text-sm font-medium">Acesso dos alunos (opcional)</summary>
+          <section hidden={step !== 3} className="amf-panel">
+          <h2 className="text-lg font-semibold">Quem pode assistir</h2>
+          <p className="mt-1 text-sm text-amf-muted-600">Libere para todos os alunos ou para pessoas específicas. Compras liberam sozinhas.</p>
           <CourseAdminAccessPanel
             courseId={id}
             courseTitle={initialData?.title ?? ''}
             initialEntitlements={initialAccessList}
             initialAllStudents={initialData?.all_students ?? false}
           />
-          </details>
+          </section>
         )}
       </div>
 
-      {!isNew && <div className="mt-6"><CoursePublicationPanel courseId={id} version={initialData!.version} status={initialData!.status} slug={form.slug} schedule={initialSchedule} saveInformation={() => saveCourse(id, form)} /></div>}
+      {!isNew && <div hidden={step !== 4} className="mt-6"><CoursePublicationPanel courseId={id} version={initialData!.version} status={initialData!.status} slug={form.slug} schedule={initialSchedule} saveInformation={() => saveCourse(id, form)} /></div>}
+
+      {!isNew && (
+        <div className="mt-6 flex justify-between gap-3">
+          {step > 1 ? <button type="button" className="amf-secondary" onClick={() => { setStep(step - 1); window.scrollTo({ top: 0 }) }}>Voltar: {STEPS[step - 2]}</button> : <span />}
+          {step < STEPS.length && <button type="button" className="amf-primary" onClick={() => { setStep(step + 1); window.scrollTo({ top: 0 }) }}>Próximo: {STEPS[step]}</button>}
+        </div>
+      )}
     </div>
   )
 }
